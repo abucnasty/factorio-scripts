@@ -5,19 +5,18 @@
  * @returns 
  */
 export function createRange(start_inclusive, end_inclusive) {
-    return {
-        start_inclusive,
-        end_inclusive
-    }
+  return {
+    start_inclusive,
+    end_inclusive
+  }
 }
 
 export function distributeEvenly(total, segments) {
-  const base = Math.floor(total / segments);
-  const remainder = total % segments;
-  const result = [];
+  const result = Array(segments).fill(0);
 
-  for (let i = 0; i < segments; i++) {
-    result.push(i < remainder ? base + 1 : base);
+  for (let i = 0; i < total; i++) {
+    const index = Math.floor(i * segments / total);
+    result[index]++;
   }
 
   return result;
