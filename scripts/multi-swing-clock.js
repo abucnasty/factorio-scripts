@@ -63,12 +63,6 @@ function conditionRange(startInclusive, endInclusive) {
     ]
 }
 
-function swingCountRange(initialOffset, swingCount, swingDuration) {
-    const startInclusive = initialOffset
-    const endInclusive = initialOffset + swingCount * swingDuration
-    return conditionRange(startInclusive, endInclusive)
-}
-
 
 
 function secondsToTicks(seconds) {
@@ -108,35 +102,40 @@ function createDeciderCombinator(decider_conditions, description = "") {
 const config = {
     book_name: "electric mining drill clocks",
     required_output_per_second: 10,
-    stack_size: 16,
     number_of_machines: 1,
     recipe: {
         inputs: {
             "advanced-circuit": {
                 count: 5,
                 inserter_count: 1,
+                stack_size: 16,
                 swing_duration: STACK_Q5_SWING.BELT
             },
             "steel-plate": {
                 count: 10,
                 inserter_count: 1,
+                stack_size: 16,
                 swing_duration: STACK_Q5_SWING.DIRECT
             },
             "stone-brick": {
                 count: 10,
                 inserter_count: 3,
+                stack_size: 16,
                 swing_duration: STACK_Q5_SWING.DIRECT
             },
-            // TODO: handle direct insert miners / "loader" in some way
-            // "stone": {
-            //     count: 10 / (1+50/100),
-            //     inserter_count: 1,
-            //     swing_duration: 1
-            // }
+            "stone": {
+                count: 10 / (1 + 50 / 100) / 3,
+                inserter_count: 1,
+                swing_duration: 0,
+                stack_size: 80,
+                // I don't like adding a random "type" here but eh... it works
+                type: "loader"
+            }
         },
         output: {
             type: "electric-furnace",
             count: 1,
+            stack_size: 16,
             swing_duration: STACK_Q5_SWING.BELT,
             swing_count: 1
         }
@@ -150,19 +149,19 @@ function main() {
         number_of_machines,
         recipe,
         productivity,
-        stack_size
     } = config;
 
     const output_configuration = {
         type: recipe.output.type,
         start_inclusive: 1,
+        stack_size: recipe.output.stack_size,
         end_inclusive: recipe.output.swing_count * recipe.output.swing_duration,
         swing_count: recipe.output.swing_count
     }
 
     const output_per_machine = required_output_per_second / number_of_machines
 
-    const crafting_cycle_ticks = secondsToTicks(stack_size / output_per_machine * output_configuration.swing_count)
+    const crafting_cycle_ticks = secondsToTicks(output_configuration.stack_size / output_per_machine * output_configuration.swing_count)
 
     const input_multiplier_per_second = required_output_per_second / recipe.output.count / (1 + productivity / 100)
 
@@ -170,7 +169,7 @@ function main() {
 
     const input_configurations = []
 
-    Object.entries(recipe.inputs).forEach(([ingredient, { count, swing_duration, inserter_count }]) => {
+    Object.entries(recipe.inputs).forEach(([ingredient, { count, swing_duration, stack_size, inserter_count, type }]) => {
         const input_per_cycle = input_multiplier_per_cycle * count
 
         const swings_per_cycle = input_per_cycle / stack_size / inserter_count
@@ -179,7 +178,8 @@ function main() {
             type: ingredient,
             swings_per_cycle: swings_per_cycle,
             inserter_count: inserter_count,
-            swing_duration
+            swing_duration,
+            insertion_type: type
         })
     })
 
@@ -228,7 +228,7 @@ function main() {
                     [...Array(least_common_multiple).keys()].flatMap((_, index) => {
                         const start_inclusive = output_configuration.start_inclusive + index * crafting_cycle_ticks
                         const end_inclusive = start_inclusive + output_configuration.end_inclusive - STACK_Q5_SWING.SWING_ANIMATION
-                        console.log(`-- output: [${output_configuration.type}]::[cycle=${index+1}] ${output_configuration.swing_count} swing(s) between ticks [${start_inclusive}, ${end_inclusive}]`)
+                        console.log(`-- output: [${output_configuration.type}]::[cycle=${index + 1}] ${output_configuration.swing_count} swing(s) between ticks [${start_inclusive}, ${end_inclusive}]`)
                         return conditionRange(start_inclusive, end_inclusive)
                     })
                 )
@@ -240,10 +240,15 @@ function main() {
     const ingredient_blueprints = input_configurations.map(it => {
 
         const ranges = it.swing_distribution.flatMap((swings, index) => {
+            // const start_inclusive = output_configuration.end_inclusive + 1 + index * crafting_cycle_ticks
             const start_inclusive = output_configuration.end_inclusive + 1 + index * crafting_cycle_ticks
-            const end_inclusive = start_inclusive + swings * it.swing_duration - STACK_Q5_SWING.SWING_ANIMATION
+            let end_inclusive = start_inclusive + swings * it.swing_duration
 
-            console.log(`-- input: [${it.type}]::[cycle=${index+1}] ${swings} swings using ${it.inserter_count} inserters between [${start_inclusive}, ${end_inclusive}]`)
+            if (it.insertion_type != "loader") {
+                end_inclusive = end_inclusive - STACK_Q5_SWING.SWING_ANIMATION
+            }
+
+            console.log(`-- input: [${it.type}]::[cycle=${index + 1}] ${swings} swings using ${it.inserter_count} inserters between [${start_inclusive}, ${end_inclusive}]`)
             return conditionRange(start_inclusive, end_inclusive)
         })
         const itemSignal = createItemSignal(it.type)
