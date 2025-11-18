@@ -1,51 +1,120 @@
-import { fraction, evaluate, isProper, isEqual } from 'fractionability';
-import { FactorioDataService } from './data/factorio-data-service';
-import { InserterFactory } from './crafting/inserter';
-import { MachineFactory } from './crafting/machine';
-import { CraftingCycleFactory } from './crafting/crafting-cycle';
-import { OverloadMultiplierFactory } from './crafting/overload-multipliers';
+import { InserterFactory, MachineInteractionPoint } from './crafting/inserter';
+import { MachineFactory, printMachineFacts } from './crafting/machine';
+import { Config } from './config/config';
+import { MachineRegistry } from './crafting/machine-registry';
+import { computeInserterTickTimingForMachine } from './inserter-swing-logic/inserter-tick-timing';
+import { InserterRegistry } from './crafting/inserter-registry';
+
+const machineConfigs = [
+    {
+        id: 1,
+        recipe: "productivity-module",
+        productivity: 50,
+        crafting_speed: 124.65,
+    },
+    {
+        id: 2,
+        recipe: "electronic-circuit",
+        productivity: 175,
+        crafting_speed: 63.75,
+    },
+    {
+        id: 3,
+        recipe: "advanced-circuit",
+        productivity: 175,
+        crafting_speed: 83.9,
+    }
+]
+
+const productivityModuleMachineConfig = machineConfigs[0];
+const electronicCircuitMachineConfig = machineConfigs[1];
+const advancedCircuitMachineConfig = machineConfigs[2];
+
+const config: Config = {
+    target_output: {
+        recipe: "productivity-module",
+        items_per_second: 40,
+        machines: 3,
+    },
+    machines: [
+        {
+            id: 1,
+            recipe: "productivity-module",
+            productivity: 50,
+            crafting_speed: 135.05,
+        },
+        {
+            id: 2,
+            recipe: "electronic-circuit",
+            productivity: 175,
+            crafting_speed: 63.75,
+        },
+        {
+            id: 3,
+            recipe: "advanced-circuit",
+            productivity: 175,
+            crafting_speed: 100.05,
+        }
+    ],
+    inserters: [
+        {
+            source: { type: "machine", machine_id: electronicCircuitMachineConfig.id },
+            target: { type: "machine", machine_id: productivityModuleMachineConfig.id },
+            stack_size: 16,
+        },
+        {
+            source: { type: "machine", machine_id: electronicCircuitMachineConfig.id },
+            target: { type: "machine", machine_id: advancedCircuitMachineConfig.id },
+            stack_size: 16,
+        },
+        {
+            source: { type: "machine", machine_id: advancedCircuitMachineConfig.id },
+            target: { type: "machine", machine_id: productivityModuleMachineConfig.id },
+            stack_size: 16,
+        },
+        {
+            source: { type: "machine", machine_id: productivityModuleMachineConfig.id },
+            target: { type: "belt", ingredient: "productivity-module" },
+            stack_size: 16,
+        },
+    ],
+};
 
 
-// compute crafting cycle
+const main = () => {
+    const machineRegistry = new MachineRegistry();
+    const inserterRegistry = new InserterRegistry();
+    const inserterFactory = new InserterFactory(machineRegistry);
 
-console.log(FactorioDataService.findRecipeOrThrow("advanced-circuit"));
+    config.machines.forEach(machineConfig => {
+        machineRegistry.setMachine(MachineFactory.fromConfig(machineConfig))
+    });
 
+    // config.inserters.forEach(inserterConfig => {
+    //     inserterRegistry.createNewInserter(inserterFactory.fromConfig(inserterConfig))
+    // });
 
-console.log(InserterFactory.fromMachineToMachine(16));
-console.log(InserterFactory.fromBeltToMachine(16));
-console.log(InserterFactory.fromMachineToBelt(16));
+    // const primaryMachine = machineRegistry.getMachineByRecipeOrThrow(config.target_output.recipe);
 
+    // const primaryMachineOutputInserter = inserterRegistry.getInsertersForMachine(primaryMachine.id).find(inserter => {
+    //     return inserter.target.type === "belt";
+    // });
 
-console.log("--------------");
-console.log("red circuit machine");
-console.log("--------------");
+    // if (!primaryMachineOutputInserter) {
+    //     throw new Error(`No inserter found for output of primary machine with id ${primaryMachine.id}`);
+    // }
 
-const redCircuitMachine = MachineFactory.createMachine(1, {
-    recipe: "advanced-circuit",
-    productivity: 175,
-    crafting_speed: 83.9,
-})
-console.log({
-    redCircuitMachine,
-    result: redCircuitMachine.recipe.results[0],
-})
+    // const foo = computeInserterTickTimingForMachine(primaryMachine, inserterRegistry, config.target_output.items_per_second);
 
-console.log("--------------");
+    // // console.log(JSON.stringify(foo[0], null, 2));
 
+    for(const machine of machineRegistry.getAllMachines()) {
 
-console.log("--------------");
-console.log("green circuit machine");
-console.log("--------------");
+        printMachineFacts(machine);
 
-const greenCircuitMachine = MachineFactory.createMachine(1, {
-    recipe: "electronic-circuit",
-    productivity: 175,
-    crafting_speed: 63.75,
-})
-console.log(JSON.stringify(greenCircuitMachine, null, 2));
+    }
 
-console.log("--------------");
+    // console.log(JSON.stringify(primaryMachine, null, 2))
+}
 
-
-const craftingCycle = CraftingCycleFactory.fromMachine(redCircuitMachine)
-console.log(craftingCycle)
+main()

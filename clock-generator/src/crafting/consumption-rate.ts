@@ -6,6 +6,10 @@ export class ConsumptionRate {
         public readonly rate_per_second: Fraction,
         public readonly rate_per_tick: Fraction,
     ) {}
+
+    limitTo(maxRatePerSecond: Fraction): ConsumptionRate {
+        return new ConsumptionRate(this.item, maxRatePerSecond, maxRatePerSecond.divide(60));
+    }
 }
 
 

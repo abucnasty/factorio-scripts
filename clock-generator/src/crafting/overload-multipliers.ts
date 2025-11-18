@@ -18,12 +18,6 @@ export class OverloadMultiplierFactory {
 
         const overloadMultiplier = Math.ceil(dynamic_recipe_overload_factor / (energyRequired / craftingSpeed)) + 1;
 
-        console.log({
-            craftingSpeed,
-            energyRequired,
-            overloadMultiplier
-        })
-
         if (overloadMultiplier < minimum_recipe_overload_multiplier) {
             return new OverloadMultiplier(minimum_recipe_overload_multiplier);
         }

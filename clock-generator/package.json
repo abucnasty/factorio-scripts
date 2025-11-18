@@ -21,6 +21,7 @@
     "csv-writer": "^1.6.0",
     "fractionability": "^2.3.3",
     "lodash": "^4.17.21",
+    "mathjs": "^15.1.0",
     "uuid": "^11.1.0"
   }
 }

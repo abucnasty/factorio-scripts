@@ -1,4 +1,7 @@
+import { InserterConfiguration } from "../config/config";
 import { OpenRange } from "../data-types/range";
+import { Machine } from "./machine";
+import { ReadableMachineRegistry } from "./machine-registry";
 
 const STACK_INSERTER_Q5 = {
     FROM_BELT_PICKUP: 4,
@@ -8,23 +11,88 @@ const STACK_INSERTER_Q5 = {
     SWING_ANIMATION: 3,
 }
 
-export type InserterSource = "belt" | "machine"
-export type InserterSink = "belt" | "machine"
+export type InteractionType = "belt" | "machine";
+
+export interface InteractionPoint {
+    type: InteractionType;
+    machine_id?: number;
+    ingredient_name?: string;
+}
+export class MachineInteractionPoint implements InteractionPoint {
+    constructor(
+        public readonly machine_id: number,
+        public readonly type: "machine" = "machine"
+    ) { }
+}
+
+export class BeltInteractionPoint implements InteractionPoint {
+    public readonly type: "belt" = "belt";
+    constructor(
+        public readonly ingredient_name: string
+    ) {}
+}
 
 export class Inserter {
     constructor(
         public readonly stack_size: number,
+        /**
+         * duration of ticks to enable as a range to pickup items
+         */
         public readonly pickup_ticks: OpenRange,
+        /**
+         * duration of ticks to enable as a range to drop items
+         */
         public readonly drop_ticks: OpenRange,
+        /**
+         * total duration of ticks for the inserter cycle
+         */
         public readonly total_ticks: OpenRange,
-        public readonly source: InserterSource,
-        public readonly target: InserterSink,
+        public readonly source: InteractionPoint,
+        public readonly target: InteractionPoint,
+        public readonly ingredient_name: string,
     ) { }
 }
 
 export class InserterFactory {
 
-    public static fromMachineToBelt(
+    constructor(
+        private readonly machineRegistry: ReadableMachineRegistry
+    ) {}
+
+    public fromConfig(config: InserterConfiguration): Inserter {
+        if (config.source.type === "belt" && config.target.type === "belt") {
+            throw new Error(`Inserter cannot have both source and target as belt.`);
+        }
+        if (config.source.type === "machine" && config.target.type === "machine") {
+            return this.fromMachineToMachine(
+                config.source.machine_id,
+                config.target.machine_id,
+                config.stack_size
+            );
+        }
+
+        if (config.source.type === "machine" && config.target.type === "belt") {
+            return this.fromMachineToBelt(
+                config.source.machine_id,
+                config.target.ingredient,
+                config.stack_size
+            );
+        }
+
+        if (config.source.type === "belt" && config.target.type === "machine") {
+            return this.fromBeltToMachine(
+                config.source.ingredient,
+                config.target.machine_id,
+                config.stack_size
+            );
+        }
+
+        throw new Error(`Unhandled inserter configuration: ${JSON.stringify(config)}`);
+    }
+
+    public fromMachineToBelt(
+        source_machine_id: number,
+        target_ingredient_name: string,
         stackSize: number
     ) {
         const pickupTick = STACK_INSERTER_Q5.FROM_MACHINE_PICKUP;
@@ -41,10 +109,15 @@ export class InserterFactory {
             pickupTicks.start_inclusive,
             dropTicks.end_inclusive + STACK_INSERTER_Q5.SWING_ANIMATION
         );
-        return new Inserter(stackSize, pickupTicks, dropTicks, totalTicks, "machine", "belt");
+
+        const ingredient_name = this.machineRegistry.getMachineByIdOrThrow(source_machine_id).output.ingredient.name;
+
+        return new Inserter(stackSize, pickupTicks, dropTicks, totalTicks, new MachineInteractionPoint(source_machine_id), new BeltInteractionPoint(target_ingredient_name), ingredient_name);
     }
 
-    public static fromMachineToMachine(
+    public fromMachineToMachine(
+        source_machine_id: number,
+        target_machine_id: number,
         stackSize: number
     ) {
         const pickupTick = STACK_INSERTER_Q5.FROM_MACHINE_PICKUP;
@@ -60,10 +133,15 @@ export class InserterFactory {
             pickupTicks.start_inclusive,
             dropTicks.end_inclusive + STACK_INSERTER_Q5.SWING_ANIMATION
         );
-        return new Inserter(stackSize, pickupTicks, dropTicks, totalTicks, "machine", "machine");
+
+        const ingredient_name = this.machineRegistry.getMachineByIdOrThrow(source_machine_id).output.ingredient.name;
+
+        return new Inserter(stackSize, pickupTicks, dropTicks, totalTicks, new MachineInteractionPoint(source_machine_id), new MachineInteractionPoint(target_machine_id), ingredient_name);
     }
 
-    public static fromBeltToMachine(
+    public fromBeltToMachine(
+        source_ingredient_name: string,
+        target_machine_id: number,
         stackSize: number
     ) {
         const pickupTick = STACK_INSERTER_Q5.FROM_BELT_PICKUP;
@@ -73,7 +151,7 @@ export class InserterFactory {
         );
         const dropTicks = OpenRange.from(
             pickupTicks.end_inclusive + STACK_INSERTER_Q5.SWING_ANIMATION + STACK_INSERTER_Q5.TO_MACHINE_DROP,
-            pickupTicks.end_inclusive + STACK_INSERTER_Q5.SWING_ANIMATION+STACK_INSERTER_Q5.TO_MACHINE_DROP
+            pickupTicks.end_inclusive + STACK_INSERTER_Q5.SWING_ANIMATION + STACK_INSERTER_Q5.TO_MACHINE_DROP
         )
 
         const totalTicks = OpenRange.from(
@@ -81,6 +159,8 @@ export class InserterFactory {
             dropTicks.end_inclusive + STACK_INSERTER_Q5.SWING_ANIMATION
         );
 
-        return new Inserter(stackSize, pickupTicks, dropTicks, totalTicks, "belt", "machine");
+
+
+        return new Inserter(stackSize, pickupTicks, dropTicks, totalTicks, new BeltInteractionPoint(source_ingredient_name), new MachineInteractionPoint(target_machine_id), source_ingredient_name);
     }
 }
