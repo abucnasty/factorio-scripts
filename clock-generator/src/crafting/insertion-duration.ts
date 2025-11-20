@@ -14,8 +14,8 @@ export class InsertionDuration {
 
 export class InsertionDurationFactory {
 
-    public static create(craftingRate: ProductionRate, overloadMultiplier: OverloadMultiplier): InsertionDuration {
-        const tickDurationBeforeOverloadLock = fraction(overloadMultiplier.multiplier).divide(craftingRate.rate_per_tick);
+    public static create(productionRate: ProductionRate, overloadMultiplier: OverloadMultiplier): InsertionDuration {
+        const tickDurationBeforeOverloadLock = fraction(overloadMultiplier.multiplier).divide(productionRate.rate_per_tick);
 
         return new InsertionDuration(
             tickDurationBeforeOverloadLock

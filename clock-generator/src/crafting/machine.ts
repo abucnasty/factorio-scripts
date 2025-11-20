@@ -1,7 +1,7 @@
 import Fraction, { fraction } from "fractionability";
 import { MachineConfiguration } from "../config/config";
 import { FactorioDataService } from "../data/factorio-data-service";
-import { Ingredient, Recipe } from "../data/factorio-data-types";
+import { Ingredient, ItemName, Recipe } from "../data/factorio-data-types";
 import { AutomatedInsertionLimit, AutomatedInsertionLimitFactory } from "./automated-insertion-limit";
 import { BonusProductivityRate, BonusProductivityRateFactory } from "./bonus-productivity-rate";
 import { ConsumptionRate, ConsumptionRateFactory } from "./consumption-rate";
@@ -9,6 +9,7 @@ import { CraftingRate, CraftingRateFactory } from "./crafting-rate";
 import { OverloadMultiplier, OverloadMultiplierFactory } from "./overload-multipliers";
 import { ProductionRate, ProductionRateFactory } from "./production-rate";
 import { InsertionDuration, InsertionDurationFactory } from "./insertion-duration";
+import { OutputBlock } from "./output-block";
 
 export interface MachineMetadata {
     recipe: string;
@@ -30,7 +31,8 @@ export class MachineOutput {
         public readonly item_name: string,
         public readonly amount_per_craft: Fraction,
         public readonly production_rate: ProductionRate,
-        public readonly ingredient: Ingredient
+        public readonly ingredient: Ingredient,
+        public readonly outputBlock: OutputBlock
     ) {}
 }
 
@@ -41,11 +43,11 @@ export class Machine {
         public readonly metadata: MachineMetadata,
         public readonly recipe: Recipe,
         public readonly overload_multiplier: OverloadMultiplier,
-        public readonly inputs: Record<string, MachineInput>,
+        public readonly inputs: Record<ItemName, MachineInput>,
         public readonly output: MachineOutput,
         public readonly crafting_rate: CraftingRate,
         public readonly bonus_productivity_rate: BonusProductivityRate,
-        public readonly insertion_duration: InsertionDuration
+        public readonly insertion_duration: InsertionDuration,
     ) {}
 }
 
@@ -97,9 +99,10 @@ export class MachineFactory {
                 metadata.crafting_speed,
                 recipe.energy_required,
                 resultIngredient.amount,
-                metadata.productivity / 100
+                metadata.productivity / 100,
             ),
-            resultIngredient
+            resultIngredient,
+            OutputBlock.fromRecipe(recipe, overload_multiplier)
         );
 
         const craftingRate = CraftingRateFactory.fromCraftingSpeed(
@@ -131,6 +134,7 @@ export function printMachineFacts(machine: Machine): void {
     console.log(`  Recipe: ${machine.recipe.name}`);
     console.log(`  Crafting Speed: ${machine.metadata.crafting_speed}`);
     console.log(`  Productivity: ${machine.metadata.productivity}%`);
+    console.log(`  Output Per Craft: ${machine.output.amount_per_craft.toMixedNumber()}`);
     console.log(`  Output Rate: ${machine.output.production_rate.rate_per_second.toMixedNumber()} per second`);
     console.log(`  Overload Multiplier: ${machine.overload_multiplier.multiplier.toString()}`);
     console.log(`  Ticks per craft: ${machine.crafting_rate.ticks_per_craft.toMixedNumber()} ticks`);

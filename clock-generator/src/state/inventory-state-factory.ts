@@ -6,8 +6,14 @@ export class InventoryStateFactory {
     public static createFromMachineInputs(machineInputs: Record<string, MachineInput>): InventoryState {
         const inventory = this.createEmpty();
         for (const [itemName, _] of Object.entries(machineInputs)) {
-            inventory.add(itemName, 0);
+            inventory.addQuantity(itemName, 0);
         }
+        return inventory;
+    }
+
+    public static createEmptyForSingleItem(itemName: string): InventoryState {
+        const inventory = this.createEmpty();
+        inventory.addQuantity(itemName, 0);
         return inventory;
     }
 

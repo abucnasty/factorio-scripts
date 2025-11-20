@@ -21,6 +21,7 @@ export class InserterRegistry implements WritableInserterRegistry {
 
     public createNewInserter(inserter: Inserter): number {
         const id = this.nextId++;
+        inserter.setId(id);
         this.setInserter(id, inserter);
         return id;
     }

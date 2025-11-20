@@ -1,4 +1,4 @@
-import Fraction from "fractionability";
+import Fraction, { fraction } from "fractionability";
 import { Machine } from "./machine";
 import { ProductionRate } from "./production-rate";
 
@@ -7,27 +7,27 @@ export class CraftingCycle {
     constructor(
         public readonly items_per_second: Fraction,
         public readonly items_per_tick: Fraction,
-        public readonly stack_size: number,
+        public readonly items_per_cycle: Fraction,
         public readonly total_ticks: Fraction,
     ) { }
 }
 
 export class CraftingCycleFactory {
-    public static fromItemsPerSecond(itemsPerSecond: Fraction, stackSize: number): CraftingCycle {
+    public static fromItemsPerSecond(itemsPerSecond: Fraction, totalItems: Fraction): CraftingCycle {
         const itemsPerTick = itemsPerSecond.divide(60);
 
-        const totalTicks = new Fraction(stackSize).divide(itemsPerTick);
+        const totalTicks = totalItems.divide(itemsPerTick);
 
         return new CraftingCycle(
             itemsPerSecond,
             itemsPerTick,
-            stackSize,
+            totalItems,
             totalTicks
         );
     }
 
     public static fromProductionRate(productionRate: ProductionRate, stackSize: number): CraftingCycle {
-        return this.fromItemsPerSecond(productionRate.rate_per_second, stackSize);
+        return this.fromItemsPerSecond(productionRate.rate_per_second, fraction(stackSize));
     }
 
     public static fromMachine(

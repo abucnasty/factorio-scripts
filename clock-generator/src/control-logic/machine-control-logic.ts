@@ -1,10 +1,23 @@
+import { Machine } from "../crafting/machine";
 import { MachineState } from "../state/machine-state";
 import { ControlLogic } from "./control-logic";
 
 export class MachineControlLogic implements ControlLogic {
+
+    static forMachine(machine: Machine): MachineControlLogic {
+        const machineState = MachineState.forMachine(machine);
+        return new MachineControlLogic(machineState);
+    }
+
     constructor(
         public readonly machineState: MachineState
     ) { }
+
+    executeForTicks(ticks: number): void {
+        for (let tick = 0; tick < ticks; tick++) {
+            this.execute();
+        }
+    }
 
     execute(): void {
         // each time this is invoked, if the machine has enough inventory to craft it should progress 
@@ -36,12 +49,12 @@ export class MachineControlLogic implements ControlLogic {
             }
 
             // produce output
-            inventory.add(machine.output.ingredient.name, machine.output.ingredient.amount);
+            inventory.addQuantity(machine.output.ingredient.name, machine.output.ingredient.amount);
         }
 
         if (this.machineState.bonusProgress.completed_this_tick) {
             // produce output
-            inventory.add(machine.output.ingredient.name, machine.output.ingredient.amount);
+            inventory.addQuantity(machine.output.ingredient.name, machine.output.ingredient.amount);
         }
     }
 

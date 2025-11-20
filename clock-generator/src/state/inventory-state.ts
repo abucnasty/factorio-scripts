@@ -14,12 +14,19 @@ export class InventoryState {
         return this.inventory.get(itemName) ?? 0;
     }
 
-    public add(itemName: string, amount: number): void {
+    public addQuantity(itemName: string, amount: number): void {
         if (amount < 0) {
             throw new Error(`Cannot add negative amount: ${amount}`);
         }
         const current = this.getQuantity(itemName);
         this.inventory.set(itemName, current + amount);
+    }
+
+    public setQuantity(itemName: string, amount: number): void {
+        if (amount < 0) {
+            throw new Error(`Cannot set negative amount: ${amount}`);
+        }
+        this.inventory.set(itemName, amount);
     }
 
     public remove(itemName: string, amount: number): void {

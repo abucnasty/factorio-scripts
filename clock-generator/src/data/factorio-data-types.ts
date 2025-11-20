@@ -1,6 +1,7 @@
+export type ItemName = string;
 export interface Ingredient {
   type: "item" | "fluid",
-  name: string,
+  name: ItemName,
   amount: number
 }
 

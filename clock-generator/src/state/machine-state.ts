@@ -1,11 +1,17 @@
-import Fraction, { fraction}  from "fractionability";
 import { Machine } from "../crafting/machine";
 import { InventoryState } from "./inventory-state";
 import { InventoryStateFactory } from "./inventory-state-factory";
 import { ProgressState } from "./progress-state";
+import { ItemName } from "../data/factorio-data-types";
 
 export class MachineState {
-    constructor(
+
+    public static forMachine(machine: Machine): MachineState {
+        const inventoryState = InventoryStateFactory.createFromMachineInputs(machine.inputs);
+        return new MachineState(machine, new ProgressState(), new ProgressState(), inventoryState);
+    }
+
+    private constructor(
         public readonly machine: Machine,
         public readonly craftingProgress: ProgressState = new ProgressState(),
         public readonly bonusProgress: ProgressState = new ProgressState(),
@@ -14,5 +20,17 @@ export class MachineState {
 
     public isIdle(): boolean {
         return this.craftingProgress.progress.toDecimal() === 0;
+    }
+
+    public isUnderAutomatedInsertionLimit(itemName: ItemName): boolean {
+        const input = this.machine.inputs[itemName];
+        if (!input) {
+            throw new Error(`Machine ${this.machine.id} does not have input for item ${itemName}`);
+        }
+        
+        const currentQuantity = this.inventoryState.getQuantity(itemName);
+        const automatedInsertionLimit = input.automated_insertion_limit.quantity;
+        
+        return currentQuantity < automatedInsertionLimit;
     }
 }

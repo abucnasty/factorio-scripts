@@ -50,7 +50,20 @@ export class Inserter {
         public readonly source: InteractionPoint,
         public readonly target: InteractionPoint,
         public readonly ingredient_name: string,
+        public id: number = -1,
     ) { }
+
+    public swingDuration() {
+        return this.total_ticks.duration();
+    }
+
+    public setId(id: number) {
+        this.id = id;
+    }
+
+    public prettyPrint() {
+        return `Inserter ${this.id}: [${this.source.type}${this.source.type === "machine" ? `:${this.source.machine_id}` : `:${this.ingredient_name}` } -> ${this.target.type}${this.target.type === "machine" ? `:${this.target.machine_id}` : `:${this.ingredient_name}` }]`;
+    }
 }
 
 export class InserterFactory {
@@ -107,7 +120,7 @@ export class InserterFactory {
 
         const totalTicks = OpenRange.from(
             pickupTicks.start_inclusive,
-            dropTicks.end_inclusive + STACK_INSERTER_Q5.SWING_ANIMATION
+            dropTicks.end_inclusive + STACK_INSERTER_Q5.SWING_ANIMATION + 1
         );
 
         const ingredient_name = this.machineRegistry.getMachineByIdOrThrow(source_machine_id).output.ingredient.name;
