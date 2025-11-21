@@ -1,5 +1,5 @@
-import { BeltConfig } from "../config/config";
-import { ItemName } from "../data/factorio-data-types";
+import { BeltConfig } from "../../config/config";
+import { ItemName } from "../../data/factorio-data-types";
 import assert from "assert";
 
 export const BeltStackSize = {

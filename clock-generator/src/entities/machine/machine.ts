@@ -1,36 +1,11 @@
-import Fraction, { fraction } from "fractionability";
-import { MachineConfiguration } from "../config/config";
-import { Ingredient, ItemName } from "../data/factorio-data-types";
-import { AutomatedInsertionLimit } from "./automated-insertion-limit";
-import { BonusProductivityRate } from "./bonus-productivity-rate";
-import { ConsumptionRate } from "./consumption-rate";
-import { CraftingRate } from "./crafting-rate";
-import { OverloadMultiplier } from "./overload-multipliers";
-import { ProductionRate } from "./production-rate";
-import { InsertionDuration } from "./insertion-duration";
-import { OutputBlock } from "./output-block";
+import { fraction } from "fractionability"
+import { MachineConfiguration } from "../../config/config";
+import { ItemName } from "../../data/factorio-data-types";
+import { AutomatedInsertionLimit, ConsumptionRate, MachineInput } from "./input";
+import { MachineMetadata } from "./machine-metadata";
+import { MachineOutput, OutputBlock, OverloadMultiplier, ProductionRate } from "./output";
 import { RecipeMetadata } from "./recipe";
-
-export interface MachineMetadata {
-    productivity: number;
-    crafting_speed: number;
-    recipe: RecipeMetadata;
-}
-
-export interface MachineInput {
-    readonly item_name: string;
-    readonly consumption_rate: ConsumptionRate;
-    readonly automated_insertion_limit: AutomatedInsertionLimit;
-    readonly ingredient: Ingredient;
-}
-
-export interface MachineOutput {
-    readonly item_name: string;
-    readonly amount_per_craft: Fraction;
-    readonly production_rate: ProductionRate;
-    readonly ingredient: Ingredient;
-    readonly outputBlock: OutputBlock;
-}
+import { BonusProductivityRate, CraftingRate, InsertionDuration } from "./traits";
 
 
 export interface Machine {

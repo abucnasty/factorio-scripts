@@ -1,4 +1,4 @@
-import { Inserter } from "../crafting/inserter";
+import { Inserter } from "../entities";
 import { ItemName } from "../data/factorio-data-types";
 import { InventoryItem, InventoryState } from "./inventory-state";
 import { InventoryStateFactory } from "./inventory-state-factory";

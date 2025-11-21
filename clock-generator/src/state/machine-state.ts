@@ -1,8 +1,8 @@
-import { Machine } from "../crafting/machine";
 import { InventoryState } from "./inventory-state";
 import { InventoryStateFactory } from "./inventory-state-factory";
 import { ProgressState } from "./progress-state";
 import { ItemName } from "../data/factorio-data-types";
+import { Machine } from "../entities";
 
 export class MachineState {
 

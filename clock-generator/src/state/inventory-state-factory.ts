@@ -1,4 +1,4 @@
-import { MachineInput } from "../crafting/machine";
+import { MachineInput } from "../entities";
 import { InventoryState } from "./inventory-state";
 
 export class InventoryStateFactory {

@@ -1,6 +1,6 @@
-import { InserterConfiguration } from "../config/config";
-import { OpenRange } from "../data-types/range";
-import { ReadableMachineRegistry } from "./machine-registry";
+import { OpenRange } from "../../data-types/range";
+import { InserterConfiguration } from "../../config/config";
+import { ReadableMachineRegistry } from "../machine";
 
 const STACK_INSERTER_Q5 = {
     FROM_BELT_PICKUP: 4,

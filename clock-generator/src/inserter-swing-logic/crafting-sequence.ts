@@ -1,7 +1,7 @@
-import { IngredientRatio, RecipeMetadata } from "../crafting/recipe";
 import { OpenRange } from "../data-types/range";
 import { MachineState } from "../state/machine-state";
 import { CraftingSimulator } from "../crafting/crafting-simulator";
+import { IngredientRatio, RecipeMetadata } from "../entities";
 
 export interface CraftEvent {
     machine_state: Readonly<MachineState>;

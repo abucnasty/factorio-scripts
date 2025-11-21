@@ -1,5 +1,5 @@
-import { Ingredient } from "../data/factorio-data-types";
-import { OverloadMultiplier } from "./overload-multipliers";
+import { Ingredient } from "../../../data/factorio-data-types";
+import { OverloadMultiplier } from "../output";
 
 export interface AutomatedInsertionLimit {
     readonly quantity: number;

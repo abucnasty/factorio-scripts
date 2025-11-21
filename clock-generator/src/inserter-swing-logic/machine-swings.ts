@@ -1,14 +1,11 @@
 import Fraction, { fraction } from "fractionability";
-import { Inserter } from "../crafting/inserter";
-import { ReadableInserterRegistry } from "../crafting/inserter-registry";
-import { Machine } from "../crafting/machine";
 import { MachineState } from "../state/machine-state";
 import assert from "assert";
 import { lcm } from "mathjs"
 import { OpenRange } from "../data-types/range";
 import { CraftingCycle } from "../crafting/crafting-cycle";
-import { ProductionRate } from "../crafting/production-rate";
 import { TargetProductionRate } from "../config/config";
+import { Inserter, Machine, ProductionRate, ReadableInserterRegistry } from "../entities";
 
 export const computeMaxInputSwings = (
     machine: Machine,

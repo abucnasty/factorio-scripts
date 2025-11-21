@@ -1,6 +1,5 @@
 import Fraction, { fraction } from "fractionability";
-import { Machine } from "./machine";
-import { ProductionRate } from "./production-rate";
+import { Machine, ProductionRate } from "../entities";
 
 
 export interface CraftingCycle {

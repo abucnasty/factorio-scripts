@@ -1,8 +1,4 @@
-import { InserterFactory } from './crafting/inserter';
-import { Machine } from './crafting/machine';
 import { Config } from './config/config';
-import { MachineRegistry } from './crafting/machine-registry';
-import { InserterRegistry } from './crafting/inserter-registry';
 import { computeInserterSchedule, computeInserterSwingCounts, computeMaxInputSwings, computeMaxOutputSwingsForInserter, InserterSchedule, SwingCountsPerClockCycle } from './inserter-swing-logic/machine-swings';
 import * as EXAMPLES from './config/examples';
 import { DeciderCombinatorEntity } from './blueprints/entity/decider-combinator';
@@ -12,6 +8,7 @@ import { encodeBlueprintFile } from './blueprints/serde';
 import { CraftingSequence } from './inserter-swing-logic/crafting-sequence';
 import { MachineState } from './state/machine-state';
 import assert from 'assert';
+import { InserterFactory, InserterRegistry, Machine, MachineRegistry } from './entities';
 
 
 const config: Config = EXAMPLES.UTILITY_SCIENCE_CONFIG
