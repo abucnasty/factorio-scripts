@@ -89,11 +89,6 @@ export const computeMaxOutputSwingsForInserter = (
         const output = machine.output;
 
         const outputAmount = output.amount_per_craft.divide(machineInput.consumption_rate.amount_per_craft).multiply(inserterInputAmount);
-        console.debug(`- For input inserter (${inserter.ingredient_name}):`);
-        console.debug(`  - Inserter input amount: ${inserterInputAmount}`);
-        console.debug(`  - Machine input per craft: ${machineInput.consumption_rate.amount_per_craft}`);
-        console.debug(`  - Machine output per craft: ${output.amount_per_craft}`);
-        console.debug(`  - Machine output per swing: ${outputAmount}`);
 
         return outputAmount;
     })

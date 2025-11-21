@@ -41,6 +41,36 @@ export const UTILITY_SCIENCE_CONFIG: Config = {
             stack_size: 16,
         },
     ],
+    belts: [
+        {
+            id: 1,
+            type: "turbo-transport-belt",
+            lanes: [
+                {
+                    ingredient: "low-density-structure",
+                    stack_size: 4
+                },
+                {
+                    ingredient: "processing-unit",
+                    stack_size: 4
+                }
+            ]
+        },
+        {
+            id: 2,
+            type: "turbo-transport-belt",
+            lanes: [
+                {
+                    ingredient: "low-density-structure",
+                    stack_size: 4
+                },
+                {
+                    ingredient: "flying-robot-frame",
+                    stack_size: 4
+                }
+            ]
+        }
+    ]
 };
 
 export const LOGISTIC_SCIENCE_CONFIG: Config = {
@@ -78,6 +108,22 @@ export const LOGISTIC_SCIENCE_CONFIG: Config = {
             stack_size: 16,
         },
     ],
+    belts: [
+        {
+            id: 1,
+            type: "turbo-transport-belt",
+            lanes: [
+                {
+                    ingredient: "transport-belt",
+                    stack_size: 4
+                },
+                {
+                    ingredient: "inserter",
+                    stack_size: 4
+                }
+            ]
+        }
+    ]
 };
 
 // TODO: impplement this after multiple ingredient inserter support is added
@@ -110,4 +156,20 @@ export const LOGISTIC_SCIENCE_SHARED_INSERTER_CONFIG: Config = {
             stack_size: 16,
         },
     ],
+    belts: [
+        {
+            id: 1,
+            type: "turbo-transport-belt",
+            lanes: [
+                {
+                    ingredient: "transport-belt",
+                    stack_size: 4
+                },
+                {
+                    ingredient: "inserter",
+                    stack_size: 4
+                }
+            ]
+        }
+    ]
 };

@@ -1,3 +1,4 @@
+import { BeltConfig } from "../config/config";
 import { ItemName } from "../data/factorio-data-types";
 import assert from "assert";
 
@@ -16,6 +17,7 @@ export interface Lane {
 }
 
 export interface Belt {
+    readonly id: number
     readonly lanes: readonly Lane[]
     readonly belt_speed: BeltSpeed
 }
@@ -33,8 +35,14 @@ export type BeltSpeed = typeof BeltSpeed[keyof typeof BeltSpeed];
 export class BeltBuilder {
     private lanes: Lane[] = [];
     private belt_speed?: BeltSpeed;
+    private id?: number
 
     constructor() { }
+
+    setId(id: number): BeltBuilder {
+        this.id = id;
+        return this;
+    }
 
     addLane(ingredient_name: ItemName, stack_size: BeltStackSize): BeltBuilder {
         this.lanes.push({ ingredient_name, stack_size });
@@ -48,32 +56,59 @@ export class BeltBuilder {
 
     build(): Belt {
         assert(this.belt_speed !== undefined, "Belt speed must be set before building a Belt");
+        assert(this.lanes.length > 0, "At least one lane must be added before building a Belt");
+        assert(this.id !== undefined, "Belt id must be set before building a Belt");
         return {
+            id: this.id ?? -1,
             lanes: this.lanes,
             belt_speed: this.belt_speed!
         };
     }
 }
 
-function createSingleLaneBelt(beltSpeed: BeltSpeed, ingredient: ItemName, stackSize: BeltStackSize): Belt {
+function fromConfig(config: BeltConfig): Belt {
+    const builder = new BeltBuilder().setId(config.id)
+
+    switch(config.type) {
+        case "express-transport-belt":
+            builder.setBeltSpeed(BeltSpeed.EXPRESS_TRANSPORT_BELT);
+            break;
+        case "fast-transport-belt":
+            builder.setBeltSpeed(BeltSpeed.FAST_TRANSPORT_BELT);
+            break;
+        case "turbo-transport-belt":
+            builder.setBeltSpeed(BeltSpeed.TURBO_TRANSPORT_BELT);
+            break;
+        case "transport-belt":
+            builder.setBeltSpeed(BeltSpeed.TRANSPORT_BELT);
+            break;
+    }
+
+    for (const lane of config.lanes) {
+        assert(lane.stack_size in BeltStackSize, `Invalid stack size: ${lane.stack_size}`);
+        builder.addLane(lane.ingredient, lane.stack_size as BeltStackSize);
+    }
+    return builder.build();
+}
+
+function createSingleLaneBelt(beltSpeed: BeltSpeed, ingredient: ItemName, stackSize: BeltStackSize): BeltBuilder {
     return new BeltBuilder()
         .setBeltSpeed(beltSpeed)
         .addLane(ingredient, stackSize)
-        .build();
 }
 
-function createDoubleLaneBelt(beltSpeed: BeltSpeed, ingredient: ItemName, stackSize: BeltStackSize): Belt {
+function createDoubleLaneBelt(beltSpeed: BeltSpeed, ingredient: ItemName, stackSize: BeltStackSize): BeltBuilder {
     const builder = new BeltBuilder().setBeltSpeed(beltSpeed);
     builder.addLane(ingredient, stackSize);
     builder.addLane(ingredient, stackSize);
-    return builder.build();
+    return builder
 }
 
-function createSplitLaneBelt(beltSpeed: BeltSpeed, ingredientA: ItemName, ingredientB: ItemName, stackSize: BeltStackSize): Belt {
+function createSplitLaneBelt(beltSpeed: BeltSpeed, ingredientA: ItemName, ingredientB: ItemName, stackSize: BeltStackSize): BeltBuilder {
     const builder = new BeltBuilder().setBeltSpeed(beltSpeed);
     builder.addLane(ingredientA, stackSize);
     builder.addLane(ingredientB, stackSize);
-    return builder.build();
+    return builder
 }
 
 export const buildersForBeltSpeed = (beltSpeed: BeltSpeed) => ({
@@ -98,4 +133,5 @@ export const Belt = {
     express_transport_belt: buildersForBeltSpeed(BeltSpeed.EXPRESS_TRANSPORT_BELT),
     fast_transport_belt: buildersForBeltSpeed(BeltSpeed.FAST_TRANSPORT_BELT),
     transport_belt: buildersForBeltSpeed(BeltSpeed.TRANSPORT_BELT),
+    fromConfig: fromConfig
 }
