@@ -1,6 +1,6 @@
 import { OpenRange } from "../data-types/range";
 import { MachineState } from "../state/machine-state";
-import { CraftingSimulator } from "../crafting/crafting-simulator";
+import { CraftingSimulator } from "./crafting-simulator";
 import { IngredientRatio, RecipeMetadata } from "../entities";
 
 export interface CraftEvent {
@@ -20,7 +20,6 @@ export interface CraftingSequence {
     snapshots_per_tick: MachineTickSnapshot[];
     input_insertion_ranges: Map<string, OpenRange[]>;
 }
-
 
 function createEmpty(): CraftingSequence {
     return {

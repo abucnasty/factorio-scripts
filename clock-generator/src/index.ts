@@ -5,7 +5,7 @@ import { DeciderCombinatorEntity } from './blueprints/entity/decider-combinator'
 import { Position, SignalId } from './blueprints/components';
 import { BlueprintBuilder, FactorioBlueprint } from './blueprints/blueprint';
 import { encodeBlueprintFile } from './blueprints/serde';
-import { CraftingSequence } from './inserter-swing-logic/crafting-sequence';
+import { CraftingSequence } from './crafting/crafting-sequence';
 import { MachineState } from './state/machine-state';
 import assert from 'assert';
 import { InserterFactory, InserterRegistry, Machine, MachineRegistry } from './entities';
