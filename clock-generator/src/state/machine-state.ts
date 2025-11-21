@@ -11,6 +11,15 @@ export class MachineState {
         return new MachineState(machine, new ProgressState(), new ProgressState(), inventoryState);
     }
 
+    public static clone(machineState: MachineState): MachineState {
+        return new MachineState(
+            machineState.machine,
+            ProgressState.clone(machineState.craftingProgress),
+            ProgressState.clone(machineState.bonusProgress),
+            InventoryStateFactory.clone(machineState.inventoryState)
+        );
+    }
+
     private constructor(
         public readonly machine: Machine,
         public readonly craftingProgress: ProgressState = new ProgressState(),
@@ -23,7 +32,7 @@ export class MachineState {
     }
 
     public isUnderAutomatedInsertionLimit(itemName: ItemName): boolean {
-        const input = this.machine.inputs[itemName];
+        const input = this.machine.inputs.get(itemName);
         if (!input) {
             throw new Error(`Machine ${this.machine.id} does not have input for item ${itemName}`);
         }

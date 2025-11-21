@@ -23,7 +23,7 @@ export const UTILITY_SCIENCE_CONFIG: Config = {
             target: { type: "machine", machine_id: 1 },
             // hack alert: using this to compensate for this one inserter grabbing 
             // either processing-units or flying robot frames
-            stack_size: 24,
+            stack_size: 16,
         },
         {
             source: { type: "belt", ingredient: "processing-unit" },
@@ -58,6 +58,7 @@ export const LOGISTIC_SCIENCE_CONFIG: Config = {
             recipe: "logistic-science-pack",
             productivity: 100,
             crafting_speed: 68.90625,
+            // crafting_speed: 68.906247615814
         },
     ],
     inserters: [

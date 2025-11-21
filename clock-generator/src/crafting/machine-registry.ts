@@ -20,21 +20,21 @@ export class MachineRegistry implements WritableMachineRegistry {
     public setMachine(machine: Machine): void {
         this.machinesById.set(machine.id, machine);
         
-        if (!this.machinesByRecipe.has(machine.metadata.recipe)) {
-            this.machinesByRecipe.set(machine.metadata.recipe, new Set());
+        if (!this.machinesByRecipe.has(machine.metadata.recipe.name)) {
+            this.machinesByRecipe.set(machine.metadata.recipe.name, new Set());
         }
-        this.machinesByRecipe.get(machine.metadata.recipe)!.add(machine.id);
+        this.machinesByRecipe.get(machine.metadata.recipe.name)!.add(machine.id);
     }
 
     public removeMachine(machineId: number): void {
         const machine = this.machinesById.get(machineId);
         if (machine) {
             this.machinesById.delete(machineId);
-            const recipeSet = this.machinesByRecipe.get(machine.metadata.recipe);
+            const recipeSet = this.machinesByRecipe.get(machine.metadata.recipe.name);
             if (recipeSet) {
                 recipeSet.delete(machineId);
                 if (recipeSet.size === 0) {
-                    this.machinesByRecipe.delete(machine.metadata.recipe);
+                    this.machinesByRecipe.delete(machine.metadata.recipe.name);
                 }
             }
         }

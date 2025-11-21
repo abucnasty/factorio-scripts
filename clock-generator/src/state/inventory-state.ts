@@ -22,6 +22,17 @@ export class InventoryState {
         this.inventory.set(itemName, current + amount);
     }
 
+    public removeQuantity(itemName: string, amount: number): void {
+        if (amount < 0) {
+            throw new Error(`Cannot remove negative amount: ${amount}`);
+        }
+        const current = this.getQuantity(itemName);
+        if (current < amount) {
+            throw new Error(`Insufficient inventory: have ${current}, need ${amount} of ${itemName}`);
+        }
+        this.inventory.set(itemName, current - amount);
+    }
+
     public setQuantity(itemName: string, amount: number): void {
         if (amount < 0) {
             throw new Error(`Cannot set negative amount: ${amount}`);

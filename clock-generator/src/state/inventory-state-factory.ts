@@ -3,9 +3,9 @@ import { InventoryState } from "./inventory-state";
 
 export class InventoryStateFactory {
 
-    public static createFromMachineInputs(machineInputs: Record<string, MachineInput>): InventoryState {
+    public static createFromMachineInputs(machineInputs: Map<string, MachineInput>): InventoryState {
         const inventory = this.createEmpty();
-        for (const [itemName, _] of Object.entries(machineInputs)) {
+        for (const itemName of machineInputs.keys()) {
             inventory.addQuantity(itemName, 0);
         }
         return inventory;
@@ -19,5 +19,13 @@ export class InventoryStateFactory {
 
     public static createEmpty(): InventoryState {
         return new InventoryState();
+    }
+
+    public static clone(inventory: InventoryState): InventoryState {
+        const newInventory = this.createEmpty();
+        for (const item of inventory.getAllItems()) {
+            newInventory.addQuantity(item.item_name, item.quantity);
+        }
+        return newInventory;
     }
 }

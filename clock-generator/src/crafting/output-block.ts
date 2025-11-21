@@ -1,24 +1,18 @@
-import { ItemName, Recipe } from "../data/factorio-data-types";
-import { CraftingRate } from "./crafting-rate";
-import { Machine, MachineOutput } from "./machine";
+import { ItemName } from "../data/factorio-data-types";
 import { OverloadMultiplier } from "./overload-multipliers";
-import assert from "assert";
+import { RecipeMetadata } from "./recipe";
 
 export class OutputBlock {
 
     public static fromRecipe(
-        recipe: Recipe,
+        recipe: RecipeMetadata,
         overloadMultiplier: OverloadMultiplier
     ): OutputBlock {
-
-        const results = recipe.results;
-        assert(results.length === 1, `Expected exactly one output result for recipe ${recipe.name}, but got ${results.length}`);
-
-        const recipeResult = results[0];
-        const outputBlock = overloadMultiplier.multiplier * recipeResult.amount
+        const output = recipe.output
+        const outputBlock = overloadMultiplier.multiplier * output.amount
 
         return new OutputBlock(
-            recipeResult.name,
+            output.name,
             outputBlock
         );
     }

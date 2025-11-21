@@ -29,7 +29,7 @@ export const computeMaxInputSwingsForInserter = (
     const inputs = machineTarget.inputs
 
     const machineState = MachineState.forMachine(machineTarget);
-    const input = inputs[inserter.ingredient_name]!;
+    const input = inputs.get(inserter.ingredient_name)!;
 
     const automatedInsertionLimit = input.automated_insertion_limit.quantity;
 
@@ -76,10 +76,6 @@ export const computeMaxOutputSwingsForInserter = (
     inserterRegistry: ReadableInserterRegistry,
 ): Fraction => {
 
-    const log = (message: string) => {
-        console.debug(`[computeMaxOutputSwingsForInserter] ${message}`);
-    }
-
     const inserters = inserterRegistry.getInsertersForMachine(machine.id)
 
     const inputInserters = inserters.filter(it => it.target.machine_id == machine.id);
@@ -88,16 +84,16 @@ export const computeMaxOutputSwingsForInserter = (
     const potentialOutputAmount = inputInserters.map(inserter => {
         const inserterInputAmount = computeMaxInputSwingsForInserter(machine, inserter) * inserter.stack_size;
 
-        const machineInput = machine.inputs[inserter.ingredient_name];
+        const machineInput = machine.inputs.get(inserter.ingredient_name);
         assert(machineInput !== undefined, `Machine ${machine.id} does not have input for inserter ingredient ${inserter.ingredient_name}`);
         const output = machine.output;
 
         const outputAmount = output.amount_per_craft.divide(machineInput.consumption_rate.amount_per_craft).multiply(inserterInputAmount);
-        log(`- For input inserter (${inserter.ingredient_name}):`);
-        log(`  - Inserter input amount: ${inserterInputAmount}`);
-        log(`  - Machine input per craft: ${machineInput.consumption_rate.amount_per_craft}`);
-        log(`  - Machine output per craft: ${output.amount_per_craft}`);
-        log(`  - Machine output per swing: ${outputAmount}`);
+        console.debug(`- For input inserter (${inserter.ingredient_name}):`);
+        console.debug(`  - Inserter input amount: ${inserterInputAmount}`);
+        console.debug(`  - Machine input per craft: ${machineInput.consumption_rate.amount_per_craft}`);
+        console.debug(`  - Machine output per craft: ${output.amount_per_craft}`);
+        console.debug(`  - Machine output per swing: ${outputAmount}`);
 
         return outputAmount;
     })
@@ -153,7 +149,7 @@ export const computeInserterSwingCounts = (
 
     // TODO: finish implementing least common multiple of denominators
     const inputStats = inputInserters.map(inputInserter => {
-        const machineInput = machine.inputs[inputInserter.ingredient_name];
+        const machineInput = machine.inputs.get(inputInserter.ingredient_name);
         assert(machineInput !== undefined, `Machine ${machine.id} does not have input for inserter ingredient ${inputInserter.ingredient_name}`);
         const output = machine.output;
 
@@ -297,7 +293,7 @@ export const computeInserterSchedule = (
         for(const inserter of inputInserters) {
             const swingsPerCycle = inserterSwingCounts.get(inserter)!.divide(craftingCycleCount);
 
-            const machineInput = craftingMachine.inputs[inserter.ingredient_name]
+            const machineInput = craftingMachine.inputs.get(inserter.ingredient_name)
             assert(machineInput !== undefined, `Machine ${craftingMachine.id} does not have input for inserter ingredient ${inserter.ingredient_name}`);
 
             const maxSequentialSwings = Math.ceil(machineInput.automated_insertion_limit.quantity / inserter.stack_size);

@@ -1,6 +1,5 @@
 import Fraction, { fraction } from "fractionability";
 import { MachineConfiguration } from "../config/config";
-import { FactorioDataService } from "../data/factorio-data-service";
 import { Ingredient, ItemName, Recipe } from "../data/factorio-data-types";
 import { AutomatedInsertionLimit, AutomatedInsertionLimitFactory } from "./automated-insertion-limit";
 import { BonusProductivityRate, BonusProductivityRateFactory } from "./bonus-productivity-rate";
@@ -10,11 +9,13 @@ import { OverloadMultiplier, OverloadMultiplierFactory } from "./overload-multip
 import { ProductionRate, ProductionRateFactory } from "./production-rate";
 import { InsertionDuration, InsertionDurationFactory } from "./insertion-duration";
 import { OutputBlock } from "./output-block";
+import { RecipeMetadata, RecipeMetadataFactory } from "./recipe";
+import { InventoryState } from "../state/inventory-state";
 
 export interface MachineMetadata {
-    recipe: string;
     productivity: number;
     crafting_speed: number;
+    recipe: RecipeMetadata;
 }
 
 export class MachineInput {
@@ -41,9 +42,8 @@ export class Machine {
     constructor(
         public readonly id: number,
         public readonly metadata: MachineMetadata,
-        public readonly recipe: Recipe,
         public readonly overload_multiplier: OverloadMultiplier,
-        public readonly inputs: Record<ItemName, MachineInput>,
+        public readonly inputs: Map<ItemName, MachineInput>,
         public readonly output: MachineOutput,
         public readonly crafting_rate: CraftingRate,
         public readonly bonus_productivity_rate: BonusProductivityRate,
@@ -56,7 +56,7 @@ export class MachineFactory {
 
     public static fromConfig(config: MachineConfiguration): Machine {
         return this.createMachine(config.id, {
-            recipe: config.recipe,
+            recipe: RecipeMetadataFactory.fromRecipeName(config.recipe),
             productivity: config.productivity,
             crafting_speed: config.crafting_speed,
         });
@@ -66,10 +66,11 @@ export class MachineFactory {
         id: number,
         metadata: MachineMetadata
     ): Machine {
-        const recipe = FactorioDataService.findRecipeOrThrow(metadata.recipe);
+        const recipe = metadata.recipe;
         const overload_multiplier = OverloadMultiplierFactory.fromCraftingSpeed(metadata.crafting_speed, recipe.energy_required)
-        const inputs = Object.fromEntries(
-            recipe.ingredients.map(ingredient => {
+        
+        const inputs = new Map<ItemName, MachineInput>(
+            recipe.raw.ingredients.map(ingredient => {
                 const limit = AutomatedInsertionLimitFactory.fromIngredient(ingredient, overload_multiplier);
                 return [ingredient.name, new MachineInput(
                     ingredient.name,
@@ -82,30 +83,27 @@ export class MachineFactory {
                     limit,
                     ingredient
                 )];
-            }
-        ));
+            })
+        );
 
-        if (recipe.results.length !== 1) {
-            throw new Error(`MachineFactory currently only supports recipes with a single output. Recipe ${recipe.name} has ${recipe.results.length} outputs.`);
-        }
-
-        const resultIngredient = recipe.results[0];
+        const outputItem = recipe.output;
 
         const output = new MachineOutput(
-            resultIngredient.name,
-            fraction(resultIngredient.amount).multiply(fraction(1).add(fraction(metadata.productivity).divide(100))),
+            outputItem.name,
+            fraction(outputItem.amount).multiply(fraction(1).add(fraction(metadata.productivity).divide(100))),
             ProductionRateFactory.fromCraftingSpeed(
-                resultIngredient.name,
+                outputItem.name,
                 metadata.crafting_speed,
                 recipe.energy_required,
-                resultIngredient.amount,
+                outputItem.amount,
                 metadata.productivity / 100,
             ),
-            resultIngredient,
+            outputItem,
             OutputBlock.fromRecipe(recipe, overload_multiplier)
         );
 
         const craftingRate = CraftingRateFactory.fromCraftingSpeed(
+            fraction(outputItem.amount),
             metadata.crafting_speed,
             recipe.energy_required
         );
@@ -116,7 +114,6 @@ export class MachineFactory {
         return new Machine(
             id,
             metadata,
-            recipe,
             overload_multiplier,
             inputs,
             output,
@@ -131,7 +128,7 @@ export class MachineFactory {
 export function printMachineFacts(machine: Machine): void {
     console.log(`--------------------------------------------------`)
     console.log(`Machine Facts:`);
-    console.log(`  Recipe: ${machine.recipe.name}`);
+    console.log(`  Recipe: ${machine.metadata.recipe.name}`);
     console.log(`  Crafting Speed: ${machine.metadata.crafting_speed}`);
     console.log(`  Productivity: ${machine.metadata.productivity}%`);
     console.log(`  Output Per Craft: ${machine.output.amount_per_craft.toMixedNumber()}`);
@@ -142,7 +139,7 @@ export function printMachineFacts(machine: Machine): void {
     console.log(`  Insertion Duration before overload lockout: ${machine.insertion_duration.tick_duration.toMixedNumber()} ticks`);
 
     console.log(`ingredient consumption rate facts:`)
-    for (const input of Object.values(machine.inputs)) {
+    for (const input of machine.inputs.values()) {
         console.log(`  - ${input.item_name}: ${input.consumption_rate.rate_per_second.toMixedNumber()} per second`);
     }
 }
