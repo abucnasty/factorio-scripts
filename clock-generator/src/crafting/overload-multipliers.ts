@@ -5,25 +5,24 @@ const dynamic_recipe_overload_factor = 1.166;
 const minimum_recipe_overload_multiplier = 2;
 const maximum_recipe_overload_multiplier = 100;
 
-export class OverloadMultiplier {
-    constructor(
-        public readonly multiplier: number
-    ) {}
+export interface OverloadMultiplier {
+    readonly overload_multiplier: number
+}
+
+function fromCraftingSpeed(craftingSpeed: number, energyRequired: number): OverloadMultiplier {
+
+    const overloadMultiplier = Math.ceil(dynamic_recipe_overload_factor / (energyRequired / craftingSpeed)) + 1;
+
+    if (overloadMultiplier < minimum_recipe_overload_multiplier) {
+        return { overload_multiplier: minimum_recipe_overload_multiplier };
+    }
+    if (overloadMultiplier > maximum_recipe_overload_multiplier) {
+        return { overload_multiplier: maximum_recipe_overload_multiplier };
+    }
+    return { overload_multiplier: overloadMultiplier };
 }
 
 
-export class OverloadMultiplierFactory {
-
-    public static fromCraftingSpeed(craftingSpeed: number, energyRequired: number): OverloadMultiplier {
-
-        const overloadMultiplier = Math.ceil(dynamic_recipe_overload_factor / (energyRequired / craftingSpeed)) + 1;
-
-        if (overloadMultiplier < minimum_recipe_overload_multiplier) {
-            return new OverloadMultiplier(minimum_recipe_overload_multiplier);
-        }
-        if (overloadMultiplier > maximum_recipe_overload_multiplier) {
-            return new OverloadMultiplier(maximum_recipe_overload_multiplier);
-        }
-        return new OverloadMultiplier(overloadMultiplier);
-    }
+export const OverloadMultiplier = {
+    fromCraftingSpeed: fromCraftingSpeed,
 }

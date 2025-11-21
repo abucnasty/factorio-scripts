@@ -1,6 +1,5 @@
 import { InserterConfiguration } from "../config/config";
 import { OpenRange } from "../data-types/range";
-import { Machine } from "./machine";
 import { ReadableMachineRegistry } from "./machine-registry";
 
 const STACK_INSERTER_Q5 = {

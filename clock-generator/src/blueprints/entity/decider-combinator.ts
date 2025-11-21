@@ -1,71 +1,116 @@
 import { OpenRange } from "../../data-types/range";
 import {
+    CircuitNetworkSelection,
     ComparatorString,
-    ControlBehavior,
     DeciderCombinatorCondition,
-    DeciderCombinatorOutput,
-    DeciderConditions,
+    ControlBehavior,
+    ControlBehaviorBuilder,
+    DeciderCombinatorConditionBuilder,
+    DeciderCombinatorOutputBuilder,
     Entity,
     EntityType,
     Position,
-    SignalId
+    SignalId,
+    DeciderCombinatorOutput
 } from "../components";
 
-export class DeciderCombinatorEntity implements Entity {
 
+export interface DeciderCombinatorEntity extends Entity {
+    readonly name: EntityType;
+    readonly position: Position;
+    readonly control_behavior: ControlBehavior;
+    readonly player_description?: string;
+}
 
-    public static clock(
-        threshold: number,
-        step: number = 1
-    ): DeciderCombinatorEntity {
+export class DeciderCombinatorEntityBuilder {
+    private position: Position = Position.zero;
+    private control_behavior: ControlBehavior = {};
+    private player_description: string | undefined = undefined;
 
-        const clockSignalId = SignalId.clock
-
-        const condition = new DeciderCombinatorCondition(clockSignalId)
-        condition.comparator = ComparatorString.LESS_THAN
-        condition.constant = threshold - 1
-
-        const outputs = [
-            new DeciderCombinatorOutput(
-                clockSignalId,
-                true,
-                step
-            ),
-            DeciderCombinatorOutput.constant(clockSignalId, 1),
-        ]
-
-        const controlBehavior = new ControlBehavior(new DeciderConditions([condition], outputs))
-
-        return new DeciderCombinatorEntity(
-            Position.zero,
-            controlBehavior
-        )
-
+    public setPosition(position: Position): DeciderCombinatorEntityBuilder {
+        this.position = position;
+        return this;
     }
 
-    public static fromRanges(
-        inputSignal: SignalId,
-        inputRanges: OpenRange[],
-        outputSignal: SignalId
-    ): DeciderCombinatorEntity {
-
-        const conditions = inputRanges.flatMap(range => DeciderCombinatorCondition.fromOpenRange(range, inputSignal));
-
-        const output = DeciderCombinatorOutput.constant(outputSignal, 1);
-
-        const controlBehavior = new ControlBehavior(new DeciderConditions(conditions, [output]))
-
-        return new DeciderCombinatorEntity(
-            Position.zero,
-            controlBehavior
-        )
+    public setControlBehavior(controlBehavior: ControlBehavior): DeciderCombinatorEntityBuilder {
+        this.control_behavior = controlBehavior;
+        return this;
     }
 
-    public readonly name: EntityType = EntityType.DECIDER_COMBINATOR;
+    public setPlayerDescription(description: string): DeciderCombinatorEntityBuilder {
+        this.player_description = description;
+        return this;
+    }
 
-    constructor(
-        public position: Position,
-        public control_behavior: ControlBehavior,
-        public player_description: string | undefined = undefined,
-    ) { }
+    public build(): DeciderCombinatorEntity {
+        return {
+            name: EntityType.DECIDER_COMBINATOR,
+            player_description: this.player_description,
+            position: this.position,
+            control_behavior: this.control_behavior
+        };
+    }
+}
+
+
+
+function clock(
+    threshold: number,
+    step: number = 1
+): DeciderCombinatorEntityBuilder {
+    const clockSignalId = SignalId.clock
+
+    const condition = new DeciderCombinatorConditionBuilder(clockSignalId)
+        .setComparator(ComparatorString.LESS_THAN)
+        .setConstant(threshold - 1)
+        .build()
+
+    const outputs = [
+        new DeciderCombinatorOutputBuilder(clockSignalId)
+            .setCopyCountFromInput(true)
+            .setConstant(step)
+            .setNetworks(CircuitNetworkSelection.BOTH)
+            .build(),
+        new DeciderCombinatorOutputBuilder(clockSignalId)
+            .setConstant(1)
+            .setCopyCountFromInput(false)
+            .build(),
+    ]
+
+    const controlBehavior = new ControlBehaviorBuilder()
+        .setDeciderConditions([condition])
+        .setOutputs(outputs)
+        .build()
+
+    return new DeciderCombinatorEntityBuilder()
+        .setPosition(Position.zero)
+        .setControlBehavior(controlBehavior)
+
+}
+
+function fromRanges(
+    inputSignal: SignalId,
+    inputRanges: OpenRange[],
+    outputSignal: SignalId
+): DeciderCombinatorEntityBuilder {
+
+    const conditions = inputRanges.flatMap(range => DeciderCombinatorCondition.fromOpenRange(range, inputSignal));
+
+    const output = DeciderCombinatorOutput.constant(outputSignal, 1);
+
+    const controlBehavior = new ControlBehaviorBuilder()
+        .setDeciderConditions(conditions)
+        .setOutputs([output])
+        .build();
+
+
+    return new DeciderCombinatorEntityBuilder()
+        .setPosition(Position.zero)
+        .setControlBehavior(controlBehavior)
+}
+
+
+export const DeciderCombinatorEntity = {
+    clock: clock,
+    fromRanges: fromRanges,
 }

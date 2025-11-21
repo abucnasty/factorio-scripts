@@ -3,37 +3,39 @@ import { Machine } from "./machine";
 import { ProductionRate } from "./production-rate";
 
 
-export class CraftingCycle {
-    constructor(
-        public readonly items_per_second: Fraction,
-        public readonly items_per_tick: Fraction,
-        public readonly items_per_cycle: Fraction,
-        public readonly total_ticks: Fraction,
-    ) { }
+export interface CraftingCycle {
+    readonly items_per_second: Fraction;
+    readonly items_per_tick: Fraction;
+    readonly items_per_cycle: Fraction;
+    readonly total_ticks: Fraction;
 }
 
-export class CraftingCycleFactory {
-    public static fromItemsPerSecond(itemsPerSecond: Fraction, totalItems: Fraction): CraftingCycle {
-        const itemsPerTick = itemsPerSecond.divide(60);
+function fromItemsPerSecond(itemsPerSecond: Fraction, totalItems: Fraction): CraftingCycle {
+    const itemsPerTick = itemsPerSecond.divide(60);
 
-        const totalTicks = totalItems.divide(itemsPerTick);
+    const totalTicks = totalItems.divide(itemsPerTick);
 
-        return new CraftingCycle(
-            itemsPerSecond,
-            itemsPerTick,
-            totalItems,
-            totalTicks
-        );
-    }
+    return {
+        items_per_second: itemsPerSecond,
+        items_per_tick: itemsPerTick,
+        items_per_cycle: totalItems,
+        total_ticks: totalTicks
+    };
+}
 
-    public static fromProductionRate(productionRate: ProductionRate, stackSize: number): CraftingCycle {
-        return this.fromItemsPerSecond(productionRate.rate_per_second, fraction(stackSize));
-    }
+function fromProductionRate(productionRate: ProductionRate, stackSize: number): CraftingCycle {
+    return fromItemsPerSecond(productionRate.rate_per_second, fraction(stackSize));
+}
 
-    public static fromMachine(
-        machine: Machine,
-        stackSize: number,
-    ): CraftingCycle {
-        return this.fromProductionRate(machine.output.production_rate, stackSize);
-    }
+function fromMachine(
+    machine: Machine,
+    stackSize: number,
+): CraftingCycle {
+    return fromProductionRate(machine.output.production_rate, stackSize);
+}
+
+export const CraftingCycle = {
+    fromItemsPerSecond: fromItemsPerSecond,
+    fromProductionRate: fromProductionRate,
+    fromMachine: fromMachine,
 }

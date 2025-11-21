@@ -1,18 +1,16 @@
 import { Ingredient } from "../data/factorio-data-types";
 import { OverloadMultiplier } from "./overload-multipliers";
 
-export class AutomatedInsertionLimit {
-    constructor(
-        public readonly quantity: number,
-        public readonly item: string
-    ) {}
+export interface AutomatedInsertionLimit {
+    readonly quantity: number;
+    readonly item: string;
 }
 
+function fromIngredient(ingredient: Ingredient, machineOverloadMultiplier: OverloadMultiplier): AutomatedInsertionLimit {
+    const quantity = Math.ceil(ingredient.amount * machineOverloadMultiplier.overload_multiplier);
+    return { quantity, item: ingredient.name };
+}
 
-export class AutomatedInsertionLimitFactory {
-
-    public static fromIngredient(ingredient: Ingredient, machineOverloadMultiplier: OverloadMultiplier): AutomatedInsertionLimit {
-        const quantity = Math.ceil(ingredient.amount * machineOverloadMultiplier.multiplier);
-        return new AutomatedInsertionLimit(quantity, ingredient.name);
-    }
+export const AutomatedInsertionLimit = {
+    fromIngredient: fromIngredient
 }

@@ -1,16 +1,15 @@
 import Fraction, { fraction } from "fractionability";
 import { MachineConfiguration } from "../config/config";
-import { Ingredient, ItemName, Recipe } from "../data/factorio-data-types";
-import { AutomatedInsertionLimit, AutomatedInsertionLimitFactory } from "./automated-insertion-limit";
-import { BonusProductivityRate, BonusProductivityRateFactory } from "./bonus-productivity-rate";
-import { ConsumptionRate, ConsumptionRateFactory } from "./consumption-rate";
-import { CraftingRate, CraftingRateFactory } from "./crafting-rate";
-import { OverloadMultiplier, OverloadMultiplierFactory } from "./overload-multipliers";
-import { ProductionRate, ProductionRateFactory } from "./production-rate";
-import { InsertionDuration, InsertionDurationFactory } from "./insertion-duration";
+import { Ingredient, ItemName } from "../data/factorio-data-types";
+import { AutomatedInsertionLimit } from "./automated-insertion-limit";
+import { BonusProductivityRate } from "./bonus-productivity-rate";
+import { ConsumptionRate } from "./consumption-rate";
+import { CraftingRate } from "./crafting-rate";
+import { OverloadMultiplier } from "./overload-multipliers";
+import { ProductionRate } from "./production-rate";
+import { InsertionDuration } from "./insertion-duration";
 import { OutputBlock } from "./output-block";
-import { RecipeMetadata, RecipeMetadataFactory } from "./recipe";
-import { InventoryState } from "../state/inventory-state";
+import { RecipeMetadata } from "./recipe";
 
 export interface MachineMetadata {
     productivity: number;
@@ -18,114 +17,100 @@ export interface MachineMetadata {
     recipe: RecipeMetadata;
 }
 
-export class MachineInput {
-    constructor(
-        public readonly item_name: string,
-        public readonly consumption_rate: ConsumptionRate,
-        public readonly automated_insertion_limit: AutomatedInsertionLimit,
-        public readonly ingredient: Ingredient
-    ) {}
+export interface MachineInput {
+    readonly item_name: string;
+    readonly consumption_rate: ConsumptionRate;
+    readonly automated_insertion_limit: AutomatedInsertionLimit;
+    readonly ingredient: Ingredient;
 }
 
-export class MachineOutput {
-    constructor(
-        public readonly item_name: string,
-        public readonly amount_per_craft: Fraction,
-        public readonly production_rate: ProductionRate,
-        public readonly ingredient: Ingredient,
-        public readonly outputBlock: OutputBlock
-    ) {}
-}
-
-export class Machine {
-    
-    constructor(
-        public readonly id: number,
-        public readonly metadata: MachineMetadata,
-        public readonly overload_multiplier: OverloadMultiplier,
-        public readonly inputs: Map<ItemName, MachineInput>,
-        public readonly output: MachineOutput,
-        public readonly crafting_rate: CraftingRate,
-        public readonly bonus_productivity_rate: BonusProductivityRate,
-        public readonly insertion_duration: InsertionDuration,
-    ) {}
+export interface MachineOutput {
+    readonly item_name: string;
+    readonly amount_per_craft: Fraction;
+    readonly production_rate: ProductionRate;
+    readonly ingredient: Ingredient;
+    readonly outputBlock: OutputBlock;
 }
 
 
-export class MachineFactory {
+export interface Machine {
+    readonly id: number;
+    readonly metadata: MachineMetadata,
+    readonly overload_multiplier: OverloadMultiplier,
+    readonly inputs: Map<ItemName, MachineInput>,
+    readonly output: MachineOutput,
+    readonly crafting_rate: CraftingRate,
+    readonly bonus_productivity_rate: BonusProductivityRate,
+    readonly insertion_duration: InsertionDuration,
+}
 
-    public static fromConfig(config: MachineConfiguration): Machine {
-        return this.createMachine(config.id, {
-            recipe: RecipeMetadataFactory.fromRecipeName(config.recipe),
-            productivity: config.productivity,
-            crafting_speed: config.crafting_speed,
-        });
-    }
+function fromConfig(config: MachineConfiguration): Machine {
+    return createMachine(config.id, {
+        recipe: RecipeMetadata.fromRecipeName(config.recipe),
+        productivity: config.productivity,
+        crafting_speed: config.crafting_speed,
+    });
+}
 
-    public static createMachine(
-        id: number,
-        metadata: MachineMetadata
-    ): Machine {
-        const recipe = metadata.recipe;
-        const overload_multiplier = OverloadMultiplierFactory.fromCraftingSpeed(metadata.crafting_speed, recipe.energy_required)
-        
-        const inputs = new Map<ItemName, MachineInput>(
-            recipe.raw.ingredients.map(ingredient => {
-                const limit = AutomatedInsertionLimitFactory.fromIngredient(ingredient, overload_multiplier);
-                return [ingredient.name, new MachineInput(
+function createMachine(
+    id: number,
+    metadata: MachineMetadata
+): Machine {
+    const recipe = metadata.recipe;
+    const overload_multiplier = OverloadMultiplier.fromCraftingSpeed(metadata.crafting_speed, recipe.energy_required)
+
+    const machineInputs = new Map<ItemName, MachineInput>(
+        recipe.raw.ingredients.map(ingredient => {
+            return [ingredient.name, {
+                item_name: ingredient.name,
+                consumption_rate: ConsumptionRate.fromCraftingSpeed(
                     ingredient.name,
-                    ConsumptionRateFactory.fromCraftingSpeed(
-                        ingredient.name,
-                        metadata.crafting_speed,
-                        recipe.energy_required,
-                        ingredient.amount
-                    ),
-                    limit,
-                    ingredient
-                )];
-            })
-        );
+                    metadata.crafting_speed,
+                    recipe.energy_required,
+                    ingredient.amount
+                ),
+                automated_insertion_limit: AutomatedInsertionLimit.fromIngredient(ingredient, overload_multiplier),
+                ingredient: ingredient
+            }];
+        })
+    );
 
-        const outputItem = recipe.output;
-
-        const output = new MachineOutput(
-            outputItem.name,
-            fraction(outputItem.amount).multiply(fraction(1).add(fraction(metadata.productivity).divide(100))),
-            ProductionRateFactory.fromCraftingSpeed(
-                outputItem.name,
-                metadata.crafting_speed,
-                recipe.energy_required,
-                outputItem.amount,
-                metadata.productivity / 100,
-            ),
-            outputItem,
-            OutputBlock.fromRecipe(recipe, overload_multiplier)
-        );
-
-        const craftingRate = CraftingRateFactory.fromCraftingSpeed(
-            fraction(outputItem.amount),
+    const machineOutput: MachineOutput = {
+        item_name: recipe.output.name,
+        amount_per_craft: fraction(recipe.output.amount).multiply(fraction(1).add(fraction(metadata.productivity).divide(100))),
+        production_rate: ProductionRate.fromCraftingSpeed(
+            recipe.output.name,
             metadata.crafting_speed,
-            recipe.energy_required
-        );
+            recipe.energy_required,
+            recipe.output.amount,
+            metadata.productivity / 100,
+        ),
+        ingredient: recipe.output,
+        outputBlock: OutputBlock.fromRecipe(recipe, overload_multiplier)
+    };
 
-        const insertionDurationPeriod = InsertionDurationFactory.create(output.production_rate, overload_multiplier)
+    const craftingRate = CraftingRate.fromCraftingSpeed(
+        fraction(recipe.output.amount),
+        metadata.crafting_speed,
+        recipe.energy_required
+    );
 
-        const bonusProductivityRate = BonusProductivityRateFactory.fromCraftingRate(craftingRate, metadata.productivity);
-        return new Machine(
-            id,
-            metadata,
-            overload_multiplier,
-            inputs,
-            output,
-            craftingRate,
-            bonusProductivityRate,
-            insertionDurationPeriod
-        );
-    }
+    const insertionDurationPeriod = InsertionDuration.create(machineOutput.production_rate, overload_multiplier)
+
+    const bonusProductivityRate = BonusProductivityRate.fromCraftingRate(craftingRate, metadata.productivity);
+    return {
+        id,
+        metadata,
+        overload_multiplier,
+        inputs: machineInputs,
+        output: machineOutput,
+        crafting_rate: craftingRate,
+        bonus_productivity_rate: bonusProductivityRate,
+        insertion_duration: insertionDurationPeriod
+    };
 }
 
-
-export function printMachineFacts(machine: Machine): void {
+function printMachineFacts(machine: Machine): void {
     console.log(`--------------------------------------------------`)
     console.log(`Machine Facts:`);
     console.log(`  Recipe: ${machine.metadata.recipe.name}`);
@@ -133,7 +118,7 @@ export function printMachineFacts(machine: Machine): void {
     console.log(`  Productivity: ${machine.metadata.productivity}%`);
     console.log(`  Output Per Craft: ${machine.output.amount_per_craft.toMixedNumber()}`);
     console.log(`  Output Rate: ${machine.output.production_rate.rate_per_second.toMixedNumber()} per second`);
-    console.log(`  Overload Multiplier: ${machine.overload_multiplier.multiplier.toString()}`);
+    console.log(`  Overload Multiplier: ${machine.overload_multiplier.overload_multiplier.toString()}`);
     console.log(`  Ticks per craft: ${machine.crafting_rate.ticks_per_craft.toMixedNumber()} ticks`);
     console.log(`  Ticks per Bonus Craft: ${machine.bonus_productivity_rate.ticks_per_bonus.toMixedNumber()} ticks`);
     console.log(`  Insertion Duration before overload lockout: ${machine.insertion_duration.tick_duration.toMixedNumber()} ticks`);
@@ -142,4 +127,10 @@ export function printMachineFacts(machine: Machine): void {
     for (const input of machine.inputs.values()) {
         console.log(`  - ${input.item_name}: ${input.consumption_rate.rate_per_second.toMixedNumber()} per second`);
     }
+}
+
+export const Machine = {
+    fromConfig: fromConfig,
+    createMachine: createMachine,
+    printMachineFacts: printMachineFacts,
 }

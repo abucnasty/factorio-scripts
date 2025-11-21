@@ -1,4 +1,5 @@
-import { EntityWithId, Icon } from "./components";
+import { Entity, EntityWithId, Icon } from "./components";
+import { entityWithId } from "./entity/entity-with-id";
 
 const FACTORIO_VERSION: number = 562949958139904;
 
@@ -17,7 +18,7 @@ export type FactorioBlueprint = {
 export type FactorioBlueprintBook = {
     item: "blueprint-book";
     label: string;
-    blueprints: {index: number, blueprint: FactorioBlueprint}[];
+    blueprints: { index: number, blueprint: FactorioBlueprint }[];
     active_index: number;
     description?: string;
     /**
@@ -31,24 +32,85 @@ export type FactorioBlueprintFile = {
     blueprint?: FactorioBlueprint
 }
 
+export class BlueprintFileBuilder {
+    private blueprintFile: Partial<FactorioBlueprintFile> = {};
 
-export function blueprint(bp: Partial<FactorioBlueprint>): FactorioBlueprint {
-    return {
-        item: "blueprint",
-        label: bp.label || "Blueprint",
-        entities: bp.entities || [],
-        icons: bp.icons || [],
-        wires: bp.wires || [],
-        version: FACTORIO_VERSION,
+    public setBlueprint(blueprint: FactorioBlueprint): BlueprintFileBuilder {
+        this.blueprintFile.blueprint = blueprint;
+        return this;
+    }
+
+    public setBlueprintBook(blueprintBook: FactorioBlueprintBook): BlueprintFileBuilder {
+        this.blueprintFile.blueprint_book = blueprintBook;
+        return this;
+    }
+
+    public build(): FactorioBlueprintFile {
+        return this.blueprintFile;
+    }
+}
+    
+export class BlueprintBuilder {
+    private blueprint: Partial<FactorioBlueprint> = {};
+
+    public setLabel(label: string): BlueprintBuilder {
+        this.blueprint.label = label;
+        return this;
+    }
+
+    public setEntities(entities: Entity[]): BlueprintBuilder {
+        this.blueprint.entities = entities.map((it, index) => entityWithId(it, index + 1));
+        return this;
+    }
+
+    public setIcons(icons: Icon[]): BlueprintBuilder {
+        this.blueprint.icons = icons;
+        return this;
+    }
+
+    public setWires(wires: number[][]): BlueprintBuilder {
+        this.blueprint.wires = wires;
+        return this;
+    }
+
+    public build(): FactorioBlueprint {
+        return {
+            item: "blueprint",
+            label: this.blueprint.label || "Blueprint",
+            entities: this.blueprint.entities || [],
+            icons: this.blueprint.icons || [],
+            wires: this.blueprint.wires || [],
+            version: FACTORIO_VERSION,
+        }
     }
 }
 
-export function blueprintBook(bpBook: Partial<FactorioBlueprintBook>): FactorioBlueprintBook {
-    return {
-        item: "blueprint-book",
-        label: bpBook.label || "Blueprint Book",
-        blueprints: bpBook.blueprints || [],
-        active_index: bpBook.active_index || 0,
-        version: FACTORIO_VERSION,
+export class BlueprintBookBuilder {
+    private blueprintBook: Partial<FactorioBlueprintBook> = {};
+
+    public setLabel(label: string): BlueprintBookBuilder {
+        this.blueprintBook.label = label;
+        return this;
+    }
+
+    public addBlueprint(blueprint: FactorioBlueprint): BlueprintBookBuilder {
+        const index = this.blueprintBook.blueprints?.length || 0;
+        this.blueprintBook.blueprints?.push({ index, blueprint });
+        return this;
+    }
+
+    public setActiveIndex(active_index: number): BlueprintBookBuilder {
+        this.blueprintBook.active_index = active_index;
+        return this;
+    }
+
+    public build(): FactorioBlueprintBook {
+        return {
+            item: "blueprint-book",
+            label: this.blueprintBook.label || "Blueprint Book",
+            blueprints: this.blueprintBook.blueprints || [],
+            active_index: this.blueprintBook.active_index || 0,
+            version: FACTORIO_VERSION,
+        }
     }
 }

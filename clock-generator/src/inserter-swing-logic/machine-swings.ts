@@ -6,8 +6,8 @@ import { MachineState } from "../state/machine-state";
 import assert from "assert";
 import { lcm } from "mathjs"
 import { OpenRange } from "../data-types/range";
-import { CraftingCycle, CraftingCycleFactory } from "../crafting/crafting-cycle";
-import { ProductionRateFactory } from "../crafting/production-rate";
+import { CraftingCycle } from "../crafting/crafting-cycle";
+import { ProductionRate } from "../crafting/production-rate";
 import { TargetProductionRate } from "../config/config";
 
 export const computeMaxInputSwings = (
@@ -135,11 +135,11 @@ export const computeInserterSwingCounts = (
     const outputInserter = outputInserters[0];
 
     const outputTargetPerMachine = fraction(targetProductionRate.items_per_second, targetProductionRate.machines)
-    const throttledProductionRatePerMachine = machine.output.production_rate.limitTo(outputTargetPerMachine);
+    const throttledProductionRatePerMachine = ProductionRate.limitTo(machine.output.production_rate, outputTargetPerMachine);
 
     console.log(`Target Production Rate per Machine: ${throttledProductionRatePerMachine.rate_per_second} (${throttledProductionRatePerMachine.rate_per_second.toDecimal()}) items/sec`)
 
-    const outputCraftingCycle = CraftingCycleFactory.fromProductionRate(
+    const outputCraftingCycle = CraftingCycle.fromProductionRate(
         throttledProductionRatePerMachine,
         outputInserter.stack_size * targetOutputSwings
     );
@@ -182,7 +182,7 @@ export const computeInserterSwingCounts = (
 
     const craftingCycleCount = leastCommonMultiple;
 
-    const totalClockCycle = CraftingCycleFactory.fromItemsPerSecond(
+    const totalClockCycle = CraftingCycle.fromItemsPerSecond(
         throttledProductionRatePerMachine.rate_per_second,
         outputCraftingCycle.items_per_cycle.multiply(craftingCycleCount)
     )

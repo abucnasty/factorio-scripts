@@ -1,11 +1,36 @@
-export class Position {
+export interface Position {
+    readonly x: number;
+    readonly y: number;
+}
 
-    public static zero: Position = new Position(0, 0)
-    public static fromXY(x: number, y: number): Position {
-        return new Position(x, y);
+export class PositionBuilder {
+    private x: number = 0;
+    private y: number = 0;
+
+    public setX(x: number): PositionBuilder {
+        this.x = x;
+        return this;
     }
-    constructor(
-        public readonly x: number,
-        public readonly y: number,
-    ) {}
+
+    public setY(y: number): PositionBuilder {
+        this.y = y;
+        return this;
+    }
+
+    public build(): Position {
+        return {
+            x: this.x,
+            y: this.y,
+        };
+    }
+}
+
+export const Position = {
+    zero: new PositionBuilder().setX(0).setY(0).build(),
+    builder(): PositionBuilder {
+        return new PositionBuilder();
+    },
+    fromXY(x: number, y: number): Position {
+        return new PositionBuilder().setX(x).setY(y).build();
+    }
 }
