@@ -1,7 +1,6 @@
 import { Inserter } from "../entities";
 import { ItemName } from "../data/factorio-data-types";
 import { InventoryItem, InventoryState } from "./inventory-state";
-import { InventoryStateFactory } from "./inventory-state-factory";
 
 export const INSERTER_STATUS = {
     IDLE: "IDLE",
@@ -17,7 +16,7 @@ export class InserterState {
     public static forInserter(inserter: Inserter): InserterState {
         return new InserterState(
             inserter,
-            InventoryStateFactory.createEmptyForSingleItem(inserter.ingredient_name)
+            InventoryState.createEmptyForSingleItem(inserter.ingredient_name)
         );
     }
 

@@ -1,9 +1,34 @@
+import { MachineInput } from "../entities";
+
 export interface InventoryItem {
     item_name: string;
     quantity: number;
 }
 
 export class InventoryState {
+
+    public static createFromMachineInputs(machineInputs: Map<string, MachineInput>): InventoryState {
+        const inventory = this.createEmpty();
+        for (const itemName of machineInputs.keys()) {
+            inventory.addQuantity(itemName, 0);
+        }
+        return inventory;
+    }
+
+    public static createEmptyForSingleItem(itemName: string): InventoryState {
+        const inventory = this.createEmpty();
+        inventory.addQuantity(itemName, 0);
+        return inventory;
+    }
+
+    public static createEmpty(): InventoryState {
+        return new InventoryState();
+    }
+
+    public static clone(inventoryState: InventoryState): InventoryState {
+        return new InventoryState(inventoryState.export());
+    }
+
     private inventory: Map<string, number>;
 
     constructor(initialInventory?: Record<string, number>) {

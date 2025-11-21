@@ -1,16 +1,21 @@
 import Fraction, { fraction } from "fractionability";
 
-export class ProgressState {
 
-    public static clone(progressState: ProgressState): ProgressState {
-        return new ProgressState(progressState.progress);
-    }
+export interface ProgressState {
+    progress: Fraction;
+}
 
-    constructor(
-        public progress: Fraction = fraction(0)
-    ) { }
+function clone(progressState: ProgressState): ProgressState {
+    return { progress: progressState.progress };
+}
 
-    public clone(): ProgressState {
-        return ProgressState.clone(this);
+function empty(): ProgressState {
+    return {
+        progress: fraction(0)
     }
 }
+
+export const ProgressState = {
+    clone: clone,
+    empty: empty
+};
