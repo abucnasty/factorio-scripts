@@ -19,14 +19,16 @@ export interface TargetProductionRate {
 }
 
 // TODO: the ingredient field should instead be a filter property and the ingredient should be sourced from either a machine or a belt
-export type InserterBeltConfig = { type: "belt", ingredient: ItemName };
-export type InserterMachineConfig = { type: "machine"; machine_id: number; };
+export type InserterStackSizeConfig = { stack_size: number }
+export type InserterFilterConfig = { filters: ItemName[] }
+export type InserterBeltConfig = { type: "belt", id: number }
+export type InserterMachineConfig = { type: "machine"; id: number; }
 
-export interface InserterConfiguration {
+export type InserterConfig = {
     source: InserterBeltConfig | InserterMachineConfig;
-    target: InserterBeltConfig | InserterMachineConfig;
+    sink: InserterBeltConfig | InserterMachineConfig;
     stack_size: number;
-}
+} & InserterStackSizeConfig & Partial<InserterFilterConfig>
 
 export const BeltType = {
     TRANSPORT_BELT: "transport-belt",
@@ -52,6 +54,6 @@ export interface BeltConfig {
 export interface Config {
     target_output: TargetProductionRate;
     machines: MachineConfiguration[];
-    inserters: InserterConfiguration[];
+    inserters: InserterConfig[];
     belts: BeltConfig[];
 }

@@ -12,6 +12,7 @@ export const SignalIdType = {
 export type SignalIdType = typeof SignalIdType[keyof typeof SignalIdType];
 
 export const QualityIdType = {
+    normal: "normal",
     uncommon: "uncommon",
     rare: "rare",
     epic: "epic",

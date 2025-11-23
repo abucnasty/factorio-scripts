@@ -1,15 +1,7 @@
 import { BeltConfig } from "../../config/config";
 import { ItemName } from "../../data/factorio-data-types";
 import assert from "assert";
-
-export const BeltStackSize = {
-    ONE: 1,
-    TWO: 2,
-    THREE: 3,
-    FOUR: 4
-} as const;
-
-export type BeltStackSize = typeof BeltStackSize[keyof typeof BeltStackSize];
+import { BeltStackSize, isValidBeltStackSize } from "./belt-stack-size";
 
 export interface Lane {
     ingredient_name: ItemName;
@@ -85,7 +77,7 @@ function fromConfig(config: BeltConfig): Belt {
     }
 
     for (const lane of config.lanes) {
-        assert(lane.stack_size in BeltStackSize, `Invalid stack size: ${lane.stack_size}`);
+        assert(isValidBeltStackSize(lane.stack_size), `Invalid stack size: ${lane.stack_size}`);
         builder.addLane(lane.ingredient, lane.stack_size as BeltStackSize);
     }
     return builder.build();

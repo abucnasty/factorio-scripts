@@ -1,23 +1,25 @@
 import { Config } from './config/config';
-import { computeInserterSchedule, computeInserterSwingCounts, computeMaxInputSwings, computeMaxOutputSwingsForInserter, InserterSchedule, SwingCountsPerClockCycle } from './inserter-swing-logic/machine-swings';
 import * as EXAMPLES from './config/examples';
-import { DeciderCombinatorEntity } from './blueprints/entity/decider-combinator';
-import { Position, SignalId } from './blueprints/components';
-import { BlueprintBuilder, FactorioBlueprint } from './blueprints/blueprint';
-import { encodeBlueprintFile } from './blueprints/serde';
 import { CraftingSequence } from './crafting/crafting-sequence';
 import { MachineState } from './state/machine-state';
 import assert from 'assert';
 import { InserterFactory, InserterRegistry, Machine, MachineRegistry } from './entities';
+import { Belt, BeltRegistry } from './entities/belt';
+import { EntityType } from './entities/entity-type';
 
 
 const config: Config = EXAMPLES.UTILITY_SCIENCE_CONFIG
 
-
 const main = () => {
     const machineRegistry = new MachineRegistry();
     const inserterRegistry = new InserterRegistry();
-    const inserterFactory = new InserterFactory(machineRegistry);
+    const beltRegistry = new BeltRegistry();
+    const inserterFactory = new InserterFactory(machineRegistry, beltRegistry);
+
+
+    config.belts.forEach(beltConfig => {
+        beltRegistry.setBelt(beltConfig.id, Belt.fromConfig(beltConfig));
+    })
 
     config.machines.forEach(machineConfig => {
         machineRegistry.setMachine(Machine.fromConfig(machineConfig))
@@ -34,30 +36,19 @@ const main = () => {
     const inserters = inserterRegistry.getInsertersForMachine(primaryMachine.id)
 
     const outputInserter = inserters.find(inserter => {
-        return inserter.source.machine_id === primaryMachine.id;
+        return inserter.source.entity_type === EntityType.MACHINE && inserter.source.entity_id === primaryMachine.id;
     });
 
     assert(outputInserter != undefined, `No output inserter found for primary machine with id ${primaryMachine.id}`);
 
-    const inputInserters = inserters.filter(it => it.target.machine_id == primaryMachine.id)
-
-    const maxInputSwingsPerCycle = computeMaxInputSwings(primaryMachine, inserterRegistry);
-
-    console.log(`Input Inserter Timing:`)
-    maxInputSwingsPerCycle.forEach(([inserter, maxSwings]) => {
-        console.log(`- Inserter (${inserter.ingredient_name}) max swings per cycle: ${maxSwings}`);
-    })
-
-    console.log("------------------------------")
-    console.log(`Computing Output Inserter Timing:`)
-    const maxOutputSwingsPerCycle = computeMaxOutputSwingsForInserter(primaryMachine, inserterRegistry);
-
-    console.log(`Output Inserter (${outputInserter.ingredient_name}) max safe swings per cycle: ${maxOutputSwingsPerCycle}`);
-
+    const inputInserters = inserters.filter(it => it.sink.entity_type === EntityType.MACHINE && it.sink.entity_id === primaryMachine.id)
 
     const initialState = MachineState.forMachine(primaryMachine);
     inputInserters.forEach(inserter => {
-        initialState.inventoryState.addQuantity(inserter.ingredient_name, inserter.stack_size);
+        inserter.filtered_items.forEach(itemName => {
+            initialState.inventoryState.addQuantity(itemName, inserter.metadata.stack_size);
+        })
+        
     })
     const craftingSequence = CraftingSequence.createForMachine(
         initialState
@@ -83,81 +74,42 @@ const main = () => {
     })
     return;
 
-
-    const swingCountsPerClockCycle = computeInserterSwingCounts(
-        primaryMachine,
-        inserterRegistry,
-        config.target_output,
-        maxOutputSwingsPerCycle.toDecimal()
-    );
-
-    // print clock tick results per cycle
-    console.log("------------------------------")
-    console.log(`Clock Schedule:`)
-    console.log(`- Total Clock Cycle Ticks: ${swingCountsPerClockCycle.totalClockCycle.total_ticks.toMixedNumber()}`);
-    console.log(`- Crafting Cycle Count: ${swingCountsPerClockCycle.craftingCycleCount} of ${swingCountsPerClockCycle.totalClockCycle.total_ticks.toMixedNumber()} ticks each`);
-    swingCountsPerClockCycle.inserterSwingCounts.forEach((swingCount, inserter) => {
-        console.log(`- Inserter (${inserter.ingredient_name}) Swings: ${swingCount} over ${swingCountsPerClockCycle.totalClockCycle.total_ticks.toMixedNumber()} ticks`);
-    })
-    console.log("------------------------------")
-
-
-    const inserterSchedules = computeInserterSchedule(swingCountsPerClockCycle, inserterRegistry);
-
-    inserterSchedules.forEach((schedule => {
-        console.log(`Inserter (${schedule.inserter.ingredient_name}) Schedule:`);
-        schedule.ranges.forEach((enabledRange, index) => {
-            console.log(`- [Cycle ${enabledRange.cycle_index}] Swings ${enabledRange.swing_count} during ticks [${enabledRange.range.start_inclusive} - ${enabledRange.range.end_inclusive}]`);
-        })
-    }))
-
-    const blueprint = createBlueprintFromInserterSchedule(
-        swingCountsPerClockCycle,
-        inserterSchedules
-    );
-
-    console.log("")
-    console.log("Generated Blueprint Book JSON:")
-    console.log(encodeBlueprintFile({
-        blueprint: blueprint
-    }));
-
 }
 
 
-function createBlueprintFromInserterSchedule(
-    swingCountsPerClockCycle: SwingCountsPerClockCycle,
-    schedules: InserterSchedule[]
-): FactorioBlueprint {
-    let x = 0.5;
-    const totalClockTicks = swingCountsPerClockCycle.totalClockCycle.total_ticks.toDecimal()
-    const clock = DeciderCombinatorEntity
-        .clock(totalClockTicks, 1)
-        .setPosition(Position.fromXY(x, 0))
-        .build();
+// function createBlueprintFromInserterSchedule(
+//     swingCountsPerClockCycle: SwingCountsPerClockCycle,
+//     schedules: InserterSchedule[]
+// ): FactorioBlueprint {
+//     let x = 0.5;
+//     const totalClockTicks = swingCountsPerClockCycle.totalClockCycle.total_ticks.toDecimal()
+//     const clock = DeciderCombinatorEntity
+//         .clock(totalClockTicks, 1)
+//         .setPosition(Position.fromXY(x, 0))
+//         .build();
 
-    const deciderCombinatorEntities = schedules.map(schedule => {
-        const itemSignalId = SignalId.item(schedule.inserter.ingredient_name);
-        x += 1;
-        const deciderCombinator = DeciderCombinatorEntity
-            .fromRanges(
-                SignalId.clock,
-                schedule.ranges.flatMap(it => it.range),
-                itemSignalId
-            )
-            .setPosition(Position.fromXY(x, 0))
-            .build();
-        return deciderCombinator;
-    })
+//     const deciderCombinatorEntities = schedules.map(schedule => {
+//         const itemSignalId = SignalId.item(schedule.inserter.ingredient_name);
+//         x += 1;
+//         const deciderCombinator = DeciderCombinatorEntity
+//             .fromRanges(
+//                 SignalId.clock,
+//                 schedule.ranges.flatMap(it => it.range),
+//                 itemSignalId
+//             )
+//             .setPosition(Position.fromXY(x, 0))
+//             .build();
+//         return deciderCombinator;
+//     })
 
-    return new BlueprintBuilder()
-        .setLabel(swingCountsPerClockCycle.craftingMachine.output.item_name + " Inserter Clock Schedule")
-        .setEntities([
-            clock,
-            ...deciderCombinatorEntities
-        ])
-        .setWires([[1, 2, 1, 4]])
-        .build();
-}
+//     return new BlueprintBuilder()
+//         .setLabel(swingCountsPerClockCycle.craftingMachine.output.item_name + " Inserter Clock Schedule")
+//         .setEntities([
+//             clock,
+//             ...deciderCombinatorEntities
+//         ])
+//         .setWires([[1, 2, 1, 4]])
+//         .build();
+// }
 
 main()

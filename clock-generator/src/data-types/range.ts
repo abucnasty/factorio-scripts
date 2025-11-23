@@ -1,3 +1,5 @@
+import { Duration } from "./duration";
+
 export class OpenRange {
 
     public static from(start:number, end: number): OpenRange {
@@ -13,7 +15,7 @@ export class OpenRange {
         public readonly end_inclusive: number,
     ) {}
 
-    public duration(): number {
-        return this.end_inclusive - this.start_inclusive;
+    public duration(): Duration {
+        return Duration.ofTicks(this.end_inclusive - this.start_inclusive);
     }
 }

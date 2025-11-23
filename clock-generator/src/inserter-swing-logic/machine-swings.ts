@@ -254,9 +254,9 @@ export const computeInserterSchedule = (
         const startTick = 1 + craftingCycle.total_ticks.multiply(craftingCycleIndex).toDecimal();
         const swingsPerCycle = inserterSwingCounts.get(outputInserter)!.divide(craftingCycleCount);
 
-        const swingDuration = outputInserter.total_ticks.duration() * swingsPerCycle.toDecimal();
+        const swingDuration = outputInserter.total_ticks.duration().ticks * swingsPerCycle.toDecimal();
         // this is used to allow the inserter to hold a buffer on the return swing back to the assembly machine
-        const bufferDuration = outputInserter.pickup_ticks.duration();
+        const bufferDuration = outputInserter.pickup_ticks.duration().ticks;
 
         schedules.get(outputInserter)!.ranges.push(
             {
@@ -280,7 +280,7 @@ export const computeInserterSchedule = (
         const swingsUntilUnderOutputBuffer = expectedMachineOutputBuffer.subtract(outputBlockQuantity).divide(outputInserter.stack_size);
         const outputSwingUnblockCount = Math.ceil(swingsUntilUnderOutputBuffer.toDecimal())
 
-        const startTick = cycleStartTick + outputSwingUnblockCount * outputInserter.total_ticks.duration();
+        const startTick = cycleStartTick + outputSwingUnblockCount * outputInserter.total_ticks.duration().ticks;
 
         for(const inserter of inputInserters) {
             const swingsPerCycle = inserterSwingCounts.get(inserter)!.divide(craftingCycleCount);
@@ -313,7 +313,7 @@ export const computeInserterSchedule = (
                 }
             }
             
-            const swingDuration = inserter.total_ticks.duration() * swingsThisCycle - inserter.pickup_ticks.duration();
+            const swingDuration = inserter.total_ticks.duration().ticks * swingsThisCycle - inserter.pickup_ticks.duration().ticks;
 
             schedules.get(inserter)!.ranges.push(
                 {

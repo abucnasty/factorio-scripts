@@ -1,178 +1,117 @@
-import { OpenRange } from "../../data-types/range";
-import { InserterConfiguration } from "../../config/config";
+import { InserterConfig } from "../../config/config";
+import { ItemName } from "../../data/factorio-data-types";
+import { ReadableBeltRegistry } from "../belt";
+import { EntityType } from "../entity-type";
 import { ReadableMachineRegistry } from "../machine";
+import { InserterMetadata } from "./metadata/inserter-metadata";
+import { InserterTargetEntityType } from "./metadata/inserter-target-type";
+import { InserterAnimation } from "./inserter-animation";
+import assert from "assert";
 
-const STACK_INSERTER_Q5 = {
-    FROM_BELT_PICKUP: 4,
-    TO_BELT_DROP: 4,
-    FROM_MACHINE_PICKUP: 1,
-    TO_MACHINE_DROP: 1,
-    SWING_ANIMATION: 3,
+
+// targets are modeled as either a belt lane or a machine input slot
+// since machine can have multiple input slots and belts have multiple lanes,
+// the target will represent the interesection of the source item names and
+// the targets accepted inputs.
+
+// if the source is a machine and the target is a belt, the output of the machine
+// will be the item name
+
+export interface InserterTargetConfig {
+    type: InserterTargetEntityType;
+    id: number;
 }
 
-export type InteractionType = "belt" | "machine";
-
-export interface InteractionPoint {
-    type: InteractionType;
-    machine_id?: number;
-    ingredient_name?: string;
-}
-export class MachineInteractionPoint implements InteractionPoint {
-    constructor(
-        public readonly machine_id: number,
-        public readonly type: "machine" = "machine"
-    ) { }
+export interface InserterTarget {
+    item_names: Set<ItemName>;
+    entity_id: number;
+    entity_type: InserterTargetEntityType;
 }
 
-export class BeltInteractionPoint implements InteractionPoint {
-    public readonly type: "belt" = "belt";
-    constructor(
-        public readonly ingredient_name: string
-    ) {}
+
+export interface Inserter {
+    id: number;
+    metadata: InserterMetadata;
+    sink: InserterTarget;
+    source: InserterTarget;
+    filtered_items: Set<ItemName>;
+    animation: InserterAnimation;
 }
 
-export class Inserter {
-    constructor(
-        public readonly stack_size: number,
-        /**
-         * duration of ticks to enable as a range to pickup items
-         */
-        public readonly pickup_ticks: OpenRange,
-        /**
-         * duration of ticks to enable as a range to drop items
-         */
-        public readonly drop_ticks: OpenRange,
-        /**
-         * total duration of ticks for the inserter cycle
-         */
-        public readonly total_ticks: OpenRange,
-        public readonly source: InteractionPoint,
-        public readonly target: InteractionPoint,
-        public readonly ingredient_name: string,
-        public id: number = -1,
-    ) { }
-
-    public swingDuration() {
-        return this.total_ticks.duration();
-    }
-
-    public setId(id: number) {
-        this.id = id;
-    }
-
-    public prettyPrint() {
-        return `Inserter ${this.id}: [${this.source.type}${this.source.type === "machine" ? `:${this.source.machine_id}` : `:${this.ingredient_name}` } -> ${this.target.type}${this.target.type === "machine" ? `:${this.target.machine_id}` : `:${this.ingredient_name}` }]`;
-    }
-}
 
 export class InserterFactory {
-
     constructor(
-        private readonly machineRegistry: ReadableMachineRegistry
-    ) {}
+        public readonly machineRegistry: ReadableMachineRegistry,
+        public readonly beltRegistry: ReadableBeltRegistry,
+    ) { }
 
-    public fromConfig(config: InserterConfiguration): Inserter {
-        if (config.source.type === "belt" && config.target.type === "belt") {
-            throw new Error(`Inserter cannot have both source and target as belt.`);
-        }
-        if (config.source.type === "machine" && config.target.type === "machine") {
-            return this.fromMachineToMachine(
-                config.source.machine_id,
-                config.target.machine_id,
-                config.stack_size
-            );
-        }
 
-        if (config.source.type === "machine" && config.target.type === "belt") {
-            return this.fromMachineToBelt(
-                config.source.machine_id,
-                config.target.ingredient,
-                config.stack_size
-            );
-        }
-
-        if (config.source.type === "belt" && config.target.type === "machine") {
-            return this.fromBeltToMachine(
-                config.source.ingredient,
-                config.target.machine_id,
-                config.stack_size
-            );
-        }
-
-        throw new Error(`Unhandled inserter configuration: ${JSON.stringify(config)}`);
-    }
-
-    public fromMachineToBelt(
-        source_machine_id: number,
-        target_ingredient_name: string,
-        stackSize: number
-    ) {
-        const pickupTick = STACK_INSERTER_Q5.FROM_MACHINE_PICKUP;
-        const pickupTicks = OpenRange.from(
-            1,
-            pickupTick
-        );
-        const dropTicks = OpenRange.from(
-            pickupTicks.end_inclusive + STACK_INSERTER_Q5.SWING_ANIMATION + 1,
-            pickupTicks.end_inclusive + STACK_INSERTER_Q5.SWING_ANIMATION + 1 + STACK_INSERTER_Q5.TO_BELT_DROP
+    public fromConfig(config: InserterConfig): Inserter {
+        const metadata = InserterMetadata.create(
+            config.source.type,
+            config.sink.type,
+            config.stack_size,
+            config.filters ?? []
         )
 
-        const totalTicks = OpenRange.from(
-            pickupTicks.start_inclusive,
-            dropTicks.end_inclusive + STACK_INSERTER_Q5.SWING_ANIMATION + 1
-        );
+        const source = config.source
+        const sink = config.sink
 
-        const ingredient_name = this.machineRegistry.getMachineByIdOrThrow(source_machine_id).output.ingredient.name;
+        if (sink.type === EntityType.BELT && source.type === EntityType.BELT) {
+            throw new Error("Source and sink cannot both be a belt ya silly goose")
+        }
 
-        return new Inserter(stackSize, pickupTicks, dropTicks, totalTicks, new MachineInteractionPoint(source_machine_id), new BeltInteractionPoint(target_ingredient_name), ingredient_name);
-    }
+        const source_provided_items: Set<ItemName> = new Set()
+        const sink_consumed_items: Set<ItemName> = new Set()
 
-    public fromMachineToMachine(
-        source_machine_id: number,
-        target_machine_id: number,
-        stackSize: number
-    ) {
-        const pickupTick = STACK_INSERTER_Q5.FROM_MACHINE_PICKUP;
-        const pickupTicks = OpenRange.from(
-            1,
-            pickupTick
-        );
-        const dropTicks = OpenRange.from(
-            pickupTicks.end_inclusive + STACK_INSERTER_Q5.SWING_ANIMATION + STACK_INSERTER_Q5.TO_MACHINE_DROP,
-            pickupTicks.end_inclusive + STACK_INSERTER_Q5.SWING_ANIMATION + STACK_INSERTER_Q5.TO_MACHINE_DROP
-        )
-        const totalTicks = OpenRange.from(
-            pickupTicks.start_inclusive,
-            dropTicks.end_inclusive + STACK_INSERTER_Q5.SWING_ANIMATION
-        );
+        if (source.type === EntityType.BELT) {
+            const belt = this.beltRegistry.getBeltByIdOrThrow(source.id);
+            belt.lanes.forEach(lane => {
+                source_provided_items.add(lane.ingredient_name)
+            })
+        }
 
-        const ingredient_name = this.machineRegistry.getMachineByIdOrThrow(source_machine_id).output.ingredient.name;
+        if (source.type === EntityType.MACHINE) {
+            const machine = this.machineRegistry.getMachineByIdOrThrow(source.id)
+            source_provided_items.add(machine.output.ingredient.name)
+        }
 
-        return new Inserter(stackSize, pickupTicks, dropTicks, totalTicks, new MachineInteractionPoint(source_machine_id), new MachineInteractionPoint(target_machine_id), ingredient_name);
-    }
+        if (sink.type === EntityType.BELT) {
+            source_provided_items.forEach(it => sink_consumed_items.add(it))
+        }
 
-    public fromBeltToMachine(
-        source_ingredient_name: string,
-        target_machine_id: number,
-        stackSize: number
-    ) {
-        const pickupTick = STACK_INSERTER_Q5.FROM_BELT_PICKUP;
-        const pickupTicks = OpenRange.from(
-            1,
-            pickupTick + 1
-        );
-        const dropTicks = OpenRange.from(
-            pickupTicks.end_inclusive + STACK_INSERTER_Q5.SWING_ANIMATION + STACK_INSERTER_Q5.TO_MACHINE_DROP,
-            pickupTicks.end_inclusive + STACK_INSERTER_Q5.SWING_ANIMATION + STACK_INSERTER_Q5.TO_MACHINE_DROP
-        )
-
-        const totalTicks = OpenRange.from(
-            pickupTicks.start_inclusive,
-            dropTicks.end_inclusive + STACK_INSERTER_Q5.SWING_ANIMATION
-        );
+        if (sink.type === EntityType.MACHINE) {
+            const machine = this.machineRegistry.getMachineByIdOrThrow(sink.id)
+            machine.inputs.forEach((input) => {
+                sink_consumed_items.add(input.ingredient.name)
+            })
+        }
 
 
+        let filtered_items = new Set(Array.from(sink_consumed_items).filter(it => source_provided_items.has(it)))
 
-        return new Inserter(stackSize, pickupTicks, dropTicks, totalTicks, new BeltInteractionPoint(source_ingredient_name), new MachineInteractionPoint(target_machine_id), source_ingredient_name);
+        if(config.filters && config.filters.length > 0) {
+            config.filters.forEach(it => {
+                assert(sink_consumed_items.has(it), `Inserter filter ${it} is not a valid item for sink entity ${sink.id} of type ${sink.type}`);
+            })
+            filtered_items = new Set(config.filters);
+        }
+
+        return {
+            id: -1, // to be assigned later
+            metadata: metadata,
+            source: {
+                entity_id: source.id,
+                entity_type: source.type,
+                item_names: source_provided_items
+            },
+            sink: {
+                entity_id: sink.id,
+                entity_type: sink.type,
+                item_names: sink_consumed_items
+            },
+            filtered_items,
+            animation: InserterAnimation.fromMetadata(metadata.animation)
+        }
     }
 }

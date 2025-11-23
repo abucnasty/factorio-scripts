@@ -1,3 +1,4 @@
+import { EntityType } from "../entity-type";
 import { Inserter } from "./inserter";
 
 export interface ReadableInserterRegistry {
@@ -15,95 +16,52 @@ export interface WritableInserterRegistry extends ReadableInserterRegistry {
 }
 
 export class InserterRegistry implements WritableInserterRegistry {
-    private insertersById: Map<number, Inserter> = new Map();
-    private insertersByMachine: Map<number, Set<number>> = new Map();
-    private nextId: number = 0;
-
-    public createNewInserter(inserter: Inserter): number {
-        const id = this.nextId++;
-        inserter.setId(id);
-        this.setInserter(id, inserter);
-        return id;
-    }
-
-    public setInserter(inserterId: number, inserter: Inserter): void {
-        this.insertersById.set(inserterId, inserter);
-        
-        if (inserter.source.type === "machine" && inserter.source.machine_id !== undefined) {
-            if (!this.insertersByMachine.has(inserter.source.machine_id)) {
-                this.insertersByMachine.set(inserter.source.machine_id, new Set());
-            }
-            this.insertersByMachine.get(inserter.source.machine_id)!.add(inserterId);
-        }
-        
-        if (inserter.target.type === "machine" && inserter.target.machine_id !== undefined) {
-            if (!this.insertersByMachine.has(inserter.target.machine_id)) {
-                this.insertersByMachine.set(inserter.target.machine_id, new Set());
-            }
-            this.insertersByMachine.get(inserter.target.machine_id)!.add(inserterId);
-        }
-    }
-
-    public removeInserter(inserterId: number): void {
-        const inserter = this.insertersById.get(inserterId);
-        if (inserter) {
-            this.insertersById.delete(inserterId);
-            
-            if (inserter.source.type === "machine" && inserter.source.machine_id !== undefined) {
-                const sourceSet = this.insertersByMachine.get(inserter.source.machine_id);
-                if (sourceSet) {
-                    sourceSet.delete(inserterId);
-                    if (sourceSet.size === 0) {
-                        this.insertersByMachine.delete(inserter.source.machine_id);
-                    }
-                }
-            }
-            
-            if (inserter.target.type === "machine" && inserter.target.machine_id !== undefined) {
-                const targetSet = this.insertersByMachine.get(inserter.target.machine_id);
-                if (targetSet) {
-                    targetSet.delete(inserterId);
-                    if (targetSet.size === 0) {
-                        this.insertersByMachine.delete(inserter.target.machine_id);
-                    }
-                }
-            }
-        }
-    }
+    private inserters: Map<number, Inserter> = new Map();
 
     public hasInserter(inserterId: number): boolean {
-        return this.insertersById.has(inserterId);
+        return this.inserters.has(inserterId);
     }
 
     public getInserterById(inserterId: number): Inserter | null {
-        return this.insertersById.get(inserterId) ?? null;
+        return this.inserters.get(inserterId) ?? null;
     }
 
     public getInserterByIdOrThrow(inserterId: number): Inserter {
         const inserter = this.getInserterById(inserterId);
         if (!inserter) {
-            throw new Error(`Inserter with id ${inserterId} not found`);
+            throw new Error(`Inserter with ID ${inserterId} does not exist`);
         }
         return inserter;
     }
 
     public getAllInserters(): Inserter[] {
-        return Array.from(this.insertersById.values());
+        return Array.from(this.inserters.values());
     }
 
     public getInsertersForMachine(machineId: number): Inserter[] {
-        const inserterIds = this.insertersByMachine.get(machineId);
-        if (!inserterIds) {
-            return [];
-        }
-        return Array.from(inserterIds)
-            .map(id => this.insertersById.get(id)!)
-            .filter(inserter => inserter !== undefined);
+        return this.getAllInserters().filter(
+            inserter => inserter.source.entity_type === EntityType.MACHINE && inserter.source.entity_id === machineId ||
+                        inserter.sink.entity_type === EntityType.MACHINE && inserter.sink.entity_id === machineId
+        );
+    }
+    public createNewInserter(inserter: Inserter): number {
+        const newId = this.inserters.size > 0 ? Math.max(...this.inserters.keys()) + 1 : 1;
+        inserter.id = newId;
+        this.inserters.set(newId, inserter);
+        return newId;
     }
 
-    public clear(): void {
-        this.insertersById.clear();
-        this.insertersByMachine.clear();
-        this.nextId = 0;
+    public setInserter(inserterId: number, inserter: Inserter): void {
+        if (!this.inserters.has(inserterId)) {
+            throw new Error(`Inserter with ID ${inserterId} does not exist`);
+        }
+        inserter.id = inserterId;
+        this.inserters.set(inserterId, inserter);
+    }
+
+    public removeInserter(inserterId: number): void {
+        if (!this.inserters.delete(inserterId)) {
+            throw new Error(`Inserter with ID ${inserterId} does not exist`);
+        }
     }
 }
