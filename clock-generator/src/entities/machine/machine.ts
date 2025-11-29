@@ -6,10 +6,11 @@ import { MachineMetadata } from "./machine-metadata";
 import { MachineOutput, OutputBlock, OverloadMultiplier, ProductionRate } from "./output";
 import { RecipeMetadata } from "./recipe";
 import { BonusProductivityRate, CraftingRate, InsertionDuration } from "./traits";
+import { Entity } from "../entity";
+import { EntityId } from "../entity-id";
 
 
-export interface Machine {
-    readonly id: number;
+export interface Machine extends Entity {
     readonly metadata: MachineMetadata,
     readonly overload_multiplier: OverloadMultiplier,
     readonly inputs: Map<ItemName, MachineInput>,
@@ -74,7 +75,7 @@ function createMachine(
 
     const bonusProductivityRate = BonusProductivityRate.fromCraftingRate(craftingRate, metadata.productivity);
     return {
-        id,
+        entity_id: EntityId.forMachine(id),
         metadata,
         overload_multiplier,
         inputs: machineInputs,
@@ -101,6 +102,11 @@ function printMachineFacts(machine: Machine): void {
     console.log(`ingredient consumption rate facts:`)
     for (const input of machine.inputs.values()) {
         console.log(`  - ${input.item_name}: ${input.consumption_rate.rate_per_second.toMixedNumber()} per second`);
+    }
+
+    console.log(`automated insertion limits:`)
+    for (const input of machine.inputs.values()) {
+        console.log(`  - ${input.item_name}: ${input.automated_insertion_limit.quantity}`);
     }
 }
 

@@ -4,33 +4,18 @@ import { ReadableBeltRegistry } from "../belt";
 import { EntityType } from "../entity-type";
 import { ReadableMachineRegistry } from "../machine";
 import { InserterMetadata } from "./metadata/inserter-metadata";
-import { InserterTargetEntityType } from "./metadata/inserter-target-type";
 import { InserterAnimation } from "./inserter-animation";
 import assert from "assert";
-
-
-// targets are modeled as either a belt lane or a machine input slot
-// since machine can have multiple input slots and belts have multiple lanes,
-// the target will represent the interesection of the source item names and
-// the targets accepted inputs.
-
-// if the source is a machine and the target is a belt, the output of the machine
-// will be the item name
-
-export interface InserterTargetConfig {
-    type: InserterTargetEntityType;
-    id: number;
-}
+import { Entity } from "../entity";
+import { EntityId } from "../entity-id";
 
 export interface InserterTarget {
     item_names: Set<ItemName>;
-    entity_id: number;
-    entity_type: InserterTargetEntityType;
+    entity_id: EntityId;
 }
 
 
-export interface Inserter {
-    id: number;
+export interface Inserter extends Entity {
     metadata: InserterMetadata;
     sink: InserterTarget;
     source: InserterTarget;
@@ -46,7 +31,7 @@ export class InserterFactory {
     ) { }
 
 
-    public fromConfig(config: InserterConfig): Inserter {
+    public fromConfig(id: number, config: InserterConfig): Inserter {
         const metadata = InserterMetadata.create(
             config.source.type,
             config.sink.type,
@@ -98,16 +83,14 @@ export class InserterFactory {
         }
 
         return {
-            id: -1, // to be assigned later
+            entity_id: EntityId.forInserter(id),
             metadata: metadata,
             source: {
-                entity_id: source.id,
-                entity_type: source.type,
+                entity_id: EntityId.forEntity(source.id, source.type),
                 item_names: source_provided_items
             },
             sink: {
-                entity_id: sink.id,
-                entity_type: sink.type,
+                entity_id: EntityId.forEntity(sink.id, sink.type),
                 item_names: sink_consumed_items
             },
             filtered_items,

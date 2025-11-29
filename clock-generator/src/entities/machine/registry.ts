@@ -1,3 +1,6 @@
+import { EntityId } from "../entity-id";
+import { ReadableEntityRegistry } from "../entity-registry";
+import { EntityType } from "../entity-type";
 import { Machine } from "./machine";
 
 export interface ReadableMachineRegistry {
@@ -8,44 +11,15 @@ export interface ReadableMachineRegistry {
     getAllMachines(): Machine[];
 }
 
-export interface WritableMachineRegistry extends ReadableMachineRegistry {
-    setMachine(machine: Machine): void;
-    removeMachine(machineId: number): void;
-}
-
-export class MachineRegistry implements WritableMachineRegistry {
-    private machinesById: Map<number, Machine> = new Map();
-    private machinesByRecipe: Map<string, Set<number>> = new Map();
-
-    public setMachine(machine: Machine): void {
-        this.machinesById.set(machine.id, machine);
-        
-        if (!this.machinesByRecipe.has(machine.metadata.recipe.name)) {
-            this.machinesByRecipe.set(machine.metadata.recipe.name, new Set());
-        }
-        this.machinesByRecipe.get(machine.metadata.recipe.name)!.add(machine.id);
-    }
-
-    public removeMachine(machineId: number): void {
-        const machine = this.machinesById.get(machineId);
-        if (machine) {
-            this.machinesById.delete(machineId);
-            const recipeSet = this.machinesByRecipe.get(machine.metadata.recipe.name);
-            if (recipeSet) {
-                recipeSet.delete(machineId);
-                if (recipeSet.size === 0) {
-                    this.machinesByRecipe.delete(machine.metadata.recipe.name);
-                }
-            }
-        }
-    }
+export class MachineRegistry implements ReadableMachineRegistry {
+    constructor(private readonly entityRegistry: ReadableEntityRegistry) { }
 
     public hasMachine(machineId: number): boolean {
-        return this.machinesById.has(machineId);
+        return this.entityRegistry.hasEntity(EntityId.forMachine(machineId));
     }
 
     public getMachineById(machineId: number): Machine | null {
-        return this.machinesById.get(machineId) ?? null;
+        return this.entityRegistry.getEntityById(EntityId.forMachine(machineId)) as Machine | null;
     }
 
     public getMachineByIdOrThrow(machineId: number): Machine {
@@ -57,22 +31,19 @@ export class MachineRegistry implements WritableMachineRegistry {
     }
 
     public getMachineByRecipeOrThrow(recipe_name: string): Machine {
-        const machineIds = this.machinesByRecipe.get(recipe_name);
-        if (!machineIds || machineIds.size === 0) {
+
+        const machines = this.getAllMachines().filter(it => it.metadata.recipe.name === recipe_name);
+        if (!machines || machines.length === 0) {
             throw new Error(`No machines found for recipe ${recipe_name}`);
         }
-        if (machineIds.size > 1) {
-            throw new Error(`Expected exactly one machine for recipe ${recipe_name}, but found ${machineIds.size}`);
+
+        if (machines.length > 1) {
+            throw new Error(`Expected exactly one machine for recipe ${recipe_name}, but found ${machines.length}`);
         }
-        return this.machinesById.get(Array.from(machineIds)[0])!;
+        return machines[0];
     }
 
     public getAllMachines(): Machine[] {
-        return Array.from(this.machinesById.values());
-    }
-
-    public clear(): void {
-        this.machinesById.clear();
-        this.machinesByRecipe.clear();
+        return this.entityRegistry.getAll().filter(it => it.entity_id.type === EntityType.MACHINE) as Machine[];
     }
 }

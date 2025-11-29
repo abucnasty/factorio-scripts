@@ -2,14 +2,15 @@ import { BeltConfig } from "../../config/config";
 import { ItemName } from "../../data/factorio-data-types";
 import assert from "assert";
 import { BeltStackSize, isValidBeltStackSize } from "./belt-stack-size";
+import { EntityId } from "../entity-id";
+import { Entity } from "../entity";
 
 export interface Lane {
     ingredient_name: ItemName;
     stack_size: BeltStackSize;
 }
 
-export interface Belt {
-    readonly id: number
+export interface Belt extends Entity{
     readonly lanes: readonly Lane[]
     readonly belt_speed: BeltSpeed
 }
@@ -27,12 +28,12 @@ export type BeltSpeed = typeof BeltSpeed[keyof typeof BeltSpeed];
 export class BeltBuilder {
     private lanes: Lane[] = [];
     private belt_speed?: BeltSpeed;
-    private id?: number
+    private id?: EntityId;
 
     constructor() { }
 
     setId(id: number): BeltBuilder {
-        this.id = id;
+        this.id = EntityId.forBelt(id);
         return this;
     }
 
@@ -51,7 +52,7 @@ export class BeltBuilder {
         assert(this.lanes.length > 0, "At least one lane must be added before building a Belt");
         assert(this.id !== undefined, "Belt id must be set before building a Belt");
         return {
-            id: this.id ?? -1,
+            entity_id: this.id!,
             lanes: this.lanes,
             belt_speed: this.belt_speed!
         };

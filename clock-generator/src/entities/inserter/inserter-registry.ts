@@ -1,3 +1,5 @@
+import { EntityId } from "../entity-id";
+import { ReadableEntityRegistry } from "../entity-registry";
 import { EntityType } from "../entity-type";
 import { Inserter } from "./inserter";
 
@@ -6,24 +8,21 @@ export interface ReadableInserterRegistry {
     getInserterById(inserterId: number): Inserter | null;
     getInserterByIdOrThrow(inserterId: number): Inserter;
     getAllInserters(): Inserter[];
-    getInsertersForMachine(machineId: number): Inserter[];
+    getInsertersForMachine(machineId: EntityId): Inserter[];
 }
 
-export interface WritableInserterRegistry extends ReadableInserterRegistry {
-    createNewInserter(inserter: Inserter): number;
-    setInserter(inserterId: number, inserter: Inserter): void;
-    removeInserter(inserterId: number): void;
-}
-
-export class InserterRegistry implements WritableInserterRegistry {
-    private inserters: Map<number, Inserter> = new Map();
+export class InserterRegistry implements ReadableInserterRegistry {
+    
+    constructor(
+        private entityRegistry: ReadableEntityRegistry
+    ) {}
 
     public hasInserter(inserterId: number): boolean {
-        return this.inserters.has(inserterId);
+        return this.entityRegistry.hasEntity(EntityId.forInserter(inserterId));
     }
 
     public getInserterById(inserterId: number): Inserter | null {
-        return this.inserters.get(inserterId) ?? null;
+        return this.entityRegistry.getEntityById(EntityId.forInserter(inserterId)) as Inserter | null;
     }
 
     public getInserterByIdOrThrow(inserterId: number): Inserter {
@@ -35,33 +34,14 @@ export class InserterRegistry implements WritableInserterRegistry {
     }
 
     public getAllInserters(): Inserter[] {
-        return Array.from(this.inserters.values());
+        return this.entityRegistry.getAll().filter(it => it.entity_id.type === EntityType.INSERTER) as Inserter[];
     }
 
-    public getInsertersForMachine(machineId: number): Inserter[] {
+    public getInsertersForMachine(machineId: EntityId): Inserter[] {
         return this.getAllInserters().filter(
-            inserter => inserter.source.entity_type === EntityType.MACHINE && inserter.source.entity_id === machineId ||
-                        inserter.sink.entity_type === EntityType.MACHINE && inserter.sink.entity_id === machineId
+            inserter => 
+                inserter.source.entity_id.id === machineId.id ||
+                inserter.sink.entity_id.id === machineId.id
         );
-    }
-    public createNewInserter(inserter: Inserter): number {
-        const newId = this.inserters.size > 0 ? Math.max(...this.inserters.keys()) + 1 : 1;
-        inserter.id = newId;
-        this.inserters.set(newId, inserter);
-        return newId;
-    }
-
-    public setInserter(inserterId: number, inserter: Inserter): void {
-        if (!this.inserters.has(inserterId)) {
-            throw new Error(`Inserter with ID ${inserterId} does not exist`);
-        }
-        inserter.id = inserterId;
-        this.inserters.set(inserterId, inserter);
-    }
-
-    public removeInserter(inserterId: number): void {
-        if (!this.inserters.delete(inserterId)) {
-            throw new Error(`Inserter with ID ${inserterId} does not exist`);
-        }
     }
 }

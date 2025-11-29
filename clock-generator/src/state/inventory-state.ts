@@ -1,3 +1,4 @@
+import { ItemName } from "../data/factorio-data-types";
 import { MachineInput } from "../entities";
 
 export interface InventoryItem {
@@ -5,10 +6,30 @@ export interface InventoryItem {
     quantity: number;
 }
 
-export class InventoryState {
+
+export interface ReadableInventoryState {
+    getQuantity(itemName: string): number;
+    hasQuantity(itemName: string, amount: number): boolean;
+    getItems(): InventoryItem[];
+    getAllItems(): InventoryItem[];
+    getTotalQuantity(): number;
+    isEmpty(): boolean;
+}
+
+export interface WritableInventoryState extends ReadableInventoryState {
+    addQuantity(itemName: string, amount: number): void;
+    removeQuantity(itemName: string, amount: number): void;
+    setQuantity(itemName: string, amount: number): void;
+    clear(): void;
+    resetItem(itemName: string): void;
+    clone(): WritableInventoryState;
+    export(): Record<ItemName, number>;
+}
+
+export class InventoryState implements WritableInventoryState {
 
     public static createFromMachineInputs(machineInputs: Map<string, MachineInput>): InventoryState {
-        const inventory = this.createEmpty();
+        const inventory = this.empty();
         for (const itemName of machineInputs.keys()) {
             inventory.addQuantity(itemName, 0);
         }
@@ -16,12 +37,12 @@ export class InventoryState {
     }
 
     public static createEmptyForSingleItem(itemName: string): InventoryState {
-        const inventory = this.createEmpty();
+        const inventory = this.empty();
         inventory.addQuantity(itemName, 0);
         return inventory;
     }
 
-    public static createEmpty(): InventoryState {
+    public static empty(): InventoryState {
         return new InventoryState();
     }
 
@@ -103,11 +124,15 @@ export class InventoryState {
         return Array.from(this.inventory.values()).reduce((sum, qty) => sum + qty, 0);
     }
 
-    public export(): Record<string, number> {
+    public export(): Record<ItemName, number> {
         return Object.fromEntries(this.inventory);
     }
 
     public isEmpty(): boolean {
         return this.getTotalQuantity() === 0;
+    }
+
+    public clone(): WritableInventoryState {
+        return InventoryState.clone(this);
     }
 }

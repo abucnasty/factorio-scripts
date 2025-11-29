@@ -1,56 +1,21 @@
 import { fraction } from "fractionability";
 import { MachineState } from "../state/machine-state";
 import assert from "assert";
+import { MachineControlLogic } from "../control-logic/machine-control-logic";
 
+/**
+ * 
+ * deprecated – use machine control logic directly
+ */
 function simulateMachineCraftForTicks(
     machineState: MachineState,
-    ticks: number
+    ticks: number,
 ): MachineState {
 
-    const clonedState = MachineState.clone(machineState)
+    const controlLogic = new MachineControlLogic(MachineState.clone(machineState));
+    controlLogic.executeForTick();
 
-    const machine = clonedState.machine;
-
-    const currentBonusProgress = clonedState.bonusProgress.progress
-    const currentCraftingProgress = clonedState.craftingProgress.progress
-
-    const craftsPossible = machine.crafting_rate.crafts_per_tick
-        .multiply(ticks)
-        .add(currentCraftingProgress)
-
-    const craftsWhole = Math.floor(craftsPossible.toDecimal());
-    const remainderCrafts = craftsPossible.subtract(craftsWhole);
-
-    const bonusCraftsPossible = machine.bonus_productivity_rate.bonus_crafts_per_tick
-        .multiply(ticks)
-        .add(currentBonusProgress);
-
-    const bonusCraftsWhole = Math.floor(bonusCraftsPossible.toDecimal());
-    const remainderBonusCrafts = bonusCraftsPossible.subtract(bonusCraftsWhole);
-
-
-    // consume inputs
-    machine.inputs.forEach(input => {
-        const amount = input.consumption_rate.amount_per_craft * craftsWhole;
-        clonedState.inventoryState.removeQuantity(input.ingredient.name, amount);
-    })
-
-    // produce outputs
-    const baseCraftOutput = Math.floor(machine.crafting_rate.amount_per_craft.multiply(craftsWhole).toDecimal());
-    const bonusCraftOutput = Math.floor(machine.bonus_productivity_rate.amount_per_bonus.multiply(bonusCraftsWhole).toDecimal());
-    clonedState.inventoryState.addQuantity(machine.output.ingredient.name, baseCraftOutput + bonusCraftOutput);
-
-
-    clonedState.craftingProgress.progress = remainderCrafts;
-    clonedState.bonusProgress.progress = remainderBonusCrafts;
-
-    if (!machineHasEnoughInputsForCraft(clonedState)) {
-        // if we don't have enough inputs for another craft, reset progress to 0
-        clonedState.craftingProgress.progress = fraction(0);
-        clonedState.bonusProgress.progress = fraction(0);
-    }
-
-    return clonedState;
+    return MachineState.clone(controlLogic.state);
 }
 
 function machineHasEnoughInputsForCraft(machineState: MachineState): boolean {
@@ -68,7 +33,17 @@ function machineHasEnoughInputsForCraft(machineState: MachineState): boolean {
     return true;
 }
 
+function machineAcceptsItem(machineState: MachineState, itemName: string): boolean {
+    const machine = machineState.machine;
+
+    return machine.inputs.has(itemName);
+}
+
 function machineInputIsBlocked(machineState: MachineState, ingredientName: string): boolean {
+
+    if (!machineAcceptsItem(machineState, ingredientName)) {
+        return true;
+    }
 
     if (machineIsOutputBlocked(machineState)) {
         return true;

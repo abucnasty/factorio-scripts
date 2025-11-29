@@ -1,43 +1,25 @@
 import { ItemName } from "../../data/factorio-data-types";
+import { EntityId } from "../entity-id";
+import { ReadableEntityRegistry } from "../entity-registry";
+import { EntityType } from "../entity-type";
 import { Belt } from "./belt";
 
 export interface ReadableBeltRegistry {
     getBeltById(beltId: number): Belt | null;
     getBeltByIdOrThrow(beltId: number): Belt;
     getAllBelts(): Belt[];
-    getBeltForIngredient(ingredientName: ItemName): Belt | null;
-    getBeltForIngredientOrThrow(ingredientName: ItemName): Belt;
+    getBeltsForIngredient(ingredientName: ItemName): Belt[];
 }
 
-export interface WritableBeltRegistry extends ReadableBeltRegistry {
-    setBelt(beltId: number, belt: Belt): void;
-    removeBelt(beltId: number): void;
-}
+export class BeltRegistry implements ReadableBeltRegistry {
+    
 
-export class BeltRegistry implements WritableBeltRegistry {
-    private beltsById: Map<number, Belt> = new Map();
-    private beltsByIngredient: Map<ItemName, number> = new Map();
-
-    public setBelt(beltId: number, belt: Belt): void {
-        this.beltsById.set(beltId, belt);
-
-        belt.lanes.forEach((lane) => {
-            this.beltsByIngredient.set(lane.ingredient_name, beltId);
-        });
-    }
-
-    public removeBelt(beltId: number): void {
-        const belt = this.beltsById.get(beltId);
-        if (belt) {
-            this.beltsById.delete(beltId);
-            belt.lanes.forEach((lane) => {
-                this.beltsByIngredient.delete(lane.ingredient_name);
-            });
-        }
-    }
+    constructor(
+        private readonly entityRegistry: ReadableEntityRegistry
+    ) {}
 
     public getBeltById(beltId: number): Belt | null {
-        return this.beltsById.get(beltId) || null;
+        return this.entityRegistry.getEntityById(EntityId.forBelt(beltId)) as Belt || null;
     }
 
     public getBeltByIdOrThrow(beltId: number): Belt {
@@ -49,21 +31,10 @@ export class BeltRegistry implements WritableBeltRegistry {
     }
 
     public getAllBelts(): Belt[] {
-        return Array.from(this.beltsById.values());
+        return this.entityRegistry.getAll().filter(entity => entity.entity_id.type === EntityType.BELT) as Belt[];
     }
-    public getBeltForIngredient(ingredientName: ItemName): Belt | null {
-        const beltId = this.beltsByIngredient.get(ingredientName);
-        if (beltId === undefined) {
-            return null;
-        }
-        return this.getBeltById(beltId);
-    }
-
-    public getBeltForIngredientOrThrow(ingredientName: ItemName): Belt {
-        const belt = this.getBeltForIngredient(ingredientName);
-        if (!belt) {
-            throw new Error(`Belt for ingredient ${ingredientName} not found.`);
-        }
-        return belt;
+    public getBeltsForIngredient(ingredientName: ItemName): Belt[] {
+        const belts = this.getAllBelts().filter(it => it.lanes.some(lane => lane.ingredient_name === ingredientName));
+        return belts;
     }
 }
