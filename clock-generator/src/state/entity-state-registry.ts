@@ -11,6 +11,7 @@ export interface ReadableEntityStateRegistry {
 
 export interface WritableEntityStateRegistry extends ReadableEntityStateRegistry {
     addState<T extends EntityState>(state: T): void;
+    addStates(states: EntityState[]): this;
 }
 
 export class EntityStateRegistry implements WritableEntityStateRegistry {
@@ -43,5 +44,10 @@ export class EntityStateRegistry implements WritableEntityStateRegistry {
         const entity = this.entityRegistry.getEntityById(state.entity_id);
         assert(entity != null, `Cannot add state for non-existent entity with ID ${state.entity_id.id}`);
         this.states.set(state.entity_id.id, state);
+    }
+
+    public addStates(states: EntityState[]): this {
+        states.forEach(state => this.addState(state));
+        return this;
     }
 }

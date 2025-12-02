@@ -18,6 +18,13 @@ export type Recipe = {
   category: string
 } & Record<string, any>
 
+export type Item = {
+  type: "item"
+  name: ItemName
+  stack_size: number
+} & Record<string, any>
+
 export interface FactorioData {
   recipe: Record<RecipeName, Recipe>
+  item: Record<ItemName, Item>
 }

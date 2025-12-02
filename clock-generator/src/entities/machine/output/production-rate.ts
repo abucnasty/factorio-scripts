@@ -1,4 +1,5 @@
 import Fraction, { fraction } from "fractionability";
+import { TICKS_PER_SECOND } from "../../../data-types";
 
 export interface ProductionRate {
     readonly item: string;
@@ -25,6 +26,15 @@ function fromItemsPerSecond(item: string, rate_per_second: Fraction): Production
     };
 }
 
+function fromItemsPerTick(item: string, rate_per_tick: Fraction): ProductionRate {
+    const rate_per_second = rate_per_tick.multiply(TICKS_PER_SECOND);
+    return {
+        item,
+        rate_per_second,
+        rate_per_tick
+    };
+}
+
 function fromCraftingSpeed(item: string, craftingSpeed: number, craftingTime: number, resultAmount: number, productivity: number = 0) {
     const rate_per_second = fraction(resultAmount)
         .multiply(craftingSpeed)
@@ -34,7 +44,8 @@ function fromCraftingSpeed(item: string, craftingSpeed: number, craftingTime: nu
 }
 
 export const ProductionRate = {
-    limitTo,
-    fromItemsPerSecond,
+    limitTo: limitTo,
+    perSecond: fromItemsPerSecond,
+    perTick: fromItemsPerTick,
     fromCraftingSpeed
 }

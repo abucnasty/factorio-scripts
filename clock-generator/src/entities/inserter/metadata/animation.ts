@@ -1,3 +1,4 @@
+import { InserterAnimationOverrideConfig } from "../../../config/config";
 import { Duration } from "../../../data-types";
 import { InserterSpec } from "./inserter-spec";
 import { InserterTargetEntityType } from "./inserter-target-type";
@@ -13,6 +14,7 @@ function fromSourceAndTarget(
     meta: InserterSpec,
     source: InserterTargetEntityType,
     target: InserterTargetEntityType,
+    overrides: InserterAnimationOverrideConfig
 ): InserterAnimationMetadata {
     const animationMetadata: Partial<InserterAnimationMetadata> = {}
 
@@ -33,6 +35,10 @@ function fromSourceAndTarget(
     }
 
     animationMetadata.rotation_duration = meta.rotation;
+
+    if (overrides.pickup_duration_ticks !== undefined) {
+        animationMetadata.pickup_duration = Duration.ofTicks(overrides.pickup_duration_ticks);
+    }
 
     return animationMetadata as InserterAnimationMetadata;
 }

@@ -42,7 +42,7 @@ export class InserterIdleControlLogic implements InserterStateControlLogic {
     private shouldPickupFromMachine(state: InserterState, source: MachineState): boolean {
 
         // TODO: this should be configurable per inserter
-        const pickup_amount_condition = state.inserter.metadata.stack_size;
+        const pickup_amount_condition = 1;
 
         for (const item_name of state.inserter.filtered_items) {
             if (source.inventoryState.getQuantity(item_name) >= pickup_amount_condition) {

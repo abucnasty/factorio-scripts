@@ -1,4 +1,4 @@
-import { FactorioData, Recipe } from "./factorio-data-types";
+import { FactorioData, ItemName, Recipe } from "./factorio-data-types";
 import { data } from "./factorio-raw-dump";
 
 export class FactorioDataService {
@@ -22,6 +22,16 @@ export class FactorioDataService {
             results: recipe.results.filter(it => it.type != "fluid"),
             energy_required: recipe.energy_required ?? this.DEFAULT_ENERGY_REQUIRED,
         }
+    }
+
+    public static findItemOrThrow(itemName: ItemName) {
+        const item = this.readRawDump().item[itemName];
+
+        if(!item) {
+            throw new Error(`Item ${itemName} was not found`);
+        }
+
+        return item;
     }
 
 }

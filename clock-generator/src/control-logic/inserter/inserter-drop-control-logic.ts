@@ -38,6 +38,11 @@ export class InserterDropOffControlLogic implements InserterStateControlLogic {
         }
 
         if (this.dropDurationHasPassed()) {
+            assert(
+                (this.inserterState.held_item?.quantity ?? 0) === 0, 
+                `Held item quantity should be 0 but was ${this.inserterState.held_item?.quantity} after drop duration`
+            )
+            this.inserterState.held_item = null;
             this.inserterState.status = InserterStatus.SWING_TO_SOURCE;
         }
     }
@@ -55,7 +60,10 @@ export class InserterDropOffControlLogic implements InserterStateControlLogic {
     private dropOffToMachine(inserter_state: InserterState, sink: MachineState): void {
         // dropping to a machine should take 1 tick
         const held_item = inserter_state.held_item;
-        assert(held_item !== null, "Held item should not be null when dropping off to machine");
+        assert(
+            held_item !== null, 
+            `${inserter_state.entity_id} Held item should not be null when dropping off to machine`
+        );
         sink.inventoryState.addQuantity(held_item.item_name, held_item.quantity);
         inserter_state.inventoryState.removeQuantity(held_item.item_name, held_item.quantity);
         inserter_state.held_item = null;

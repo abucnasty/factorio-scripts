@@ -18,6 +18,7 @@
   },
   "dependencies": {
     "@types/lodash": "^4.17.17",
+    "chalk": "^5.6.2",
     "csv-writer": "^1.6.0",
     "fractionability": "^2.3.3",
     "lodash": "^4.17.21",

@@ -18,6 +18,18 @@ export class EntityId {
         return this.forEntity(id, EntityType.MACHINE);
     }
 
+    public static isInserter(entityId: EntityId): boolean {
+        return entityId.type === EntityType.INSERTER;
+    }
+
+    public static isBelt(entityId: EntityId): boolean {
+        return entityId.type === EntityType.BELT;
+    }
+
+    public static isMachine(entityId: EntityId): boolean {
+        return entityId.type === EntityType.MACHINE;
+    }
+
     private constructor(
         public readonly id: string,
         public readonly type: EntityType

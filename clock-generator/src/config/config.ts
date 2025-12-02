@@ -9,7 +9,7 @@ export interface MachineConfiguration {
     crafting_speed: number;
 }
 
-export interface TargetProductionRate {
+export interface TargetProductionRateConfig {
     recipe: RecipeName;
     items_per_second: number;
     machines: number;
@@ -18,17 +18,21 @@ export interface TargetProductionRate {
     }
 }
 
-// TODO: the ingredient field should instead be a filter property and the ingredient should be sourced from either a machine or a belt
 export type InserterStackSizeConfig = { stack_size: number }
 export type InserterFilterConfig = { filters: ItemName[] }
 export type InserterBeltConfig = { type: "belt", id: number }
 export type InserterMachineConfig = { type: "machine"; id: number; }
 
+export type InserterAnimationOverrideConfig = {
+    pickup_duration_ticks?: number;
+}
+
 export type InserterConfig = {
     source: InserterBeltConfig | InserterMachineConfig;
     sink: InserterBeltConfig | InserterMachineConfig;
     stack_size: number;
-} & InserterStackSizeConfig & Partial<InserterFilterConfig>
+    overrides?: InserterAnimationOverrideConfig
+} & InserterStackSizeConfig & Partial<InserterFilterConfig>;
 
 export const BeltType = {
     TRANSPORT_BELT: "transport-belt",
@@ -52,7 +56,7 @@ export interface BeltConfig {
 
 
 export interface Config {
-    target_output: TargetProductionRate;
+    target_output: TargetProductionRateConfig;
     machines: MachineConfiguration[];
     inserters: InserterConfig[];
     belts: BeltConfig[];

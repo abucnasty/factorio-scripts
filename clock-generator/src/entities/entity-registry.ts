@@ -4,7 +4,7 @@ import { EntityId } from "./entity-id";
 export interface ReadableEntityRegistry {
     hasEntity(entityId: EntityId): boolean;
     getEntityById(entityId: EntityId): Entity | null;
-    getEntityByIdOrThrow(entityId: EntityId): Entity;
+    getEntityByIdOrThrow<T extends Entity>(entityId: EntityId): T;
     getAll(): Entity[];
 }
 
@@ -20,16 +20,16 @@ export class EntityRegistry implements WritableEntityRegistry {
         return this.entities.has(entityId.id);
     }
 
-    public getEntityById(entityId: EntityId): Entity | null {
-        return this.entities.get(entityId.id) ?? null;
+    public getEntityById<T extends Entity>(entityId: EntityId): T | null {
+        return this.entities.get(entityId.id) as T ?? null;
     }
 
-    public getEntityByIdOrThrow(entityId: EntityId): Entity {
+    public getEntityByIdOrThrow<T extends Entity>(entityId: EntityId): T {
         const entity = this.getEntityById(entityId);
         if (!entity) {
             throw new Error(`Entity with ID ${entityId.id} does not exist`);
         }
-        return entity;
+        return entity as T;
     }
     
     public getAll(): Entity[] {

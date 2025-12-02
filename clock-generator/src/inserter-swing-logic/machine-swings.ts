@@ -4,7 +4,7 @@ import assert from "assert";
 import { lcm } from "mathjs"
 import { OpenRange } from "../data-types/range";
 import { CraftingCycle } from "../crafting/crafting-cycle";
-import { TargetProductionRate } from "../config/config";
+import { TargetProductionRateConfig } from "../config/config";
 import { Inserter, Machine, ProductionRate, ReadableInserterRegistry } from "../entities";
 
 export const computeMaxInputSwings = (
@@ -107,7 +107,7 @@ export interface SwingCountsPerClockCycle {
 export const computeInserterSwingCounts = (
     machine: Machine,
     inserterRegistry: ReadableInserterRegistry,
-    targetProductionRate: TargetProductionRate,
+    targetProductionRate: TargetProductionRateConfig,
     recommendedOutputSwingsPerCycle: number
 ): SwingCountsPerClockCycle => {
     const inserters = inserterRegistry.getInsertersForMachine(machine.id)

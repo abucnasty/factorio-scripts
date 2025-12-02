@@ -12,15 +12,15 @@ export interface EntityState {
 
 
 export function isBelt(state: EntityState): state is BeltState {
-    return state.entity_id.type === EntityType.BELT;
+    return EntityId.isBelt(state.entity_id);
 }
 
 export function isMachine(state: EntityState): state is MachineState {
-    return state.entity_id.type === EntityType.MACHINE;
+    return EntityId.isMachine(state.entity_id);
 }
 
 export function isInserter(state: EntityState): state is InserterState {
-    return state.entity_id.type === EntityType.INSERTER;
+    return EntityId.isInserter(state.entity_id);
 }
 
 export const EntityState = {

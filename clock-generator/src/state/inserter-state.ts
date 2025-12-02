@@ -5,11 +5,16 @@ import { InventoryState } from "./inventory-state";
 
 
 export const InserterStatus = {
-    IDLE: "idle",
-    PICKUP: "picking_up",
-    DROP_OFF: "dropping_off",
-    SWING_TO_SINK: "rotate_to_sink",
-    SWING_TO_SOURCE: "rotate_to_source",
+    IDLE: "IDLE",
+    PICKUP: "GRAB",
+    DROP_OFF: "DROP",
+    SWING_TO_SINK: "SWING",
+    SWING_TO_SOURCE: "SWING_BACK",
+    /**
+     * Disabled by controller behavior
+     */
+    DISABLED: "DISABLED",
+    ENABLED: "ENABLED",
 } as const;
 
 export type InserterStatus = typeof InserterStatus[keyof typeof InserterStatus];

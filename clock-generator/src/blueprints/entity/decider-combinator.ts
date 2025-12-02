@@ -42,6 +42,11 @@ export class DeciderCombinatorEntityBuilder {
         return this;
     }
 
+    public setMultiLinePlayerDescription(description: string[]): DeciderCombinatorEntityBuilder {
+        this.player_description = description.join("\n");
+        return this;
+    }
+
     public build(): DeciderCombinatorEntity {
         return {
             name: EntityType.DECIDER_COMBINATOR,

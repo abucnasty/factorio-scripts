@@ -1,10 +1,22 @@
 import { fraction } from "fractionability";
 import { IngredientRatio, RecipeMetadata } from "../entities";
 import { WritableInventoryState } from "../state/inventory-state";
-import { MachineState } from "../state/machine-state";
+import { MachineState, MachineStatus } from "../state/machine-state";
 import { ControlLogic } from "./control-logic";
 
+
+export type MachineStateChangeListener = (
+    args: { state: MachineState, status: { from: MachineStatus, to: MachineStatus } }
+) => void;
+
+export type MachineCraftListener = (
+    args: { state: MachineState, craftCount: number }
+) => void;
+
 export class MachineControlLogic implements ControlLogic {
+
+    private readonly listeners: MachineStateChangeListener[] = [];
+    private readonly craftListeners: MachineCraftListener[] = [];
 
     private readonly recipe: RecipeMetadata
     private readonly inventoryState: WritableInventoryState
@@ -18,11 +30,44 @@ export class MachineControlLogic implements ControlLogic {
 
 
     public executeForTick(): void {
-        this.craftingLogic();
-        this.bonusCraftingLogic();
+        const previousStatus = this.state.status;
+        const previousCraftCount = this.state.craftCount;
+
         if (!this.hasEnoughInputsForCraft()) {
             this.resetProgress();
+        } else {
+            this.craftingLogic();
+            this.bonusCraftingLogic();
+        }        
+
+        const newStatus = this.computeStatus();
+        this.state.status = newStatus;
+        const newCraftCount = this.state.craftCount;
+
+        if (newCraftCount !== previousCraftCount) {
+            this.craftListeners.forEach(listener => listener({
+                state: MachineState.clone(this.state),
+                craftCount: newCraftCount - previousCraftCount
+            }));
         }
+
+        if (newStatus !== previousStatus) {
+            this.listeners.forEach(listener => listener({
+                state: MachineState.clone(this.state),
+                status: {
+                    from: previousStatus,
+                    to: newStatus
+                }
+            }));
+        }
+    }
+
+    public addStateChangeListener(listener: MachineStateChangeListener): void {
+        this.listeners.push(listener);
+    }
+
+    public addCraftListener(listener: MachineCraftListener): void {
+        this.craftListeners.push(listener);
     }
 
     private hasEnoughInputsForCraft(): boolean {
@@ -52,6 +97,10 @@ export class MachineControlLogic implements ControlLogic {
 
         this.state.craftingProgress.progress = remainderCrafts;
 
+        if (craftsWhole >= 1) {
+            this.state.craftCount += craftsWhole;
+        }
+
         this.state.machine.inputs.forEach(input => {
             const amount = input.consumption_rate.amount_per_craft * craftsWhole;
             this.inventoryState.removeQuantity(input.ingredient.name, amount);
@@ -60,6 +109,26 @@ export class MachineControlLogic implements ControlLogic {
         const baseCraftOutput = Math.floor(this.state.machine.crafting_rate.amount_per_craft.multiply(craftsWhole).toDecimal());
 
         this.inventoryState.addQuantity(this.state.machine.output.ingredient.name, baseCraftOutput);
+        this.state.totalCrafted += baseCraftOutput;
+    }
+
+    private computeStatus(): MachineStatus {
+
+        const craftingProgress = this.state.craftingProgress.progress.toDecimal()
+
+        if (!this.hasEnoughInputsForCraft() && this.output_item_amount > 0 && craftingProgress === 0) {
+            return MachineStatus.OUTPUT_FULL;
+        }
+
+        if (!this.hasEnoughInputsForCraft() && craftingProgress === 0) {
+            return MachineStatus.INGREDIENT_SHORTAGE;
+        }
+
+        return MachineStatus.WORKING;
+    }
+
+    private get output_item_amount(): number {
+        return this.inventoryState.getQuantity(this.state.machine.output.ingredient.name);
     }
 
     private bonusCraftingLogic() {
@@ -77,6 +146,7 @@ export class MachineControlLogic implements ControlLogic {
         const bonusCraftOutput = Math.floor(this.state.machine.bonus_productivity_rate.amount_per_bonus.multiply(bonusCraftsWhole).toDecimal());
 
         this.inventoryState.addQuantity(this.state.machine.output.ingredient.name, bonusCraftOutput);
+        this.state.totalCrafted += bonusCraftOutput;
     }
 
     private resetProgress() {

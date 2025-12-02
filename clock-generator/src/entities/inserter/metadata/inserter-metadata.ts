@@ -6,6 +6,7 @@ import { InserterStackSize } from "./stack-size";
 import assert from "assert"
 import { ItemName } from "../../../data/factorio-data-types";
 import { InserterAnimationMetadata } from "./animation";
+import { InserterAnimationOverrideConfig } from "../../../config/config";
 
 
 export interface InserterMetadata {
@@ -16,7 +17,13 @@ export interface InserterMetadata {
     filters: Set<ItemName>
 }
 
-function create(source: InserterTargetEntityType, target: InserterTargetEntityType, stackSize: number, filters: ItemName[]): InserterMetadata {
+function create(
+    source: InserterTargetEntityType, 
+    target: InserterTargetEntityType, 
+    stackSize: number, 
+    filters: ItemName[],
+    overrides: InserterAnimationOverrideConfig
+): InserterMetadata {
     
     assert(Object.values<number>(InserterStackSize).includes(stackSize), `Inserter has an invalid stack size of ${stackSize}`)
 
@@ -30,7 +37,8 @@ function create(source: InserterTargetEntityType, target: InserterTargetEntityTy
     const animationMetadata = InserterAnimationMetadata.create(
         definition,
         source,
-        target
+        target,
+        overrides
     )
 
     return {

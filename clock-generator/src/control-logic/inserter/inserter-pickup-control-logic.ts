@@ -7,6 +7,7 @@ import { MachineState } from "../../state/machine-state";
 import { InserterStateControlLogic } from "./inserter-state-control-logic";
 import assert from "assert";
 
+// TODO: support a latching mechanism for dropping a latched quantity of items
 export class InserterPickupControlLogic implements InserterStateControlLogic {
 
     constructor(
@@ -47,11 +48,24 @@ export class InserterPickupControlLogic implements InserterStateControlLogic {
             this.pickupFromMachine(this.inserterState, source);
         }
 
+        if (this.heldItemQuantity() === this.inserterState.inserter.metadata.stack_size) {
+            this.inserterState.status = InserterStatus.SWING_TO_SINK;
+            return;
+        }
+
         if(this.hasPickupDurationElapsed()) {
+            if (this.heldItemQuantity() < this.inserterState.inserter.metadata.stack_size) {
+                this.inserterState.status = InserterStatus.PICKUP;
+                return;
+            }
             // pickup complete
             this.inserterState.status = InserterStatus.SWING_TO_SINK;
             return;
         }
+    }
+
+    private heldItemQuantity(): number {
+        return this.inserterState.held_item?.quantity ?? 0
     }
 
     private pickupFromBelt(inserter_state: InserterState, source: BeltState): void {
@@ -81,7 +95,23 @@ export class InserterPickupControlLogic implements InserterStateControlLogic {
     }
 
     private pickupFromMachine(state: InserterState, source: MachineState): void {
-        throw new Error("pickupFromMachine not implemented yet");
+        const output_item_name = source.machine.output.ingredient.name;
+        const output_quantity = source.inventoryState.getQuantity(output_item_name);
+
+        const held_item = state.held_item ?? { item_name: output_item_name, quantity: 0 }
+
+        const pickup_quantity = Math.min(
+            state.inserter.metadata.stack_size - held_item.quantity,
+            output_quantity
+        );
+        
+        if (pickup_quantity <= 0) {
+            return;
+        }
+        
+        state.held_item = { item_name: held_item.item_name, quantity: held_item.quantity + pickup_quantity };
+        state.inventoryState.addQuantity(output_item_name, pickup_quantity);
+        source.inventoryState.removeQuantity(output_item_name, pickup_quantity);
     }
 
     private hasPickupDurationElapsed(): boolean {
@@ -108,7 +138,7 @@ function canPickupFromEntity(inserter_state: InserterState, entity_state: Entity
         const output_item_name = entity_state.machine.output.ingredient.name;
         const output_quantity = entity_state.inventoryState.getQuantity(output_item_name);
         // TODO: this should be configurable, setting to stack size for now
-        const output_threshold = inserter_state.inserter.metadata.stack_size;
+        const output_threshold = 1
         if (output_quantity >= output_threshold && canPickupItem(inserter_state, output_item_name)) {
             return true;
         }

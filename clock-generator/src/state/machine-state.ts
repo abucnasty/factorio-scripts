@@ -3,13 +3,23 @@ import { ProgressState } from "./progress-state";
 import { Machine } from "../entities";
 import { EntityState } from "./entity-state";
 import assert from "assert";
-import { machine } from "os";
+
+export const MachineStatus = {
+    INGREDIENT_SHORTAGE: 'INGREDIENT_SHORTAGE',
+    WORKING: 'WORKING',
+    OUTPUT_FULL: 'OUTPUT_FULL',
+} as const;
+
+export type MachineStatus = typeof MachineStatus[keyof typeof MachineStatus];
 
 export interface MachineState extends EntityState {
     readonly machine: Machine;
     readonly craftingProgress: ProgressState;
     readonly bonusProgress: ProgressState;
     readonly inventoryState: WritableInventoryState;
+    status: MachineStatus
+    craftCount: number;
+    totalCrafted: number;
 }
 
 function forMachine(machine: Machine): MachineState {
@@ -19,7 +29,10 @@ function forMachine(machine: Machine): MachineState {
         machine: machine,
         craftingProgress: ProgressState.empty(),
         bonusProgress: ProgressState.empty(),
-        inventoryState: inventoryState
+        inventoryState: inventoryState,
+        craftCount: 0,
+        status: MachineStatus.INGREDIENT_SHORTAGE,
+        totalCrafted: 0,
     };
 }
 
@@ -30,6 +43,9 @@ function clone(machineState: MachineState): MachineState {
         craftingProgress: ProgressState.clone(machineState.craftingProgress),
         bonusProgress: ProgressState.clone(machineState.bonusProgress),
         inventoryState: machineState.inventoryState.clone(),
+        craftCount: machineState.craftCount,
+        totalCrafted: machineState.totalCrafted,
+        status: machineState.status,
     }
 }
 
