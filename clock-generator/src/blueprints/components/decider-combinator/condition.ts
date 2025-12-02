@@ -1,4 +1,4 @@
-import { OpenRange } from "../../../data-types/range";
+import { OpenRange } from "../../../data-types/open-range";
 import { SignalId } from "../signal";
 import { ComparatorString, CompareType, CircuitNetworkSelection } from "./constants";
 

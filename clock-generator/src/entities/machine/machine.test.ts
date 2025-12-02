@@ -1,0 +1,164 @@
+import { expect, vi, test,describe } from 'vitest'
+import { Machine } from './machine'
+import { RecipeMetadata } from './recipe'
+import { MachineMetadata } from './machine-metadata';
+import { Ingredient } from '../../data/factorio-data-types';
+import { fraction } from 'fractionability';
+
+
+const createMachine = (recipeName: string, metadata: Partial<MachineMetadata> = {}): Machine => {
+    const id = -1;
+    return Machine.createMachine(id, {
+        crafting_speed: 1,
+        productivity: 0,
+        recipe: RecipeMetadata.fromRecipeName(recipeName),
+        ...metadata,
+    })
+}
+
+describe("Machine Entity", () => {
+    test("creates a machine with the correct recipe metadata", () => {
+        const machine = createMachine("iron-gear-wheel")
+        expect(machine.metadata.recipe.name).toBe("iron-gear-wheel")
+        
+        const ingredients = Array.from(machine.inputs.values()).map(input => input.ingredient)
+
+        const expectedIngredients: Ingredient[] = [
+            { type: "item", name: "iron-plate", amount: 2 }
+        ]
+        expect(ingredients).toEqual(expectedIngredients)
+    })
+
+    test("throws an error for unknown recipe", () => {
+        expect(() => createMachine("unknown-recipe")).toThrowError("Recipe unknown-recipe was not found")
+    })
+
+    test("set crafting speed and productivity", () => {
+        const machine = createMachine("iron-gear-wheel", {
+            crafting_speed: 1,
+            productivity: 100,
+        })
+        expect(machine.metadata.crafting_speed).toBe(1)
+        expect(machine.metadata.productivity).toBe(100)
+    })
+
+    test("minimum overload multiplier is 2", () => {
+        const machine = createMachine("iron-gear-wheel", {
+            crafting_speed: 0.0001,
+        })
+        expect(machine.overload_multiplier.overload_multiplier).toBe(2)
+    })
+
+    test("sets overload multiplier based on crafting speed", () => {
+        const machine = createMachine("iron-gear-wheel", {
+            crafting_speed: 2,
+        })
+        expect(machine.overload_multiplier.overload_multiplier).toBe(6)
+    })
+
+    test("throws an error if crafting speed is 0 or negative", () => {
+        expect(() => createMachine("iron-gear-wheel", { crafting_speed: 0 })).toThrow()
+        expect(() => createMachine("iron-gear-wheel", { crafting_speed: -1 })).toThrow()
+    })
+})
+
+describe("Machine Entity - Input Consumption Rates", () => {
+    test("amount per craft is based on recipe ingredient amount", () => {
+        const machine = createMachine("iron-gear-wheel", {
+            crafting_speed: 1,
+        })
+        const ironPlateInput = machine.inputs.get("iron-plate")
+        expect(ironPlateInput).toBeDefined()
+        expect(ironPlateInput!.consumption_rate.amount_per_craft).toBe(machine.metadata.recipe.inputsPerCraft.get("iron-plate")!.amount)
+    })
+
+    test("calculates consumption rates per ingredient", () => {
+        const machine = createMachine("iron-gear-wheel", {
+            crafting_speed: 1,
+        })
+        const iron_plate_input = machine.inputs.get("iron-plate")
+        expect(iron_plate_input).toBeDefined()
+        const expected_rate_per_second = fraction(iron_plate_input!.ingredient.amount).divide(machine.metadata.recipe.energy_required)
+        expect(iron_plate_input!.consumption_rate.rate_per_second).toStrictEqual(expected_rate_per_second)
+        const expected_rate_per_tick = expected_rate_per_second.divide(60)
+        expect(iron_plate_input!.consumption_rate.rate_per_tick).toStrictEqual(expected_rate_per_tick)
+    })
+
+    test("calculates consumption rates per ingredient based on crafting speed", () => {
+        const crafting_speed = 30;
+        const machine = createMachine("iron-gear-wheel", {
+            crafting_speed: crafting_speed,
+        })
+        const iron_plate_input = machine.inputs.get("iron-plate")
+        expect(iron_plate_input).toBeDefined()
+        const expected_rate_per_second = fraction(iron_plate_input!.ingredient.amount).divide(machine.metadata.recipe.energy_required).multiply(crafting_speed)
+        expect(iron_plate_input!.consumption_rate.rate_per_second).toStrictEqual(expected_rate_per_second)
+        const expected_rate_per_tick = expected_rate_per_second.divide(60)
+        expect(iron_plate_input!.consumption_rate.rate_per_tick).toStrictEqual(expected_rate_per_tick)
+    })
+
+    test("handles recipes with multiple ingredients", () => {
+        const machine = createMachine("advanced-circuit", {
+            crafting_speed: 1,
+        })
+        const ingredients = Array.from(machine.inputs.values()).map(input => input.ingredient.name)
+        expect(ingredients).toContain("electronic-circuit")
+        expect(ingredients).toContain("plastic-bar")
+        expect(ingredients).toContain("copper-cable")
+
+        const electronicCircuitInput = machine.inputs.get("electronic-circuit")
+        expect(electronicCircuitInput).toBeDefined()
+        const expectedElectronicCircuitRatePerSecond = fraction(electronicCircuitInput!.ingredient.amount).divide(machine.metadata.recipe.energy_required)
+        expect(electronicCircuitInput!.consumption_rate.rate_per_second).toStrictEqual(expectedElectronicCircuitRatePerSecond)
+
+        const plasticBarInput = machine.inputs.get("plastic-bar")
+        expect(plasticBarInput).toBeDefined()
+        const expectedPlasticBarRatePerSecond = fraction(plasticBarInput!.ingredient.amount).divide(machine.metadata.recipe.energy_required)
+        expect(plasticBarInput!.consumption_rate.rate_per_second).toStrictEqual(expectedPlasticBarRatePerSecond)
+
+        const copperCableInput = machine.inputs.get("copper-cable")
+        expect(copperCableInput).toBeDefined()
+        const expectedCopperCableRatePerSecond = fraction(copperCableInput!.ingredient.amount).divide(machine.metadata.recipe.energy_required)
+        expect(copperCableInput!.consumption_rate.rate_per_second).toStrictEqual(expectedCopperCableRatePerSecond)
+    })
+
+    test("productivity does not affect input consumption rates", () => {
+        const machine = createMachine("iron-gear-wheel", {
+            crafting_speed: 1,
+            productivity: 50,
+        })
+        const ironPlateInput = machine.inputs.get("iron-plate")
+        expect(ironPlateInput).toBeDefined()
+        const expected_rate_per_second = fraction(ironPlateInput!.ingredient.amount).divide(machine.metadata.recipe.energy_required)
+        expect(ironPlateInput!.consumption_rate.rate_per_second).toStrictEqual(expected_rate_per_second)
+    })
+})
+
+describe("Machine Entity - Output Production Rates", () => {
+    test("amount per craft is based on recipe output amount and productivity", () => {
+        const productivity = 50;
+        const machine = createMachine("iron-gear-wheel", {
+            crafting_speed: 1,
+            productivity: productivity,
+        })
+        const output = machine.output;
+        const baseAmount = machine.metadata.recipe.output.amount;
+        const expectedAmountPerCraft = fraction(baseAmount).multiply(1 + productivity / 100);
+        expect(output.amount_per_craft).toStrictEqual(expectedAmountPerCraft);
+    })
+
+    test("calculates production rates", () => {
+        const productivity = 100;
+        const machine = createMachine("iron-gear-wheel", {
+            crafting_speed: 1,
+            productivity: productivity,
+        })
+        const output = machine.output;
+        const baseAmount = machine.metadata.recipe.output.amount;
+        const expectedAmountPerCraft = Math.floor(baseAmount * (1 + productivity / 100));
+        const expected_rate_per_second = fraction(expectedAmountPerCraft).divide(machine.metadata.recipe.energy_required)
+        expect(output.production_rate.rate_per_second).toStrictEqual(expected_rate_per_second)
+        const expected_rate_per_tick = expected_rate_per_second.divide(60)
+        expect(output.production_rate.rate_per_tick).toStrictEqual(expected_rate_per_tick)
+    })
+})

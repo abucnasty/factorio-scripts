@@ -1,5 +1,5 @@
 import { fraction } from "fractionability"
-import { OpenRange } from "../data-types/range";
+import { OpenRange } from "../data-types/open-range";
 import { MachineState, MachineStatus } from "../state/machine-state";
 import { EntityId, Inserter } from "../entities";
 import { Duration } from "../data-types";

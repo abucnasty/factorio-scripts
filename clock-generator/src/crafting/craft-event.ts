@@ -1,4 +1,4 @@
-import { OpenRange } from "../data-types/range";
+import { OpenRange } from "../data-types/open-range";
 import { MachineState } from "../state/machine-state";
 
 export interface CraftEvent {

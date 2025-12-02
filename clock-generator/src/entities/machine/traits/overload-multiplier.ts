@@ -1,3 +1,5 @@
+import assert from "assert";
+
 // 1.166 is a magic number representing the maximum number of seconds it takes for a base game inserter to do one cycle.
 // the calculated overload multiplier is the number of crafts we can complete during one inserter full swing + 1
 const dynamic_recipe_overload_factor = 1.166;
@@ -10,6 +12,8 @@ export interface OverloadMultiplier {
 }
 
 function fromCraftingSpeed(craftingSpeed: number, energyRequired: number): OverloadMultiplier {
+
+    assert(craftingSpeed > 0, "Crafting speed must be greater than zero");
 
     const overloadMultiplier = Math.ceil(dynamic_recipe_overload_factor / (energyRequired / craftingSpeed)) + 1;
 

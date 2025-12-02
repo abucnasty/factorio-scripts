@@ -2,7 +2,7 @@ import Fraction, { fraction } from "fractionability";
 import { MachineState } from "../state/machine-state";
 import assert from "assert";
 import { lcm } from "mathjs"
-import { OpenRange } from "../data-types/range";
+import { OpenRange } from "../data-types/open-range";
 import { CraftingCycle } from "../crafting/crafting-cycle";
 import { TargetProductionRateConfig } from "../config/config";
 import { Inserter, Machine, ProductionRate, ReadableInserterRegistry } from "../entities";
