@@ -98,6 +98,7 @@ describe("transitions (belt to machine)", () => {
                 sink_state: testContext.sinkState,
                 pickup_mode: pickup_mode,
                 disabled_mode: mock(),
+                tick_provider: mock(),
                 enable_control: AlwaysEnabledControl,
             });
 
@@ -117,6 +118,7 @@ describe("transitions (belt to machine)", () => {
                 sink_state: testContext.sinkState,
                 pickup_mode: pickup_mode,
                 disabled_mode: mock(),
+                tick_provider: mock(),
                 enable_control: AlwaysEnabledControl,
             });
 
@@ -139,6 +141,7 @@ describe("transitions (belt to machine)", () => {
                 sink_state: testContext.sinkState,
                 pickup_mode: pickup_mode,
                 disabled_mode: mock(),
+                tick_provider: mock(),
                 enable_control: AlwaysEnabledControl
             });
 

@@ -31,6 +31,14 @@ export class BeltInventoryState implements WritableInventoryState {
         });
     }
 
+    public getItem(itemName: string): InventoryItem | null {
+        return this.inventoryState.getItem(itemName);
+    }
+
+    public getItemOrThrow(itemName: string): InventoryItem {
+        return this.inventoryState.getItemOrThrow(itemName);
+    }
+
     public hasQuantity(itemName: string, amount: number): boolean {
         return this.inventoryState.hasQuantity(itemName, amount);
     }

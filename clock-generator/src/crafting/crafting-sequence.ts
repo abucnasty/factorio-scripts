@@ -3,13 +3,13 @@ import { MachineState } from "../state/machine-state";
 import { EntityId } from "../entities";
 import { Duration } from "../data-types";
 import { InserterState, InserterStatus } from "../state/inserter-state";
-import { MachineControlLogic } from "../control-logic/machine-control-logic";
 import { CompositeControlLogic } from "../control-logic/composite-control-logic";
 import { MutableTickProvider } from "../control-logic/current-tick-provider";
 import chalk from "chalk"
 import { ItemName } from "../data/factorio-data-types";
 import { TickControlLogic } from "../control-logic/tick-control-logic";
 import { InserterStateMachine } from "../control-logic/inserter/inserter-state-machine";
+import { MachineStateMachine } from "../control-logic/machine/machine-state-machine";
 
 export interface CraftEvent {
     machine_state: Readonly<MachineState>;
@@ -53,7 +53,7 @@ function createEmpty(): CraftingSequence {
 
 
 function simulate(args: {
-    machineControlLogic: MachineControlLogic,
+    machine_state_machine: MachineStateMachine,
     inserterStateMachines: InserterStateMachine[],
     tickProvider: MutableTickProvider,
     maxTicks?: number,
@@ -63,12 +63,12 @@ function simulate(args: {
     }>,
 }): CraftingSequence {
 
-    const { machineControlLogic, inserterStateMachines, tickProvider, maxTicks = 1800, debug } = args;
+    const { machine_state_machine, inserterStateMachines, tickProvider, maxTicks = 1800, debug } = args;
     const crafts: CraftEvent[] = [];
     const snapshots_per_tick: TickSnapshot[] = [];
     const inserter_active_ranges: Map<EntityId, InserterTransfer[]> = new Map();
 
-    const primaryMachineState = machineControlLogic.state;
+    const primaryMachineState = machine_state_machine.machine_state;
 
     let last_craft_end_tick_inclusive: number | null = null;
     let craft_index: number = 1;
@@ -153,33 +153,35 @@ function simulate(args: {
         })
     });
 
-    machineControlLogic.addStateChangeListener((data) => {
-        const id = data.state.machine.entity_id.id;
-        const new_status = data.status.to;
-        let message = `${id} \t status=${new_status}`;
-        debugLog(chalk.yellow(message));
+    machine_state_machine.addPlugin({
+        onTransition(fromMode, transition) {
+            const state = machine_state_machine.machine_state;
+            const id = state.machine.entity_id.id;
+            const new_status = transition.toMode.status;
+            debugLog(chalk.yellow(`${id} \t ${fromMode.status} -> ${new_status}`));
+        }
     });
 
-    machineControlLogic.addCraftListener((data) => {
-        const id = data.state.machine.entity_id.id;
+    machine_state_machine.addCraftEventPlugin((craftIndex, state) => {
+        const id = state.machine.entity_id.id;
         let message = `${id} \t craft event #${craft_index}:`;
 
-        data.state.machine.inputs.forEach((input) => {
-            const input_quantity = data.state.inventoryState.getQuantity(input.ingredient.name);
+        state.machine.inputs.forEach((input) => {
+            const input_quantity = state.inventoryState.getQuantity(input.ingredient.name);
             message += ` \t "${input.ingredient.name}"=${input_quantity}`;
         });
 
-        const output_quantity = data.state.inventoryState.getQuantity(data.state.machine.output.ingredient.name);
-        const output_name = data.state.machine.output.ingredient.name;
+        const output_quantity = state.inventoryState.getQuantity(state.machine.output.ingredient.name);
+        const output_name = state.machine.output.ingredient.name;
         message += ` \t "${output_name}"=${output_quantity}`;
         debugLog(chalk.green(message));
         const tick = tickProvider.getCurrentTick();
 
         const last_craft_tick = last_craft_end_tick_inclusive ??
-            (tick - Math.ceil(data.state.machine.crafting_rate.ticks_per_craft.toDecimal()))
+            (tick - Math.ceil(state.machine.crafting_rate.ticks_per_craft.toDecimal()))
         crafts.push({
             craft_index: craft_index,
-            machine_state: data.state,
+            machine_state: MachineState.clone(state),
             tick_range: OpenRange.from(
                 last_craft_tick,
                 tick
@@ -187,12 +189,12 @@ function simulate(args: {
         });
         last_craft_end_tick_inclusive = tick;
         craft_index++;
-    });
+    })
 
     const controlLogic = new CompositeControlLogic([
         new TickControlLogic(tickProvider),
         ...inserterStateMachines,
-        machineControlLogic,
+        machine_state_machine,
     ])
 
     // arbitrary end condition to prevent infinite loops

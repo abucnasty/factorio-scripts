@@ -20,7 +20,6 @@ import {
     EntityState,
     ReadableEntityStateRegistry,
 } from './state';
-import { MachineControlLogic } from './control-logic/machine-control-logic';
 import { fraction } from 'fractionability';
 import { Duration, OpenRange } from './data-types';
 import { AlwaysEnabledControl, createPeriodicEnableControl, EnableControl, PeriodicEnableControl } from './control-logic/enable-control';
@@ -32,6 +31,7 @@ import { encodeBlueprintFile } from './blueprints/serde';
 import { TargetProductionRate } from './crafting/target-production-rate';
 import { InserterStateMachine } from './control-logic/inserter/inserter-state-machine';
 import chalk from 'chalk';
+import { MachineStateMachine } from './control-logic/machine/machine-state-machine';
 
 
 const config: Config = EXAMPLES.LOGISTIC_SCIENCE_SHARED_INSERTER_CONFIG;
@@ -145,7 +145,7 @@ const main = () => {
     // TODO: figure out a way to compute the total number of periods to simulate...
     // for utility science, 12 seems stable
     // for logistics science, 1 period is stable
-    const multiplier = 6;
+    const multiplier = 1;
     const maxTicks = totalPeriod.ticks * multiplier
 
     const testCraftingSequence = testing(
@@ -210,9 +210,7 @@ function planning(
         }));
 
     const craftingSequence = CraftingSequence.simulate({
-        machineControlLogic: new MachineControlLogic(
-            stateRegistry.getStateByEntityIdOrThrow(primaryMachine.entity_id),
-        ),
+        machine_state_machine: MachineStateMachine.forMachineId(primaryMachine.entity_id, stateRegistry),
         inserterStateMachines: stateMachines,
         tickProvider: tick_provider,
         debug: {
@@ -363,9 +361,7 @@ function testing(
     });
 
     const craftingSequence = CraftingSequence.simulate({
-        machineControlLogic: new MachineControlLogic(
-            stateRegistry.getStateByEntityIdOrThrow(primaryMachine.entity_id),
-        ),
+        machine_state_machine: MachineStateMachine.forMachineId(primaryMachine.entity_id, stateRegistry),
         inserterStateMachines: inputInserterControlLogic.concat([outputInserterControlLogic]),
         tickProvider: tickProvider,
         maxTicks: maxTicks,

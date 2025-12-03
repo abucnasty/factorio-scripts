@@ -2,12 +2,14 @@ import { ItemName } from "../data/factorio-data-types";
 import { MachineInput } from "../entities";
 
 export interface InventoryItem {
-    item_name: string;
+    readonly item_name: string;
     quantity: number;
 }
 
 
 export interface ReadableInventoryState {
+    getItem(itemName: string): InventoryItem | null;
+    getItemOrThrow(itemName: string): InventoryItem;
     getQuantity(itemName: string): number;
     hasQuantity(itemName: string, amount: number): boolean;
     getItems(): InventoryItem[];
@@ -54,6 +56,22 @@ export class InventoryState implements WritableInventoryState {
 
     constructor(initialInventory?: Record<string, number>) {
         this.inventory = new Map(Object.entries(initialInventory || {}));
+    }
+
+    public getItem(itemName: string): InventoryItem | null {
+        const quantity = this.inventory.get(itemName);
+        if (quantity === undefined) {
+            return null;
+        }
+        return { item_name: itemName, quantity };
+    }
+
+    public getItemOrThrow(itemName: string): InventoryItem {
+        const item = this.getItem(itemName);
+        if (item === null) {
+            throw new Error(`Item not found in inventory: ${itemName}`);
+        }
+        return item;
     }
 
     public getQuantity(itemName: string): number {

@@ -27,6 +27,7 @@ export class ModeStateMachine<M extends Mode> implements ModeProvider<M> {
     public executeForTick(): void {
         this.current = this.evaluateTransition()
         this.current.executeForTick();
+        this.executePlugins();
     }
 
     private evaluateTransition(): M {
@@ -55,6 +56,12 @@ export class ModeStateMachine<M extends Mode> implements ModeProvider<M> {
     private notifiyPlugins(fromMode: M, transition: Transition<M>): void {
         for (const plugin of this.plugins) {
             plugin.onTransition(fromMode, transition);
+        }
+    }
+
+    private executePlugins() {
+        for (const plugin of this.plugins) {
+            plugin.executeForTick && plugin.executeForTick();
         }
     }
 
