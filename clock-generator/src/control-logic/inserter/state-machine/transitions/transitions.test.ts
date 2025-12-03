@@ -8,6 +8,7 @@ import { InserterAnimation } from "../../../../entities/inserter/inserter-animat
 import { InserterAnimationOverrideConfig } from "../../../../config/config"
 import { InserterPickupMode } from "../modes"
 import { ModeTransition } from "../../../mode";
+import { AlwaysEnabledControl } from "../../../enable-control";
 
 
 describe("transitions (belt to machine)", () => {
@@ -96,6 +97,8 @@ describe("transitions (belt to machine)", () => {
                 source_state: testContext.sourceState,
                 sink_state: testContext.sinkState,
                 pickup_mode: pickup_mode,
+                disabled_mode: mock(),
+                enable_control: AlwaysEnabledControl,
             });
 
             const nextMode = evaluator.evaluateTransition();
@@ -113,6 +116,8 @@ describe("transitions (belt to machine)", () => {
                 source_state: testContext.sourceState,
                 sink_state: testContext.sinkState,
                 pickup_mode: pickup_mode,
+                disabled_mode: mock(),
+                enable_control: AlwaysEnabledControl,
             });
 
             const machineState = testContext.sinkState as MachineState;
@@ -133,6 +138,8 @@ describe("transitions (belt to machine)", () => {
                 source_state: testContext.sourceState,
                 sink_state: testContext.sinkState,
                 pickup_mode: pickup_mode,
+                disabled_mode: mock(),
+                enable_control: AlwaysEnabledControl
             });
 
             const machineState = testContext.sinkState as MachineState;
