@@ -8,13 +8,13 @@ export const InserterStatus = {
     IDLE: "IDLE",
     PICKUP: "GRAB",
     DROP_OFF: "DROP",
-    SWING_TO_SINK: "SWING",
+    SWING: "SWING",
+    /** @deprecated */
     SWING_TO_SOURCE: "SWING_BACK",
     /**
      * Disabled by controller behavior
      */
-    DISABLED: "DISABLED",
-    ENABLED: "ENABLED",
+    DISABLED: "DISABLED"
 } as const;
 
 export type InserterStatus = typeof InserterStatus[keyof typeof InserterStatus];

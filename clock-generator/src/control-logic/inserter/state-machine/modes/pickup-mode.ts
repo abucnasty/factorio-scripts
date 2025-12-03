@@ -1,38 +1,41 @@
-import { ItemName } from "../../data/factorio-data-types";
-import { BeltState } from "../../state/belt-state";
-import { EntityState } from "../../state/entity-state";
-import { ReadableEntityStateRegistry } from "../../state/entity-state-registry";
-import { InserterState, InserterStatus } from "../../state/inserter-state";
-import { MachineState } from "../../state/machine-state";
-import { InserterStateControlLogic } from "./inserter-state-control-logic";
-import assert from "assert";
+import { ItemName } from "../../../../data/factorio-data-types";
+import { BeltState, EntityState, InserterState, InserterStatus, MachineState, ReadableEntityStateRegistry } from "../../../../state";
+import { InserterMode } from "./inserter-mode";
 
-// TODO: support a latching mechanism for dropping a latched quantity of items
-export class InserterPickupControlLogic implements InserterStateControlLogic {
+export class InserterPickupMode implements InserterMode {
 
-    constructor(
-        private readonly inserterState: InserterState,
-        private readonly entityStateRegistry: ReadableEntityStateRegistry,
-    ) { }
+    public static create(args: {
+        inserterState: InserterState,
+        sourceState: EntityState,
+        sinkState: EntityState,
+    }): InserterPickupMode {
+        return new InserterPickupMode(
+            args.inserterState,
+            args.sourceState,
+            args.sinkState,
+        );
+    }
+
+    public readonly status = InserterStatus.PICKUP;
 
     private current_tick: number = 0;
 
-    public onEnter(): void {
-        // no-op
-    }
+    constructor(
+        private readonly inserterState: InserterState,
+        private readonly sourceEntityState: EntityState,
+        private readonly sinkEntityState: EntityState,
+    ) { }
 
-    public onExit(): void {
+    public onEnter(fromMode: InserterMode): void {
         this.current_tick = 0;
     }
 
+    public onExit(toMode: InserterMode): void {
+        // No action needed on exit
+    }
+
     public executeForTick(): void {
-
-        assert(
-            this.inserterState.status === InserterStatus.PICKUP,
-            `InserterPickupControlLogic can only be executed in PICKUP state, current state: ${this.inserterState.status}`
-        );
-
-        if (!canPickupFromEntity(this.inserterState, this.source_entity_state)) {
+        if (!canPickupFromEntity(this.inserterState, this.sourceEntityState)) {
             // cannot pickup, go idle
             this.inserterState.status = InserterStatus.IDLE;
             return;
@@ -40,7 +43,7 @@ export class InserterPickupControlLogic implements InserterStateControlLogic {
 
         this.current_tick += 1;
 
-        const source = this.source_entity_state;
+        const source = this.sourceEntityState;
         if (EntityState.isBelt(source)) {
             this.pickupFromBelt(this.inserterState, source);
         }
@@ -49,17 +52,17 @@ export class InserterPickupControlLogic implements InserterStateControlLogic {
         }
 
         if (this.heldItemQuantity() === this.inserterState.inserter.metadata.stack_size) {
-            this.inserterState.status = InserterStatus.SWING_TO_SINK;
+            this.inserterState.status = InserterStatus.SWING;
             return;
         }
 
-        if(this.hasPickupDurationElapsed()) {
+        if (this.hasPickupDurationElapsed()) {
             if (this.heldItemQuantity() < this.inserterState.inserter.metadata.stack_size) {
                 this.inserterState.status = InserterStatus.PICKUP;
                 return;
             }
             // pickup complete
-            this.inserterState.status = InserterStatus.SWING_TO_SINK;
+            this.inserterState.status = InserterStatus.SWING;
             return;
         }
     }
@@ -69,13 +72,13 @@ export class InserterPickupControlLogic implements InserterStateControlLogic {
     }
 
     private pickupFromBelt(inserter_state: InserterState, source: BeltState): void {
-        
-        const sink = this.sink_entity_state;
 
-        if(!EntityState.isMachine(sink)) {
+        const sink = this.sinkEntityState;
+
+        if (!EntityState.isMachine(sink)) {
             throw new Error("Inserter sink is not a machine");
         }
-        
+
         const held_item = inserter_state.held_item
 
         if (held_item) {
@@ -86,7 +89,7 @@ export class InserterPickupControlLogic implements InserterStateControlLogic {
         }
 
         for (const item_name of inserter_state.inserter.filtered_items) {
-            if(!MachineState.machineInputIsBlocked(sink, item_name)) {
+            if (!MachineState.machineInputIsBlocked(sink, item_name)) {
                 inserter_state.held_item = { item_name: item_name, quantity: 4 };
                 inserter_state.inventoryState.addQuantity(item_name, 4);
                 return;
@@ -104,11 +107,11 @@ export class InserterPickupControlLogic implements InserterStateControlLogic {
             state.inserter.metadata.stack_size - held_item.quantity,
             output_quantity
         );
-        
+
         if (pickup_quantity <= 0) {
             return;
         }
-        
+
         state.held_item = { item_name: held_item.item_name, quantity: held_item.quantity + pickup_quantity };
         state.inventoryState.addQuantity(output_item_name, pickup_quantity);
         source.inventoryState.removeQuantity(output_item_name, pickup_quantity);
@@ -116,14 +119,6 @@ export class InserterPickupControlLogic implements InserterStateControlLogic {
 
     private hasPickupDurationElapsed(): boolean {
         return this.current_tick >= this.inserterState.inserter.animation.pickup.ticks;
-    }
-
-    private get source_entity_state(): EntityState {
-        return this.entityStateRegistry.getStateByEntityIdOrThrow(this.inserterState.inserter.source.entity_id);
-    }
-
-    private get sink_entity_state(): EntityState {
-        return this.entityStateRegistry.getStateByEntityIdOrThrow(this.inserterState.inserter.sink.entity_id);
     }
 }
 

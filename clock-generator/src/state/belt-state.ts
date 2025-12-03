@@ -6,3 +6,16 @@ export interface BeltState extends EntityState {
     belt: Belt
     inventoryState: BeltInventoryState
 }
+
+
+function fromBelt(belt: Belt): BeltState {
+    return {
+        entity_id: belt.entity_id,
+        belt: belt,
+        inventoryState: BeltInventoryState.fromBelt(belt),
+    }
+}
+
+export const BeltState = {
+    create: fromBelt,
+}

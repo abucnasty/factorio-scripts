@@ -1,17 +1,15 @@
-import { fraction } from "fractionability"
 import { OpenRange } from "../data-types/open-range";
-import { MachineState, MachineStatus } from "../state/machine-state";
-import { EntityId, Inserter } from "../entities";
+import { MachineState } from "../state/machine-state";
+import { EntityId } from "../entities";
 import { Duration } from "../data-types";
-import { InserterControlLogic } from "../control-logic/inserter/inserter-control-logic";
 import { InserterState, InserterStatus } from "../state/inserter-state";
 import { MachineControlLogic } from "../control-logic/machine-control-logic";
 import { CompositeControlLogic } from "../control-logic/composite-control-logic";
 import { MutableTickProvider } from "../control-logic/current-tick-provider";
 import chalk from "chalk"
-import { TargetProductionRate } from "./target-production-rate";
 import { ItemName } from "../data/factorio-data-types";
 import { TickControlLogic } from "../control-logic/tick-control-logic";
+import { InserterStateMachine } from "../control-logic/inserter/state-machine/inserter-state-machine";
 
 export interface CraftEvent {
     machine_state: Readonly<MachineState>;
@@ -56,7 +54,7 @@ function createEmpty(): CraftingSequence {
 
 function simulate(args: {
     machineControlLogic: MachineControlLogic,
-    inserterControlLogic: InserterControlLogic[],
+    inserterStateMachines: InserterStateMachine[],
     tickProvider: MutableTickProvider,
     maxTicks?: number,
     debug?: Partial<{
@@ -65,7 +63,7 @@ function simulate(args: {
     }>,
 }): CraftingSequence {
 
-    const { machineControlLogic, inserterControlLogic, tickProvider, maxTicks = 1800, debug } = args;
+    const { machineControlLogic, inserterStateMachines, tickProvider, maxTicks = 1800, debug } = args;
     const crafts: CraftEvent[] = [];
     const snapshots_per_tick: TickSnapshot[] = [];
     const inserter_active_ranges: Map<EntityId, InserterTransfer[]> = new Map();
@@ -89,64 +87,67 @@ function simulate(args: {
             messageOutput += ` (${relativeTick.toString().padStart(3, '0')})`
         }
 
-        
+
 
         messageOutput += `: ${message}`
         console.log(messageOutput);
     }
 
-    inserterControlLogic.forEach(logic => {
-        logic.registerStateChangeListener((data) => {
-            const inserter = data.state.inserter;
-            const id = inserter.entity_id.id;
-            const new_status = data.status.to;
-            let message = `${id} \t status=${new_status} \t`;
+    inserterStateMachines.forEach(stateMachine => {
+        stateMachine.addPlugin({
+            onTransition(fromMode, transition) {
+                const state = stateMachine.inserter_state;
+                const inserter = stateMachine.inserter_state.inserter;
+                const id = stateMachine.entity_id;
+                const new_status = transition.toMode.status;
+                let message = `${id} \t status=${new_status} \t`;
+                const held_item = state.held_item;
 
-            const { status } = data;
-            const held_item = data.state.held_item;
-
-            if (data.state.held_item) {
-                message += `held_item "${held_item?.item_name}"=${held_item?.quantity}`;
-            }
-
-            switch(status.to) {
-                case InserterStatus.DROP_OFF:
-                    debugLog(chalk.blueBright(message));
-                    break;
-                case InserterStatus.PICKUP:
-                    debugLog(chalk.blueBright(message));
-                    break;
-                default:
-                    debugLog(chalk.dim(message));
-                    break;
-            }
-
-            
-
-            if (status.from === InserterStatus.PICKUP) {
-                const ranges = inserter_active_ranges.get(inserter.entity_id) ?? []
-                const tick = tickProvider.getCurrentTick();
-                const { drop, pickup, rotation } = inserter.animation;
-
-                if (status.to === InserterStatus.SWING_TO_SINK) {
-                    ranges.push({
-                        item_name: data.state.held_item?.item_name ?? "unknown",
-                        tick_range: OpenRange.from(
-                            tick - pickup.ticks,
-                            tick + rotation.ticks + drop.ticks + rotation.ticks
-                        )
-                    });
+                if (held_item) {
+                    message += `held_item "${held_item?.item_name}"=${held_item?.quantity}`;
                 }
 
-                if (status.to === InserterStatus.IDLE) {
-                    ranges.push({
-                        item_name: data.state.held_item?.item_name ?? "unknown",
-                        tick_range: OpenRange.from(tick - pickup.ticks, tick)
-                    });
+                switch (transition.toMode.status) {
+                    case InserterStatus.DROP_OFF:
+                        debugLog(chalk.blueBright(message));
+                        break;
+                    case InserterStatus.PICKUP:
+                        debugLog(chalk.blueBright(message));
+                        break;
+                    default:
+                        debugLog(chalk.dim(message));
+                        break;
                 }
-                inserter_active_ranges.set(inserter.entity_id, ranges);
+            },
+        })
+
+        stateMachine.addPlugin({
+            onTransition(fromMode, transition) {
+                if (fromMode.status === InserterStatus.PICKUP) {
+                    const ranges = inserter_active_ranges.get(stateMachine.entity_id) ?? []
+                    const tick = tickProvider.getCurrentTick();
+                    const state = stateMachine.inserter_state;
+                    const { drop, pickup, rotation } = state.inserter.animation;
+
+                    if (transition.toMode.status === InserterStatus.SWING) {
+                        ranges.push({
+                            item_name: state.held_item?.item_name ?? "unknown",
+                            tick_range: OpenRange.from(
+                                tick - pickup.ticks,
+                                tick + rotation.ticks + drop.ticks + rotation.ticks
+                            )
+                        });
+                    }
+
+                    if (transition.toMode.status === InserterStatus.IDLE) {
+                        ranges.push({
+                            item_name: state.held_item?.item_name ?? "unknown",
+                            tick_range: OpenRange.from(tick - pickup.ticks, tick)
+                        });
+                    }
+                    inserter_active_ranges.set(state.inserter.entity_id, ranges);
+                }
             }
-            
         })
     });
 
@@ -172,7 +173,7 @@ function simulate(args: {
         debugLog(chalk.green(message));
         const tick = tickProvider.getCurrentTick();
 
-        const last_craft_tick = last_craft_end_tick_inclusive ?? 
+        const last_craft_tick = last_craft_end_tick_inclusive ??
             (tick - Math.ceil(data.state.machine.crafting_rate.ticks_per_craft.toDecimal()))
         crafts.push({
             craft_index: craft_index,
@@ -187,9 +188,9 @@ function simulate(args: {
     });
 
     const controlLogic = new CompositeControlLogic([
-        ...inserterControlLogic,
-        machineControlLogic,
         new TickControlLogic(tickProvider),
+        ...inserterStateMachines,
+        machineControlLogic,
     ])
 
     // arbitrary end condition to prevent infinite loops
@@ -198,7 +199,7 @@ function simulate(args: {
         if (tickProvider.getCurrentTick() > maxTicks) {
             break;
         }
-        
+
         const input_blocked: Record<string, boolean> = {};
         const machineStateSnapshot = MachineState.clone(primaryMachineState)
         primaryMachineState.machine.inputs.forEach((input) => {
@@ -213,7 +214,7 @@ function simulate(args: {
             tick: tickProvider.getCurrentTick(),
             input_blocked: input_blocked,
             inserter_states: new Map(
-                inserterControlLogic.map(it => [it.inserterState.entity_id, InserterState.clone(it.inserterState)])
+                inserterStateMachines.map(it => [it.entity_id, InserterState.clone(it.inserter_state)])
             )
         })
     }

@@ -20,7 +20,6 @@ import {
     EntityState,
     ReadableEntityStateRegistry,
 } from './state';
-import { InserterControlLogic } from './control-logic/inserter/inserter-control-logic';
 import { MachineControlLogic } from './control-logic/machine-control-logic';
 import { fraction } from 'fractionability';
 import { Duration, OpenRange } from './data-types';
@@ -31,6 +30,8 @@ import { Position, SignalId } from './blueprints/components';
 import { FactorioBlueprint, BlueprintBuilder } from './blueprints/blueprint';
 import { encodeBlueprintFile } from './blueprints/serde';
 import { TargetProductionRate } from './crafting/target-production-rate';
+import { InserterStateMachine } from './control-logic/inserter/state-machine/inserter-state-machine';
+import chalk from 'chalk';
 
 
 const config: Config = EXAMPLES.UTILITY_SCIENCE_CONFIG;
@@ -108,7 +109,9 @@ const main = () => {
         stateRegistry
     );
 
-    // printCraftingSequence(craftingSequence, entityRegistry);
+    console.log(chalk.green("Planning Phase Complete:"));
+    printCraftingSequence(planningSequence, entityRegistry);
+    printCraftSnapshots(planningSequence)
 
 
     // output inserter is going to be throttled to only pull out items at a fixed rate
@@ -134,7 +137,7 @@ const main = () => {
         );
         inputInserterEnableControl.set(
             inputInserter.entity_id,
-            AlwaysEnabledControl,
+            enableControl,
         );
     });
 
@@ -144,11 +147,6 @@ const main = () => {
     // for logistics science, 1 period is stable
     const multiplier = 12;
     const maxTicks = totalPeriod.ticks * multiplier
-
-    console.log({
-        multiplier,
-        recipe: primaryMachine.metadata.recipe,
-    })
 
     const testCraftingSequence = testing(
         entityRegistry,
@@ -200,17 +198,26 @@ function planning(
         entityRegistry.getAll().map(entity => stateFactory.createStateForEntity(entity.entity_id))
     );
 
-    const inputInserterControlLogic = stateRegistry.getAllStates()
+    const tick_provider = TickProvider.mutable()
+    const stateMachines = stateRegistry.getAllStates()
         .filter(EntityState.isInserter)
         .filter(it => it.inserter.sink.entity_id.id === primaryMachine.entity_id.id)
-        .map(it => new InserterControlLogic(it, stateRegistry, AlwaysEnabledControl));
+        .map(it => InserterStateMachine.forInserterId({
+            entity_id: it.entity_id,
+            entity_state_registry: stateRegistry,
+            enable_control: AlwaysEnabledControl,
+            tick_provider: tick_provider,
+        }));
 
     const craftingSequence = CraftingSequence.simulate({
         machineControlLogic: new MachineControlLogic(
             stateRegistry.getStateByEntityIdOrThrow(primaryMachine.entity_id),
         ),
-        inserterControlLogic: inputInserterControlLogic,
-        tickProvider: TickProvider.mutable(),
+        inserterStateMachines: stateMachines,
+        tickProvider: tick_provider,
+        debug: {
+            enabled: true,
+        }
     });
 
     return craftingSequence;
@@ -239,7 +246,7 @@ function createInputInserterControlLogicFromPlan(
         const start_mod = transfer.tick_range.start_inclusive + start_offset;
         const end_mod = transfer.tick_range.end_inclusive + start_offset + buffer;
         return OpenRange.from(
-            0,
+            start_mod,
             totalPeriod.ticks,
         );
     });
@@ -335,7 +342,12 @@ function testing(
     const inputInserterControlLogic = stateRegistry.getAllStates()
         .filter(EntityState.isInserter)
         .filter(it => it.inserter.sink.entity_id.id === primaryMachine.entity_id.id)
-        .map(it => new InserterControlLogic(it, stateRegistry, inputInserterEnableControl.get(it.inserter.entity_id) ?? AlwaysEnabledControl));
+        .map(it => InserterStateMachine.forInserterId({
+            entity_id: it.entity_id,
+            entity_state_registry: stateRegistry,
+            enable_control: inputInserterEnableControl.get(it.inserter.entity_id) ?? AlwaysEnabledControl,
+            tick_provider: tickProvider,
+        }));
 
     const outputInserter = stateRegistry.getAllStates()
         .filter(EntityState.isInserter)
@@ -343,17 +355,18 @@ function testing(
 
     assert(outputInserter != undefined, `No output inserter state found for primary machine with id ${primaryMachine.entity_id}`);
 
-    const outputInserterControlLogic = new InserterControlLogic(
-        outputInserter,
-        stateRegistry,
-        outputInserterEnableControl
-    );
+    const outputInserterControlLogic = InserterStateMachine.forInserterId({
+        entity_id: outputInserter.inserter.entity_id,
+        entity_state_registry: stateRegistry,
+        enable_control: outputInserterEnableControl,
+        tick_provider: tickProvider,
+    });
 
     const craftingSequence = CraftingSequence.simulate({
         machineControlLogic: new MachineControlLogic(
             stateRegistry.getStateByEntityIdOrThrow(primaryMachine.entity_id),
         ),
-        inserterControlLogic: inputInserterControlLogic.concat([outputInserterControlLogic]),
+        inserterStateMachines: inputInserterControlLogic.concat([outputInserterControlLogic]),
         tickProvider: tickProvider,
         maxTicks: maxTicks,
         debug: {
@@ -386,14 +399,13 @@ function refinement(args: {
     }
 
     const refined_transfers = new Map<EntityId, InserterTransfer[]>();
-    const amount_per_craft = outputMachine.output.amount_per_craft;
+    const ticks_per_craft = outputMachine.crafting_rate.ticks_per_craft;
 
-    let output_buffer = Math.ceil(amount_per_craft.toDecimal())
+    let output_buffer = Math.ceil(output_inserter.animation.total.ticks / 2);
 
     finalCraftingSequence.inserter_active_ranges.forEach((transfers, inserterId) => {
-        const input_buffer = 0;
         
-        if (inserterId === output_inserter.entity_id) {
+        if (inserterId.id === output_inserter.entity_id.id) {
             refined_transfers.set(inserterId, transfers.map(transfer => ({
                 item_name: transfer.item_name,
                 tick_range: OpenRange.from(
@@ -404,14 +416,25 @@ function refinement(args: {
             return;
         }
 
-
-        refined_transfers.set(inserterId, transfers.map(transfer => ({
+        const refined_transfer = transfers.map(transfer => ({
             item_name: transfer.item_name,
             tick_range: OpenRange.from(
                 transfer.tick_range.start_inclusive,
-                transfer.tick_range.end_inclusive + input_buffer,
+                transfer.tick_range.end_inclusive,
             )
-        })));
+        }))
+
+        const inserter: Inserter = entityRegistry.getEntityByIdOrThrow(inserterId);
+
+        const last_transfer = refined_transfer[refined_transfer.length - 1];
+
+        last_transfer.tick_range = OpenRange.from(
+            last_transfer.tick_range.start_inclusive,
+            last_transfer.tick_range.end_inclusive,
+        ) 
+
+
+        refined_transfers.set(inserterId, refined_transfer);
     })
 
 
@@ -432,6 +455,22 @@ function refinement(args: {
     return finalCraftingSequence
 }
 
+function printCraftSnapshots(craftingSequence: CraftingSequence) {
+    console.log("------------------------------")
+    console.log("craft snapshots:")
+    craftingSequence.craft_events.forEach((craft) => {
+        console.log(`Craft ${craft.craft_index}:`);
+        console.log(`- Craft Progress: ${craft.machine_state.craftingProgress.progress.toMixedNumber()}`);
+        console.log(`- Bonus Progress: ${craft.machine_state.bonusProgress.progress.toMixedNumber()}`);
+        console.log(`- Tick Range: [${craft.tick_range.start_inclusive}, ${craft.tick_range.end_inclusive}]`);
+        console.log(`- Machine Status: ${craft.machine_state.status}`);
+        craft.machine_state.inventoryState.getAllItems().forEach((item) => {
+            console.log(`  - Inventory: ${item.item_name} = ${item.quantity}`);
+        })
+    })
+    console.log("------------------------------")
+}
+
 function printCraftingSequence(
     craftingSequence: CraftingSequence,
     entityRegistry: EntityRegistry,
@@ -444,19 +483,6 @@ function printCraftingSequence(
     console.log(`Crafted ${total_crafted} ${config.target_output.recipe}`);
     console.log(`Simulated ${crafts_completed} crafts over ${craftingSequence.total_duration.ticks} ticks`);
     console.log(`Average items per second: ${(total_crafted / (craftingSequence.total_duration.seconds)).toFixed(2)}`);
-    console.log("------------------------------")
-    // console.log("craft snapshots:")
-    // craftingSequence.craft_events.forEach((craft) => {
-    //     console.log(`Craft ${craft.craft_index}:`);
-    //     console.log(`- Craft Progress: ${craft.machine_state.craftingProgress.progress.toMixedNumber()}`);
-    //     console.log(`- Bonus Progress: ${craft.machine_state.bonusProgress.progress.toMixedNumber()}`);
-    //     console.log(`- Tick Range: [${craft.tick_range.start_inclusive}, ${craft.tick_range.end_inclusive}]`);
-    //     console.log(`- Machine Status: ${craft.machine_state.status}`);
-    //     craft.machine_state.inventoryState.getAllItems().forEach((item) => {
-    //         console.log(`  - Inventory: ${item.item_name} = ${item.quantity}`);
-    //     })
-    // })
-
     console.log("------------------------------")
     craftingSequence.inserter_active_ranges!.forEach((transfers, entityId) => {
         const inserter: Inserter = entityRegistry.getEntityByIdOrThrow(entityId);

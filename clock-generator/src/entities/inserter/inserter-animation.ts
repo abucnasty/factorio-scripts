@@ -1,8 +1,5 @@
-import { Duration, OpenRange } from "../../data-types";
-import { EntityType } from "../entity-type";
+import { Duration } from "../../data-types";
 import { InserterAnimationMetadata } from "./metadata/animation";
-import { InserterSpec } from "./metadata/inserter-spec";
-import { InserterTargetEntityType } from "./metadata/inserter-target-type";
 
 export interface InserterAnimation {
     pickup: Duration

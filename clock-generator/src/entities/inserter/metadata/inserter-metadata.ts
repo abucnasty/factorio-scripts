@@ -1,12 +1,12 @@
 import { QualityIdType } from "../../../blueprints/components";
 import { INSERTER_SPECS } from "./inserter-spec";
 import { InserterType } from "./inserter-type";
-import { InserterTargetEntityType } from "./inserter-target-type";
 import { InserterStackSize } from "./stack-size";
 import assert from "assert"
 import { ItemName } from "../../../data/factorio-data-types";
 import { InserterAnimationMetadata } from "./animation";
 import { InserterAnimationOverrideConfig } from "../../../config/config";
+import { EntityType } from "../../entity-type";
 
 
 export interface InserterMetadata {
@@ -18,8 +18,8 @@ export interface InserterMetadata {
 }
 
 function create(
-    source: InserterTargetEntityType, 
-    target: InserterTargetEntityType, 
+    source: EntityType, 
+    sink: EntityType, 
     stackSize: number, 
     filters: ItemName[],
     overrides: InserterAnimationOverrideConfig
@@ -37,7 +37,7 @@ function create(
     const animationMetadata = InserterAnimationMetadata.create(
         definition,
         source,
-        target,
+        sink,
         overrides
     )
 

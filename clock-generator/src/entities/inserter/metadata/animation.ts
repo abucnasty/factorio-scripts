@@ -1,7 +1,7 @@
 import { InserterAnimationOverrideConfig } from "../../../config/config";
 import { Duration } from "../../../data-types";
+import { EntityType } from "../../entity-type";
 import { InserterSpec } from "./inserter-spec";
-import { InserterTargetEntityType } from "./inserter-target-type";
 
 
 export interface InserterAnimationMetadata {
@@ -10,10 +10,10 @@ export interface InserterAnimationMetadata {
     rotation_duration: Duration;
 }
 
-function fromSourceAndTarget(
+function fromSourceAndSink(
     meta: InserterSpec,
-    source: InserterTargetEntityType,
-    target: InserterTargetEntityType,
+    source: EntityType,
+    sink: EntityType,
     overrides: InserterAnimationOverrideConfig
 ): InserterAnimationMetadata {
     const animationMetadata: Partial<InserterAnimationMetadata> = {}
@@ -26,11 +26,11 @@ function fromSourceAndTarget(
         animationMetadata.pickup_duration = meta.machine.pickup;
     }
 
-    if (target === "belt") {
+    if (sink === "belt") {
         animationMetadata.drop_duration = meta.belt.drop;
     }
 
-    if (target === "machine") {
+    if (sink === "machine") {
         animationMetadata.drop_duration = meta.machine.drop;
     }
 
@@ -45,5 +45,5 @@ function fromSourceAndTarget(
 
 
 export const InserterAnimationMetadata = {
-    create: fromSourceAndTarget
+    create: fromSourceAndSink
 }
