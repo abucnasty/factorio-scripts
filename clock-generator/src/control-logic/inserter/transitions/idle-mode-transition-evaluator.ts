@@ -1,9 +1,10 @@
-import { EntityState, InserterState, MachineState } from "../../../state";
+import { EntityState, InserterState, InserterStatus, MachineState } from "../../../state";
 import { ModeTransition, ModeTransitionEvaluator } from "../../mode";
 import { InserterMode } from "../modes/inserter-mode";
 import { InserterPickupMode } from "../modes/pickup-mode";
 import { EnableControl } from "../../enable-control";
 import { InserterDisabledMode } from "../modes/disabled-mode";
+import { TickProvider } from "../../current-tick-provider";
 
 export class IdleModeTransitionEvaluator implements ModeTransitionEvaluator<InserterMode> {
 
@@ -13,6 +14,7 @@ export class IdleModeTransitionEvaluator implements ModeTransitionEvaluator<Inse
         sink_state: EntityState,
         pickup_mode: InserterPickupMode,
         disabled_mode: InserterDisabledMode,
+        tick_provider: TickProvider,
         enable_control: EnableControl,
     }): IdleModeTransitionEvaluator {
         return new IdleModeTransitionEvaluator(
@@ -21,6 +23,7 @@ export class IdleModeTransitionEvaluator implements ModeTransitionEvaluator<Inse
             args.sink_state,
             args.pickup_mode,
             args.disabled_mode,
+            args.tick_provider,
             args.enable_control,
         );
     }
@@ -31,14 +34,27 @@ export class IdleModeTransitionEvaluator implements ModeTransitionEvaluator<Inse
         private readonly sink_state: EntityState,
         private readonly pickup_mode: InserterPickupMode,
         private readonly disabled_mode: InserterDisabledMode,
+        private readonly tick_provider: TickProvider,
         private readonly enable_control: EnableControl,
     ) {}
 
-    public onEnter(fromMode: InserterMode): void {}
+    private next_evaluation_tick: number = 0;
+
+    public onEnter(fromMode: InserterMode): void {
+        // schedules evaluation on the next tick after being disabled to simulate the delay in circuits
+        if (fromMode.status === InserterStatus.DISABLED){
+            this.next_evaluation_tick = this.tick_provider.getCurrentTick() + 1;
+        }
+    }
 
     public onExit(toMode: InserterMode): void {}
 
     public evaluateTransition(): ModeTransition<InserterMode> {
+        const current_tick = this.tick_provider.getCurrentTick();
+        if (current_tick < this.next_evaluation_tick) {
+            return ModeTransition.NONE;
+        }
+        this.next_evaluation_tick = current_tick + 1;
         if (!this.enable_control.isEnabled()) {
             return ModeTransition.transition(this.disabled_mode, "inserter disabled");
         }
