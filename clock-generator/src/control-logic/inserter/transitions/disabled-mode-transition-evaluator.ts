@@ -1,6 +1,6 @@
-import { InserterStatus } from "../../../../state";
-import { EnableControl } from "../../../enable-control";
-import { ModeTransition, ModeTransitionEvaluator } from "../../../mode";
+import { InserterStatus } from "../../../state";
+import { EnableControl } from "../../enable-control";
+import { ModeTransition, ModeTransitionEvaluator } from "../../mode";
 import { InserterMode } from "../modes/inserter-mode";
 
 export class DisabledModeTransitionEvaluator implements ModeTransitionEvaluator<InserterMode> {

@@ -1,5 +1,5 @@
-import { ItemName } from "../../../../data/factorio-data-types";
-import { BeltState, EntityState, InserterState, InserterStatus, MachineState, ReadableEntityStateRegistry } from "../../../../state";
+import { ItemName } from "../../../data/factorio-data-types";
+import { BeltState, EntityState, InserterState, InserterStatus, MachineState, ReadableEntityStateRegistry } from "../../../state";
 import { InserterMode } from "./inserter-mode";
 
 export class InserterPickupMode implements InserterMode {

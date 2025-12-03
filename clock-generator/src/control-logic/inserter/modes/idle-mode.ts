@@ -1,4 +1,4 @@
-import { InserterStatus } from "../../../../state";
+import { InserterStatus } from "../../../state";
 import { InserterMode } from "./inserter-mode";
 
 export class InserterIdleMode implements InserterMode {

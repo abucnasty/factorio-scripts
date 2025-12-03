@@ -1,8 +1,8 @@
-import { Duration } from "../../../../data-types";
-import { InserterAnimation } from "../../../../entities/inserter/inserter-animation";
-import { InserterStatus } from "../../../../state";
-import { TickProvider } from "../../../current-tick-provider";
-import { ModeTransition, ModeTransitionEvaluator } from "../../../mode";
+import { Duration } from "../../../data-types";
+import { InserterAnimation } from "../../../entities/inserter/inserter-animation";
+import { InserterStatus } from "../../../state";
+import { TickProvider } from "../../current-tick-provider";
+import { ModeTransition, ModeTransitionEvaluator } from "../../mode";
 import { InserterDropMode, InserterIdleMode, InserterMode, InserterPickupMode } from "../modes";
 import { IdleModeTransitionEvaluator } from "./idle-mode-transition-evaluator";
 

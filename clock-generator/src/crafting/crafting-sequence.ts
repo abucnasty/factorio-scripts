@@ -9,7 +9,7 @@ import { MutableTickProvider } from "../control-logic/current-tick-provider";
 import chalk from "chalk"
 import { ItemName } from "../data/factorio-data-types";
 import { TickControlLogic } from "../control-logic/tick-control-logic";
-import { InserterStateMachine } from "../control-logic/inserter/state-machine/inserter-state-machine";
+import { InserterStateMachine } from "../control-logic/inserter/inserter-state-machine";
 
 export interface CraftEvent {
     machine_state: Readonly<MachineState>;
@@ -106,6 +106,8 @@ function simulate(args: {
                 if (held_item) {
                     message += `held_item "${held_item?.item_name}"=${held_item?.quantity}`;
                 }
+
+                message += ` \t reason="${transition.reason}"`;
 
                 switch (transition.toMode.status) {
                     case InserterStatus.DROP_OFF:

@@ -30,11 +30,11 @@ import { Position, SignalId } from './blueprints/components';
 import { FactorioBlueprint, BlueprintBuilder } from './blueprints/blueprint';
 import { encodeBlueprintFile } from './blueprints/serde';
 import { TargetProductionRate } from './crafting/target-production-rate';
-import { InserterStateMachine } from './control-logic/inserter/state-machine/inserter-state-machine';
+import { InserterStateMachine } from './control-logic/inserter/inserter-state-machine';
 import chalk from 'chalk';
 
 
-const config: Config = EXAMPLES.UTILITY_SCIENCE_CONFIG;
+const config: Config = EXAMPLES.LOGISTIC_SCIENCE_SHARED_INSERTER_CONFIG;
 const DEBUG = true;
 
 const main = () => {
@@ -145,7 +145,7 @@ const main = () => {
     // TODO: figure out a way to compute the total number of periods to simulate...
     // for utility science, 12 seems stable
     // for logistics science, 1 period is stable
-    const multiplier = 12;
+    const multiplier = 6;
     const maxTicks = totalPeriod.ticks * multiplier
 
     const testCraftingSequence = testing(

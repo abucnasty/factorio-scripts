@@ -73,10 +73,7 @@ export const LOGISTIC_SCIENCE_CONFIG: Config = {
     target_output: {
         recipe: "logistic-science-pack",
         items_per_second: 240,
-        machines: 11,
-        overrides: {
-            output_swings: 4
-        }
+        machines: 11
     },
     machines: [
         {

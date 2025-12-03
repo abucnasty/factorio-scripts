@@ -1,5 +1,5 @@
-import { InserterState } from "../../../../state";
-import { ModePlugin, Transition } from "../../../mode";
+import { InserterState } from "../../../state";
+import { ModePlugin, Transition } from "../../mode";
 import { InserterMode } from "../modes/inserter-mode";
 
 export class InserterStatusPlugin implements ModePlugin<InserterMode> {

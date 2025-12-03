@@ -1,14 +1,14 @@
 import { describe, test, expect, vi, beforeEach } from "vitest"
 import { mock } from 'vitest-mock-extended';
 import { IdleModeTransitionEvaluator } from "./idle-mode-transition-evaluator"
-import { BeltState, EntityState, InserterState, MachineState } from "../../../../state"
-import { EntityId, Inserter, InserterMetadata, InserterStackSize, InserterTarget, Machine, MachineMetadata, RecipeMetadata } from "../../../../entities"
-import { ItemName } from "../../../../data/factorio-data-types"
-import { InserterAnimation } from "../../../../entities/inserter/inserter-animation"
-import { InserterAnimationOverrideConfig } from "../../../../config/config"
+import { BeltState, EntityState, InserterState, MachineState } from "../../../state"
+import { EntityId, Inserter, InserterMetadata, InserterStackSize, InserterTarget, Machine, MachineMetadata, RecipeMetadata } from "../../../entities"
+import { ItemName } from "../../../data/factorio-data-types"
+import { InserterAnimation } from "../../../entities/inserter/inserter-animation"
+import { InserterAnimationOverrideConfig } from "../../../config/config"
 import { InserterPickupMode } from "../modes"
-import { ModeTransition } from "../../../mode";
-import { AlwaysEnabledControl } from "../../../enable-control";
+import { ModeTransition } from "../../mode";
+import { AlwaysEnabledControl } from "../../enable-control";
 
 
 describe("transitions (belt to machine)", () => {

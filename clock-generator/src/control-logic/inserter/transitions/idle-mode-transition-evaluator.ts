@@ -1,8 +1,8 @@
-import { EntityState, InserterState, MachineState } from "../../../../state";
-import { ModeTransition, ModeTransitionEvaluator } from "../../../mode";
+import { EntityState, InserterState, MachineState } from "../../../state";
+import { ModeTransition, ModeTransitionEvaluator } from "../../mode";
 import { InserterMode } from "../modes/inserter-mode";
 import { InserterPickupMode } from "../modes/pickup-mode";
-import { EnableControl } from "../../../enable-control";
+import { EnableControl } from "../../enable-control";
 import { InserterDisabledMode } from "../modes/disabled-mode";
 
 export class IdleModeTransitionEvaluator implements ModeTransitionEvaluator<InserterMode> {

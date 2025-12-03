@@ -1,5 +1,5 @@
 import assert from "assert";
-import { EntityState, InserterState, InserterStatus, MachineState } from "../../../../state";
+import { EntityState, InserterState, InserterStatus, MachineState } from "../../../state";
 import { InserterMode } from "./inserter-mode";
 
 export class InserterDropMode implements InserterMode {

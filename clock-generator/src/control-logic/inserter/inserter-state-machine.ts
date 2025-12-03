@@ -1,25 +1,13 @@
-import { EntityId } from "../../../entities";
-import { EntityState, InserterState, ReadableEntityStateRegistry } from "../../../state";
-import { TickProvider } from "../../current-tick-provider";
-import { EnableControl } from "../../enable-control";
-import { ModePlugin, ModeStateMachine, ModeTransitionEvaluator } from "../../mode";
-import {
-    InserterMode,
-    InserterPickupMode,
-    InserterIdleMode,
-    InserterSwingMode,
-    InserterDropMode
-} from "./modes";
+import assert from "assert"
+import { ModePlugin, ModeStateMachine, ModeTransitionEvaluator } from "../mode";
+import { InserterDropMode, InserterIdleMode, InserterMode, InserterPickupMode, InserterSwingMode } from "./modes";
+import { EntityId } from "../../entities";
+import { EntityState, InserterState, ReadableEntityStateRegistry } from "../../state";
+import { TickProvider } from "../current-tick-provider";
+import { EnableControl } from "../enable-control";
 import { InserterDisabledMode } from "./modes/disabled-mode";
 import { InserterStatusPlugin } from "./plugins/inserter-status-plugin";
-import {
-    IdleModeTransitionEvaluator
-} from "./transitions";
-import { DisabledModeTransitionEvaluator } from "./transitions/disabled-mode-transition-evaluator";
-import { DropModeTransitionEvaluator } from "./transitions/drop-mode-transition-evaluator";
-import { PickupModeTransitionEvaluator } from "./transitions/pickup-mode-transition-evaluator";
-import { InserterSwingModeTransitionEvaluator } from "./transitions/swing-mode-transition-evaluator";
-import assert from "assert"
+import { IdleModeTransitionEvaluator, InserterSwingModeTransitionEvaluator, DropModeTransitionEvaluator, PickupModeTransitionEvaluator, DisabledModeTransitionEvaluator } from "./transitions";
 
 export class InserterStateMachine extends ModeStateMachine<InserterMode> {
     public entity_id: EntityId;

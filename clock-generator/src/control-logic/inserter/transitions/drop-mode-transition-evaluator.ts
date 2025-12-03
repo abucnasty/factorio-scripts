@@ -1,7 +1,7 @@
-import { Duration } from "../../../../data-types";
-import { InserterAnimation } from "../../../../entities/inserter/inserter-animation";
-import { TickProvider } from "../../../current-tick-provider";
-import { ModeTransition, ModeTransitionEvaluator } from "../../../mode";
+import { Duration } from "../../../data-types";
+import { InserterAnimation } from "../../../entities/inserter/inserter-animation";
+import { TickProvider } from "../../current-tick-provider";
+import { ModeTransition, ModeTransitionEvaluator } from "../../mode";
 import { InserterMode } from "../modes";
 import { InserterSwingMode } from "../modes/swing-mode";
 

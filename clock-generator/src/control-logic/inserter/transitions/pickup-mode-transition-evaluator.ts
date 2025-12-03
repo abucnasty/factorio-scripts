@@ -1,5 +1,5 @@
-import { InserterState } from "../../../../state";
-import { ModeTransition, ModeTransitionEvaluator } from "../../../mode";
+import { InserterState } from "../../../state";
+import { ModeTransition, ModeTransitionEvaluator } from "../../mode";
 import { InserterMode } from "../modes";
 import { InserterSwingMode } from "../modes/swing-mode";
 
