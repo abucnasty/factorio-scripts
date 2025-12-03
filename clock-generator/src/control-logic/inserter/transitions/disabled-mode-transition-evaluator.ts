@@ -9,17 +9,13 @@ export class DisabledModeTransitionEvaluator implements ModeTransitionEvaluator<
         private readonly idle_mode: InserterMode,
     ) { }
 
-    private previous_mode: InserterMode | null = null;
-
-    public onEnter(fromMode: InserterMode): void {
-        this.previous_mode = fromMode;
-    }
+    public onEnter(fromMode: InserterMode): void {}
 
     public onExit(toMode: InserterMode): void {}
 
     public evaluateTransition(): ModeTransition<InserterMode> {
         if (this.enable_control.isEnabled()) { 
-            return ModeTransition.transition(this.previous_mode!, "inserter enabled");
+            return ModeTransition.transition(this.idle_mode!, "inserter enabled");
         }
         return ModeTransition.NONE;
     }
