@@ -6,7 +6,7 @@ import { EntityState, InserterState, ReadableEntityStateRegistry } from "../../s
 import { TickProvider } from "../current-tick-provider";
 import { EnableControl } from "../enable-control";
 import { InserterDisabledMode } from "./modes/disabled-mode";
-import { InserterStatusPlugin } from "./plugins/inserter-status-plugin";
+import { InserterStatusPlugin, InserterHandContentsChangePlugin, OnHandContentsChanged } from "./plugins";
 import { IdleModeTransitionEvaluator, InserterSwingModeTransitionEvaluator, DropModeTransitionEvaluator, PickupModeTransitionEvaluator, DisabledModeTransitionEvaluator } from "./transitions";
 
 export class InserterStateMachine extends ModeStateMachine<InserterMode> {
@@ -23,6 +23,10 @@ export class InserterStateMachine extends ModeStateMachine<InserterMode> {
     ) {
         super(initialMode, transitionGraph, plugins);
         this.entity_id = inserter_state.entity_id;
+    }
+
+    addHandContentsChangePlugin(onHandContentsChanged: OnHandContentsChanged): void {
+        this.addPlugin(new InserterHandContentsChangePlugin(this.inserter_state, onHandContentsChanged));
     }
 };
 

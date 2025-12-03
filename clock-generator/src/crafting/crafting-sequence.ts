@@ -94,20 +94,20 @@ function simulate(args: {
     }
 
     inserterStateMachines.forEach(stateMachine => {
+
+        stateMachine.addHandContentsChangePlugin((oldContents, newContents) => {
+            const id = stateMachine.entity_id;
+            if (newContents) {
+                debugLog(chalk.dim(`${id} \t held_item "${newContents?.item_name}"=${newContents?.quantity}`));
+            }
+        })
+
+
         stateMachine.addPlugin({
             onTransition(fromMode, transition) {
-                const state = stateMachine.inserter_state;
-                const inserter = stateMachine.inserter_state.inserter;
                 const id = stateMachine.entity_id;
                 const new_status = transition.toMode.status;
-                let message = `${id} \t status=${new_status} \t`;
-                const held_item = state.held_item;
-
-                if (held_item) {
-                    message += `held_item "${held_item?.item_name}"=${held_item?.quantity}`;
-                }
-
-                message += ` \t reason="${transition.reason}"`;
+                let message = `${id} \t status=${new_status} \t reason="${transition.reason}`;
 
                 switch (transition.toMode.status) {
                     case InserterStatus.DROP_OFF:
@@ -158,7 +158,7 @@ function simulate(args: {
             const state = machine_state_machine.machine_state;
             const id = state.machine.entity_id.id;
             const new_status = transition.toMode.status;
-            debugLog(chalk.yellow(`${id} \t ${fromMode.status} -> ${new_status}`));
+            debugLog(chalk.yellow(`${id} \t ${fromMode.status} -> ${new_status} reason=${transition.reason}`));
         }
     });
 

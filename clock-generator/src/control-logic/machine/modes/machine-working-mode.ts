@@ -19,6 +19,7 @@ export class MachineWorkingMode implements MachineMode {
 
     public executeForTick(): void {
         if (!this.hasEnoughInputsForCraft()) {
+            this.resetProgress()
             return;
         }
         this.craftingLogic();

@@ -1,3 +1,4 @@
+import assert from "assert";
 import { ItemName } from "../../../data/factorio-data-types";
 import { BeltState, EntityState, InserterState, InserterStatus, MachineState, ReadableEntityStateRegistry } from "../../../state";
 import { InserterMode } from "./inserter-mode";
@@ -52,19 +53,8 @@ export class InserterPickupMode implements InserterMode {
         }
 
         if (this.heldItemQuantity() === this.inserterState.inserter.metadata.stack_size) {
-            this.inserterState.status = InserterStatus.SWING;
             return;
-        }
-
-        if (this.hasPickupDurationElapsed()) {
-            if (this.heldItemQuantity() < this.inserterState.inserter.metadata.stack_size) {
-                this.inserterState.status = InserterStatus.PICKUP;
-                return;
-            }
-            // pickup complete
-            this.inserterState.status = InserterStatus.SWING;
-            return;
-        }
+        }        
     }
 
     private heldItemQuantity(): number {
@@ -82,16 +72,22 @@ export class InserterPickupMode implements InserterMode {
         const held_item = inserter_state.held_item
 
         if (held_item) {
-            // pickup 4 items from belt per tick
-            held_item.quantity += 4;
-            inserter_state.inventoryState.addQuantity(held_item.item_name, 4);
+            const lane = source.belt.lanes.find(lane => lane.ingredient_name === held_item.item_name);
+            assert(lane, `No belt lane found for item ${held_item.item_name}`);
+            const stack_size = lane.stack_size;
+            held_item.quantity = held_item.quantity + stack_size;
+            inserter_state.inventoryState.addQuantity(held_item.item_name, stack_size);
+            inserter_state.held_item = held_item;
             return;
         }
 
         for (const item_name of inserter_state.inserter.filtered_items) {
             if (!MachineState.machineInputIsBlocked(sink, item_name)) {
-                inserter_state.held_item = { item_name: item_name, quantity: 4 };
-                inserter_state.inventoryState.addQuantity(item_name, 4);
+                const lane = source.belt.lanes.find(lane => lane.ingredient_name === item_name);
+                assert(lane, `No belt lane found for item ${item_name}`);
+                const stack_size = lane.stack_size;
+                inserter_state.held_item = { item_name: item_name, quantity: stack_size };
+                inserter_state.inventoryState.addQuantity(item_name, stack_size);
                 return;
             }
         }
