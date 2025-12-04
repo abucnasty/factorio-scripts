@@ -1,16 +1,22 @@
+## Overview
 
-## Inventory Transfers
+work in progress script to generate clocks in factorio
 
-The concept behind the targets is to create a known pointer to the target entity
+current limitations:
+1. only supports 1 assembly machine
+2. only supports pickups from belt to machine (simulation of direct insertion setups coming soon...)
 
-An entity needs to have an inventory of some kind to pull from and transfer to.
 
-If the source is a machine, then we need to create a handler that will invoke an inventory transfer from the
-output slot of the machine into an input slot of the target machine
+to run:
 
-If the source is a machine and the target is a belt, we don't need to keep track of the items to the belt, we just need need
-to allow the transfer to happen.
+1. Install
+```
+npm install
+```
 
-If the source is a belt, we will need to mock the inventory to be infinite.
+2. run
+```
+npm run dev
+```
 
-All these transactions happen in `State` components.
+in index.ts choose the target configuration you want to run and the run duration
