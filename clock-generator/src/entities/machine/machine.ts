@@ -92,16 +92,16 @@ function printMachineFacts(machine: Machine): void {
     console.log(`  Recipe: ${machine.metadata.recipe.name}`);
     console.log(`  Crafting Speed: ${machine.metadata.crafting_speed}`);
     console.log(`  Productivity: ${machine.metadata.productivity}%`);
-    console.log(`  Output Per Craft: ${machine.output.amount_per_craft.toMixedNumber()}`);
-    console.log(`  Output Rate: ${machine.output.production_rate.rate_per_second.toMixedNumber()} per second`);
+    console.log(`  Output Per Craft: ${machine.output.amount_per_craft.toDecimal().toFixed(2)}`);
+    console.log(`  Output Rate: ${machine.output.production_rate.rate_per_second.toDecimal().toFixed(2)} per second`);
     console.log(`  Overload Multiplier: ${machine.overload_multiplier.overload_multiplier.toString()}`);
-    console.log(`  Ticks per craft: ${machine.crafting_rate.ticks_per_craft.toMixedNumber()} ticks`);
-    console.log(`  Ticks per Bonus Craft: ${machine.bonus_productivity_rate.ticks_per_bonus.toMixedNumber()} ticks`);
-    console.log(`  Insertion Duration before overload lockout: ${machine.insertion_duration.tick_duration.toMixedNumber()} ticks`);
+    console.log(`  Ticks per craft: ${machine.crafting_rate.ticks_per_craft.toFixed(2)} ticks`);
+    console.log(`  Ticks per Bonus Craft: ${machine.bonus_productivity_rate.ticks_per_bonus.toFixed(2)} ticks`);
+    console.log(`  Insertion Duration before overload lockout: ${machine.insertion_duration.tick_duration.toDecimal().toFixed(2)} ticks`);
 
     console.log(`ingredient consumption rate facts:`)
     for (const input of machine.inputs.values()) {
-        console.log(`  - ${input.item_name}: ${input.consumption_rate.rate_per_second.toMixedNumber()} per second`);
+        console.log(`  - ${input.item_name}: ${input.consumption_rate.rate_per_second.toFixed(2)} per second`);
     }
 
     console.log(`automated insertion limits:`)

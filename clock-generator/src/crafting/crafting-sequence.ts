@@ -178,7 +178,7 @@ function simulate(args: {
         const tick = tickProvider.getCurrentTick();
 
         const last_craft_tick = last_craft_end_tick_inclusive ??
-            (tick - Math.ceil(state.machine.crafting_rate.ticks_per_craft.toDecimal()))
+            (tick - Math.ceil(state.machine.crafting_rate.ticks_per_craft))
         crafts.push({
             craft_index: craft_index,
             machine_state: MachineState.clone(state),
@@ -193,8 +193,8 @@ function simulate(args: {
 
     const controlLogic = new CompositeControlLogic([
         new TickControlLogic(tickProvider),
-        ...inserterStateMachines,
         machine_state_machine,
+        ...inserterStateMachines,
     ])
 
     // arbitrary end condition to prevent infinite loops

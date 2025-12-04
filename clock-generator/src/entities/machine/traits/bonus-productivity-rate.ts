@@ -2,22 +2,22 @@ import Fraction, { fraction } from "fractionability";
 import { CraftingRate } from "./crafting-rate";
 
 export interface BonusProductivityRate {
-    readonly progress_per_second: Fraction;
-    readonly progress_per_tick: Fraction;
-    readonly bonus_crafts_per_tick: Fraction;
-    readonly bonus_per_craft: Fraction;
-    readonly ticks_per_bonus: Fraction;
-    readonly amount_per_bonus: Fraction;
+    readonly progress_per_second: number;
+    readonly progress_per_tick: number;
+    readonly bonus_crafts_per_tick: number;
+    readonly bonus_per_craft: number;
+    readonly ticks_per_bonus: number;
+    readonly amount_per_bonus: number;
 }
 
 function createEmpty(): BonusProductivityRate {
     return {
-        progress_per_second: fraction(0),
-        progress_per_tick: fraction(0),
-        bonus_crafts_per_tick: fraction(0),
-        bonus_per_craft: fraction(0),
-        ticks_per_bonus: fraction(0),
-        amount_per_bonus: fraction(0)
+        progress_per_second: 0,
+        progress_per_tick: 0,
+        bonus_crafts_per_tick: 0,
+        bonus_per_craft: 0,
+        ticks_per_bonus: 0,
+        amount_per_bonus: 0
     };
 }
 
@@ -36,23 +36,22 @@ function fromCraftingRate(
     // if the productivity is 100%, then the bonus productivity will occur every craft.
     // if the crafting rate is 120 ticks per craft, and the productivity is 50%, then
     // the bonus productivity will occur every 240 ticks.
-    const productivity = fraction(productivityPercent).divide(100);
-    const progressPerTick = craftingRate.crafts_per_tick.multiply(productivity);
-    const progressPerSecond = progressPerTick.multiply(60);
+    const productivity = productivityPercent / 100;
+    const progressPerTick = craftingRate.crafts_per_tick * productivity;
+    const progressPerSecond = progressPerTick * 60;
 
-    const bonusCraftsPerTick = craftingRate.crafts_per_tick.multiply(productivity);
-
+    const bonusCraftsPerTick = craftingRate.crafts_per_tick * productivity;
     const amountPerBonus = craftingRate.amount_per_craft
 
-    const ticksPerBonus = craftingRate.ticks_per_craft.multiply(productivity)
+    const ticksPerBonus = craftingRate.ticks_per_craft * productivity
 
-    const bonusPerCraft = craftingRate.amount_per_craft.multiply(productivity);
+    const bonus_per_craft = productivity;
 
     return {
         progress_per_second: progressPerSecond,
         progress_per_tick: progressPerTick,
         bonus_crafts_per_tick: bonusCraftsPerTick,
-        bonus_per_craft: bonusPerCraft,
+        bonus_per_craft: bonus_per_craft,
         ticks_per_bonus: ticksPerBonus,
         amount_per_bonus: amountPerBonus
     };

@@ -37,6 +37,15 @@ export class OpenRange {
         return reduced_ranges;
     }
 
+    public static merge(ranges: OpenRange[]): OpenRange {
+        if (ranges.length === 0) {
+            throw new Error("Cannot merge empty range list");
+        }
+        const start = Math.min(...ranges.map(r => r.start_inclusive));
+        const end = Math.max(...ranges.map(r => r.end_inclusive));
+        return new OpenRange(start, end);
+    }
+
     constructor(
         public readonly start_inclusive: number,
         public readonly end_inclusive: number,
@@ -48,5 +57,9 @@ export class OpenRange {
 
     public contains(value: number): boolean {
         return value >= this.start_inclusive && value <= this.end_inclusive;
+    }
+
+    public overlaps(other: OpenRange): boolean {
+        return this.start_inclusive <= other.end_inclusive && other.start_inclusive <= this.end_inclusive;
     }
 }

@@ -2,7 +2,7 @@ import Fraction, { fraction } from "fractionability";
 
 
 export interface ProgressState {
-    progress: Fraction;
+    progress: number;
 }
 
 function clone(progressState: ProgressState): ProgressState {
@@ -11,7 +11,7 @@ function clone(progressState: ProgressState): ProgressState {
 
 function empty(): ProgressState {
     return {
-        progress: fraction(0)
+        progress: 0
     }
 }
 

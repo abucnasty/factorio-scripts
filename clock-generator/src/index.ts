@@ -236,7 +236,7 @@ function createInputInserterControlLogicFromPlan(
     const transfers = craftingSequence.inserter_active_ranges.get(inputInserter.entity_id);
     assert(transfers != undefined, `No active ranges found for input inserter with id ${inputInserter.entity_id}`);
 
-    const buffer = Math.ceil(machine.crafting_rate.ticks_per_craft.toDecimal())
+    const buffer = Math.ceil(machine.crafting_rate.ticks_per_craft)
 
     const start_offset = outputInserterEnableControl.enabledRanges[0].end_inclusive - 1;
     const offset_ranges = transfers.map(transfer => {
@@ -300,7 +300,7 @@ function createOutputInserterControlLogicFromPlan(
         .toDecimal()
 
     // buffer for handling out of sync machine crafts
-    const buffer = Math.floor(machine.crafting_rate.ticks_per_craft.toDecimal())
+    const buffer = Math.floor(machine.crafting_rate.ticks_per_craft)
 
     const enabledRange = OpenRange.from(
         0,
@@ -396,7 +396,7 @@ function refinement(args: {
     const refined_transfers = new Map<EntityId, InserterTransfer[]>();
     const ticks_per_craft = outputMachine.crafting_rate.ticks_per_craft;
 
-    const output_buffer = Math.ceil(ticks_per_craft.toDecimal());
+    const output_buffer = Math.ceil(ticks_per_craft);
 
     finalCraftingSequence.inserter_active_ranges.forEach((transfers, inserterId) => {
         if (inserterId.id === output_inserter.entity_id.id) {
@@ -454,8 +454,8 @@ function printCraftSnapshots(craftingSequence: CraftingSequence) {
     console.log("craft snapshots:")
     craftingSequence.craft_events.forEach((craft) => {
         console.log(`Craft ${craft.craft_index}:`);
-        console.log(`- Craft Progress: ${craft.machine_state.craftingProgress.progress.toMixedNumber()}`);
-        console.log(`- Bonus Progress: ${craft.machine_state.bonusProgress.progress.toMixedNumber()}`);
+        console.log(`- Craft Progress: ${craft.machine_state.craftingProgress.progress.toFixed(3)}`);
+        console.log(`- Bonus Progress: ${craft.machine_state.bonusProgress.progress.toFixed(3)}`);
         console.log(`- Tick Range: [${craft.tick_range.start_inclusive}, ${craft.tick_range.end_inclusive}]`);
         console.log(`- Machine Status: ${craft.machine_state.status}`);
         craft.machine_state.inventoryState.getAllItems().forEach((item) => {

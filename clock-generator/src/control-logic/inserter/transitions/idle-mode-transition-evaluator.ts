@@ -54,7 +54,6 @@ export class IdleModeTransitionEvaluator implements ModeTransitionEvaluator<Inse
         if (current_tick < this.next_evaluation_tick) {
             return ModeTransition.NONE;
         }
-        this.next_evaluation_tick = current_tick + 1;
         if (!this.enable_control.isEnabled()) {
             return ModeTransition.transition(this.disabled_mode, "inserter disabled");
         }
