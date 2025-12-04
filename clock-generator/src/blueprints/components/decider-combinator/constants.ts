@@ -27,4 +27,6 @@ export interface CircuitNetworkSelection {
 
 export const CircuitNetworkSelection = {
     BOTH: { red: true, green: true } as CircuitNetworkSelection,
+    RED: { red: true, green: false } as CircuitNetworkSelection,
+    GREEN: { red: false, green: true } as CircuitNetworkSelection,
 }

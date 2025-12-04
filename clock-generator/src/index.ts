@@ -24,17 +24,16 @@ import { fraction } from 'fractionability';
 import { Duration, OpenRange } from './data-types';
 import { AlwaysEnabledControl, createPeriodicEnableControl, EnableControl, PeriodicEnableControl } from './control-logic/enable-control';
 import { MutableTickProvider, TickProvider } from './control-logic/current-tick-provider';
-import { DeciderCombinatorEntity } from './blueprints/entity/decider-combinator';
-import { Position, SignalId } from './blueprints/components';
-import { FactorioBlueprint, BlueprintBuilder } from './blueprints/blueprint';
 import { encodeBlueprintFile } from './blueprints/serde';
 import { TargetProductionRate } from './crafting/target-production-rate';
 import { InserterStateMachine } from './control-logic/inserter/inserter-state-machine';
 import chalk from 'chalk';
 import { MachineStateMachine } from './control-logic/machine/machine-state-machine';
+import { createSignalPerInserterBlueprint } from './crafting/blueprint';
 
 
 const config: Config = EXAMPLES.LOGISTIC_SCIENCE_SHARED_INSERTER_CONFIG;
+const SIMULATOR_MULTIPLIER = 1;
 const DEBUG = true;
 
 const main = () => {
@@ -137,7 +136,7 @@ const main = () => {
         );
         inputInserterEnableControl.set(
             inputInserter.entity_id,
-            enableControl,
+            AlwaysEnabledControl,
         );
     });
 
@@ -145,7 +144,7 @@ const main = () => {
     // TODO: figure out a way to compute the total number of periods to simulate...
     // for utility science, 12 seems stable
     // for logistics science, 1 period is stable
-    const multiplier = 1;
+    const multiplier = SIMULATOR_MULTIPLIER;
     const maxTicks = totalPeriod.ticks * multiplier
 
     const testCraftingSequence = testing(
@@ -174,7 +173,7 @@ const main = () => {
         totalPeriod.ticks
     );
 
-    const blueprint = createBlueprintFromCraftingSequence(
+    const blueprint = createSignalPerInserterBlueprint(
         finalCraftingSequence,
         entityRegistry
     )
@@ -305,7 +304,7 @@ function createOutputInserterControlLogicFromPlan(
 
     const enabledRange = OpenRange.from(
         0,
-        swing_duration + buffer - 1,
+        swing_duration,
     )
 
     console.log(`Output Inserter Control Logic Period: ${total_period.ticks} ticks, Enabled Range: [${enabledRange.start_inclusive} - ${enabledRange.end_inclusive}]`)
@@ -397,10 +396,9 @@ function refinement(args: {
     const refined_transfers = new Map<EntityId, InserterTransfer[]>();
     const ticks_per_craft = outputMachine.crafting_rate.ticks_per_craft;
 
-    let output_buffer = Math.ceil(output_inserter.animation.total.ticks / 2);
+    const output_buffer = Math.ceil(ticks_per_craft.toDecimal());
 
     finalCraftingSequence.inserter_active_ranges.forEach((transfers, inserterId) => {
-        
         if (inserterId.id === output_inserter.entity_id.id) {
             refined_transfers.set(inserterId, transfers.map(transfer => ({
                 item_name: transfer.item_name,
@@ -423,12 +421,12 @@ function refinement(args: {
         const inserter: Inserter = entityRegistry.getEntityByIdOrThrow(inserterId);
 
         const last_transfer = refined_transfer[refined_transfer.length - 1];
+        const pickup_buffer = inserter.animation.pickup.ticks / 2
 
         last_transfer.tick_range = OpenRange.from(
             last_transfer.tick_range.start_inclusive,
             last_transfer.tick_range.end_inclusive,
         ) 
-
 
         refined_transfers.set(inserterId, refined_transfer);
     })
@@ -475,10 +473,14 @@ function printCraftingSequence(
     const machine = craftingSequence.craft_events[craftingSequence.craft_events.length - 1].machine_state.machine;
     const crafts_completed = craftingSequence.craft_events.length;
     const total_crafted = machine.output.amount_per_craft.toDecimal() * crafts_completed;
+
+    const first_craft = craftingSequence.craft_events[0];
+    const final_craft = craftingSequence.craft_events[craftingSequence.craft_events.length - 1];
+    const total_crafting_duration = OpenRange.from(first_craft.tick_range.start_inclusive, final_craft.tick_range.end_inclusive).duration()
     console.log("------------------------------")
     console.log(`Crafted ${total_crafted} ${config.target_output.recipe}`);
     console.log(`Simulated ${crafts_completed} crafts over ${craftingSequence.total_duration.ticks} ticks`);
-    console.log(`Average items per second: ${(total_crafted / (craftingSequence.total_duration.seconds)).toFixed(2)}`);
+    console.log(`Average items per second: ${(total_crafted / (total_crafting_duration.seconds)).toFixed(2)}`);
     console.log("------------------------------")
     craftingSequence.inserter_active_ranges!.forEach((transfers, entityId) => {
         const inserter: Inserter = entityRegistry.getEntityByIdOrThrow(entityId);
@@ -496,69 +498,6 @@ function printCraftingSequence(
             console.log(`- [${start_inclusive} - ${end_inclusive}] (${transfer.tick_range.duration().ticks} ticks) ${transfer.item_name}`);
         })
     })
-}
-
-
-
-function createBlueprintFromCraftingSequence(
-    craftingSequence: CraftingSequence,
-    entityRegistry: ReadableEntityRegistry
-): FactorioBlueprint {
-    const machine = craftingSequence.craft_events[0].machine_state.machine;
-    let x = 0.5;
-    const totalClockTicks = craftingSequence.total_duration.ticks;
-    const clock = DeciderCombinatorEntity
-        .clock(totalClockTicks, 1)
-        .setPosition(Position.fromXY(x, 0))
-        .build();
-
-    const deciderCombinatorEntities: DeciderCombinatorEntity[] = []
-
-    craftingSequence.inserter_active_ranges.forEach((transfers, entityId) => {
-        const inserter: Inserter = entityRegistry.getEntityByIdOrThrow(entityId)
-        const inserter_number = entityId.id.split(":")[1]
-        let outputSignalId = SignalId.virtual(`signal-${inserter_number}`);
-        x += 1;
-
-        let description_lines: string[] = []
-
-        description_lines.push(`Inserter ${inserter_number} for: `)
-        inserter.filtered_items.forEach(item_name => {
-            const item_icon = SignalId.toDescriptionString(SignalId.item(item_name))
-            description_lines.push(`- ${item_icon}`)
-        })
-
-        const swing_count = transfers.length
-
-        description_lines.push("")
-        description_lines.push(`Total Swings: ${swing_count}`)
-
-        if (inserter.filtered_items.size === 1) {
-            outputSignalId = SignalId.item(Array.from(inserter.filtered_items)[0])
-        }
-
-        const ranges = OpenRange.reduceRanges(transfers.map(transfer => transfer.tick_range));
-
-        const deciderCombinator = DeciderCombinatorEntity
-            .fromRanges(
-                SignalId.clock,
-                ranges,
-                outputSignalId
-            )
-            .setPosition(Position.fromXY(x, 0))
-            .setMultiLinePlayerDescription(description_lines)
-            .build();
-        deciderCombinatorEntities.push(deciderCombinator);
-    })
-
-    return new BlueprintBuilder()
-        .setLabel(machine.output.item_name + " Inserter Clock Schedule")
-        .setEntities([
-            clock,
-            ...deciderCombinatorEntities
-        ])
-        .setWires([[1, 2, 1, 4]])
-        .build();
 }
 
 main()

@@ -1,3 +1,4 @@
+import { InserterTransfer } from "../../crafting/crafting-sequence";
 import { OpenRange } from "../../data-types/open-range";
 import {
     CircuitNetworkSelection,
@@ -114,8 +115,31 @@ function fromRanges(
         .setControlBehavior(controlBehavior)
 }
 
+function fromInserterTransfers(
+    clock_signal_id: SignalId,
+    inserterTransfers: InserterTransfer[]
+): DeciderCombinatorEntityBuilder {
+    const inputRanges = inserterTransfers.flatMap(transfer => DeciderCombinatorCondition.fromInserterTransfer(transfer, clock_signal_id));
+
+    const output = new DeciderCombinatorOutputBuilder(SignalId.each)
+        .setCopyCountFromInput(false)
+        .setConstant(1)
+        .setNetworks(CircuitNetworkSelection.RED)
+        .build();
+    
+    const controlBehavior = new ControlBehaviorBuilder()
+        .setDeciderConditions(inputRanges)
+        .setOutputs([output])
+        .build();
+
+    return new DeciderCombinatorEntityBuilder()
+        .setPosition(Position.zero)
+        .setControlBehavior(controlBehavior)
+}
+
 
 export const DeciderCombinatorEntity = {
     clock: clock,
     fromRanges: fromRanges,
+    fromInserterTransfers: fromInserterTransfers,
 }

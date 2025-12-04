@@ -1,3 +1,4 @@
+import { InserterTransfer } from "../../../crafting/crafting-sequence";
 import { OpenRange } from "../../../data-types/open-range";
 import { SignalId } from "../signal";
 import { ComparatorString, CompareType, CircuitNetworkSelection } from "./constants";
@@ -26,6 +27,10 @@ export interface DeciderCombinatorCondition {
      * Which circuit networks (red/green) to read first_signal from. Defaults to both.
      */
     readonly first_signal_networks?: CircuitNetworkSelection;
+     /**
+     * Which circuit networks (red/green) to read second_signal from. Defaults to both.
+     */
+    readonly second_signal_networks?: CircuitNetworkSelection;
 }
 
 export class DeciderCombinatorConditionBuilder {
@@ -34,6 +39,7 @@ export class DeciderCombinatorConditionBuilder {
     private constant: number | undefined = undefined;
     private secondSignal: SignalId | undefined = undefined;
     private firstSignalNetworks: CircuitNetworkSelection | undefined = undefined;
+    private secondSignalNetworks: CircuitNetworkSelection | undefined = undefined;
     private comparator: ComparatorString = ComparatorString.LESS_THAN;
 
     constructor(
@@ -65,6 +71,11 @@ export class DeciderCombinatorConditionBuilder {
         return this;
     }
 
+    public setSecondSignalNetworks(networks: CircuitNetworkSelection): DeciderCombinatorConditionBuilder {
+        this.secondSignalNetworks = networks;
+        return this;
+    }
+
     public build(): DeciderCombinatorCondition {
         return {
             first_signal: this.firstSignal,
@@ -72,7 +83,8 @@ export class DeciderCombinatorConditionBuilder {
             compare_type: this.compareType,
             constant: this.constant,
             second_signal: this.secondSignal,
-            first_signal_networks: this.firstSignalNetworks
+            first_signal_networks: this.firstSignalNetworks,
+            second_signal_networks: this.secondSignalNetworks,
         };
     }
 }
@@ -92,6 +104,27 @@ function fromOpenRange(openRange: OpenRange, signalId: SignalId): DeciderCombina
     return [start, end]
 }
 
+function fromInserterTransfer(
+    inserter_transfer: InserterTransfer,
+    clock_signal_id: SignalId
+): DeciderCombinatorCondition[] {
+
+    const item_signal_id = SignalId.item(inserter_transfer.item_name);
+
+    const [start, end] = fromOpenRange(inserter_transfer.tick_range, clock_signal_id);
+
+    const item_condition = new DeciderCombinatorConditionBuilder(SignalId.each)
+        .setComparator(ComparatorString.EQUAL_TO)
+        .setFirstSignalNetworks(CircuitNetworkSelection.RED)
+        .setSecondSignal(item_signal_id)
+        .setSecondSignalNetworks(CircuitNetworkSelection.RED)
+        .setCompareType(CompareType.AND)
+        .build();
+
+    return [start, end, item_condition];
+}
+
 export const DeciderCombinatorCondition = {
     fromOpenRange: fromOpenRange,
+    fromInserterTransfer: fromInserterTransfer,
 }

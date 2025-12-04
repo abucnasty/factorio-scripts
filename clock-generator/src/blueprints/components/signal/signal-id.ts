@@ -2,18 +2,18 @@ import { QualityIdType, SignalIdType } from "./constant";
 import assert from "assert";
 
 export interface SignalId {
-    readonly name: string,
-    readonly type: SignalIdType,
-    readonly quality?: QualityIdType
+    name: string,
+    type: SignalIdType,
+    quality?: QualityIdType
 }
 
 export class SignalIdBuilder {
-    
+
     private name?: string;
     private type?: SignalIdType;
     private quality?: QualityIdType;
 
-    constructor() {}
+    constructor() { }
 
     public setName(name: string): SignalIdBuilder {
         this.name = name;
@@ -41,31 +41,40 @@ export class SignalIdBuilder {
     }
 }
 
+function virtual(name: string): SignalId {
+    return new SignalIdBuilder()
+        .setName(name)
+        .setType(SignalIdType.VIRTUAL)
+        .build();
+}
+
+const clock = new SignalIdBuilder()
+    .setName("signal-clock")
+    .setType(SignalIdType.VIRTUAL)
+    .build()
+
+function item(name: string): SignalId {
+    return new SignalIdBuilder()
+        .setName(name)
+        .setType(SignalIdType.ITEM)
+        .build();
+}
+
+function toDescriptionString(signalId: SignalId): string {
+    const entries = [
+        `${signalId.type}=${signalId.name}`
+    ]
+    if (signalId.quality) {
+        entries.push(`quality=${signalId.quality}`);
+    }
+    return `[${entries.join(",")}]`;
+}
+
 
 export const SignalId = {
-    toDescriptionString(signalId: SignalId): string {
-        const entries = [
-            `${signalId.type}=${signalId.name}`
-        ]
-        if (signalId.quality) {
-            entries.push(`quality=${signalId.quality}`);
-        }
-        return `[${entries.join(",")}]`;
-    },
-    item(name: string): SignalId {
-        return new SignalIdBuilder()
-            .setName(name)
-            .setType(SignalIdType.ITEM)
-            .build();
-    },
-    virtual(name: string): SignalId {
-        return new SignalIdBuilder()
-            .setName(name)
-            .setType(SignalIdType.VIRTUAL)
-            .build();
-    },
-    clock: new SignalIdBuilder()
-        .setName("signal-clock")
-        .setType(SignalIdType.VIRTUAL)
-        .build(),
+    toDescriptionString: toDescriptionString,
+    item: item,
+    virtual: virtual,
+    clock: clock,
+    each: virtual("signal-each"),
 }
