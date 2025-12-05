@@ -1,6 +1,5 @@
-import { P } from "vitest/dist/chunks/rpc.d.RH3apGEf";
+import fs from "fs";
 import { FactorioData, Ingredient, Item, ItemName, Recipe } from "./factorio-data-types";
-import { data } from "./factorio-raw-dump";
 
 export type EnrichedIngredient = Ingredient & {
     item: Item;
@@ -13,14 +12,17 @@ export interface EnrichedRecipe extends Recipe {
 
 export class FactorioDataService {
 
-    public static readonly DEFAULT_ENERGY_REQUIRED = 0.5
+    private static factorio_data: FactorioData = FactorioDataService.readRawFromResourceFile();
 
-    private static readRawDump(): FactorioData {
-        return data as FactorioData;
+    private static readRawFromResourceFile(): FactorioData {
+        const file = fs.readFileSync("resources/data-filtered.json", "utf-8");
+        return JSON.parse(file) as FactorioData;
     }
 
+    public static readonly DEFAULT_ENERGY_REQUIRED = 0.5
+
     public static findRecipeOrThrow(recipeName: string): EnrichedRecipe {
-        const recipe = this.readRawDump().recipe[recipeName]
+        const recipe = this.factorio_data.recipe[recipeName]
 
         if (!recipe) {
             throw new Error(`Recipe ${recipeName} was not found`)
@@ -55,8 +57,8 @@ export class FactorioDataService {
     }
 
     public static findItemOrThrow(itemName: ItemName) {
-        const item = this.readRawDump().item[itemName];
-        const tool = this.readRawDump().tool[itemName];
+        const item = this.factorio_data.item[itemName];
+        const tool = this.factorio_data.tool[itemName];
 
         if(!item && !tool) {
             throw new Error(`Item ${itemName} was not found`);
