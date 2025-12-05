@@ -31,7 +31,7 @@ function createDeciderCombinatorForTransfers(
 
     description_lines.push(`Inserter ${inserter_number} for: `)
 
-    const items = new Set(inserter_transfers.map(transfer => transfer.item_name));
+    const items = new Set(inserter.filtered_items);
 
     items.forEach(item_name => {
         const item_icon = SignalId.toDescriptionString(SignalId.item(item_name))
@@ -64,6 +64,88 @@ function createDeciderCombinatorForTransfers(
     return deciderCombinator
 }
 
+function createDeciderCombinatorForActiveRanges(
+    inserter_active_ranges: OpenRange[],
+    inserter_id: EntityId,
+    entity_registry: ReadableEntityRegistry,
+    position: Position
+): DeciderCombinatorEntity {
+    const inserter: Inserter = entity_registry.getEntityByIdOrThrow(inserter_id)
+    const inserter_number = inserter_id.id.split(":")[1]
+    let outputSignalId = SignalId.virtual(`signal-${inserter_number}`);
+
+    let description_lines: string[] = []
+
+    description_lines.push(`Inserter ${inserter_number} for: `)
+
+    const items = new Set(inserter.filtered_items);
+
+    items.forEach(item_name => {
+        const item_icon = SignalId.toDescriptionString(SignalId.item(item_name))
+        description_lines.push(`- ${item_icon}`)
+    })
+
+    const swing_count = Math.floor(inserter_active_ranges.map(range => range.duration().ticks).reduce((a, b) => a + b, 0) / inserter.animation.total.ticks)
+
+    description_lines.push("")
+    description_lines.push(`Total Swings: ${swing_count}`)
+
+    
+
+    if (items.size === 1) {
+        outputSignalId = SignalId.item(Array.from(items)[0])
+    }
+
+    const ranges = OpenRange.reduceRanges(inserter_active_ranges);
+
+    const deciderCombinator = DeciderCombinatorEntity
+        .fromRanges(
+            SignalId.clock,
+            ranges,
+            outputSignalId
+        )
+        .setPosition(position)
+        .setMultiLinePlayerDescription(description_lines)
+        .build();
+
+    return deciderCombinator
+}
+
+export function createInserterControlLogicFromActiveRanges(
+    craftingSequence: CraftingSequence,
+    entityRegistry: ReadableEntityRegistry
+): FactorioBlueprint {
+    const machine = craftingSequence.craft_events[0].machine_state.machine;
+    let x = 0.5;
+    const clock = createClockFromCraftingSequence(
+        craftingSequence,
+        Position.fromXY(x, 0)
+    );
+
+    const deciderCombinatorEntities: DeciderCombinatorEntity[] = []
+
+    craftingSequence.inserter_active_ranges.forEach((active_ranges, entity_id) => {
+        x += 1;
+        deciderCombinatorEntities.push(
+            createDeciderCombinatorForActiveRanges(
+                active_ranges,
+                entity_id,
+                entityRegistry,
+                Position.fromXY(x, 0)
+            )
+        )
+    })
+
+    return new BlueprintBuilder()
+        .setLabel(machine.output.item_name + " Inserter Clock Schedule")
+        .setEntities([
+            clock,
+            ...deciderCombinatorEntities
+        ])
+        .setWires([[1, 2, 1, 4]])
+        .build();
+}
+
 export function createSignalPerInserterBlueprint(
     craftingSequence: CraftingSequence,
     entityRegistry: ReadableEntityRegistry
@@ -77,7 +159,7 @@ export function createSignalPerInserterBlueprint(
 
     const deciderCombinatorEntities: DeciderCombinatorEntity[] = []
 
-    craftingSequence.inserter_active_ranges.forEach((transfers, entityId) => {
+    craftingSequence.inserter_transfers.forEach((transfers, entityId) => {
         x += 1;
         deciderCombinatorEntities.push(
             createDeciderCombinatorForTransfers(
@@ -112,7 +194,7 @@ export function createSplitItemSignalBlueprint(
 
     const deciderCombinatorEntities: DeciderCombinatorEntity[] = []
 
-    for (const [inserter_id, transfers] of craftingSequence.inserter_active_ranges) {
+    for (const [inserter_id, transfers] of craftingSequence.inserter_transfers) {
         const transfers_by_item: Map<string, InserterTransfer[]> = new Map();
 
         for (const transfer of transfers) {

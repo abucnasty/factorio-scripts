@@ -62,4 +62,8 @@ export class OpenRange {
     public overlaps(other: OpenRange): boolean {
         return this.start_inclusive <= other.end_inclusive && other.start_inclusive <= this.end_inclusive;
     }
+
+    public toString(): string {
+        return `[${this.start_inclusive}, ${this.end_inclusive}]`;
+    }
 }

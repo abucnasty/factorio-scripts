@@ -6,14 +6,9 @@ import { InventoryState } from "./inventory-state";
 
 export const InserterStatus = {
     IDLE: "IDLE",
-    PICKUP: "GRAB",
+    PICKUP: "PICKUP",
     DROP_OFF: "DROP",
     SWING: "SWING",
-    /** @deprecated */
-    SWING_TO_SOURCE: "SWING_BACK",
-    /**
-     * Disabled by controller behavior
-     */
     DISABLED: "DISABLED"
 } as const;
 
@@ -27,6 +22,18 @@ export type InserterStatusState = {
 export interface InserterHandContents {
     item_name: ItemName;
     quantity: number;
+}
+
+export const InserterHandContents = {
+    clone(contents: InserterHandContents | null): InserterHandContents | null {
+        if (contents == null) {
+            return null;
+        }
+        return {
+            item_name: contents.item_name,
+            quantity: contents.quantity,
+        };
+    }
 }
 
 export interface InserterState extends EntityState, InserterStatusState {

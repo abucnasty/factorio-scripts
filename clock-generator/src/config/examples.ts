@@ -133,7 +133,7 @@ export const LOGISTIC_SCIENCE_SHARED_INSERTER_CONFIG: Config = {
             id: 1,
             recipe: "logistic-science-pack",
             productivity: 100,
-            crafting_speed: 68.90625,
+            crafting_speed: 68.906247615814,
         },
     ],
     inserters: [
