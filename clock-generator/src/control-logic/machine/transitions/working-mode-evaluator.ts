@@ -29,7 +29,6 @@ export class WorkingModeTransitionEvaluator implements ModeTransitionEvaluator<M
             }
         }
 
-
         if (output_item.quantity >= output_block.quantity) {
             return ModeTransition.transition(this.output_full_mode, `output item "${output_item.item_name}" = ${output_item.quantity} waiting to be removed`);
         }

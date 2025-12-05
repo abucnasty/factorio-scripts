@@ -1,0 +1,73 @@
+import chalk from "chalk";
+import { TickProvider } from "../../../control-logic/current-tick-provider";
+import { InserterStateMachine } from "../../../control-logic/inserter/inserter-state-machine";
+import { InserterMode } from "../../../control-logic/inserter/modes";
+import { InserterHandContentsChangePlugin } from "../../../control-logic/inserter/plugins";
+import { MachineMode } from "../../../control-logic/machine/modes";
+import { CraftEventListenerPlugin } from "../../../control-logic/machine/plugins";
+import { ModePlugin } from "../../../control-logic/mode";
+import { MachineState } from "../../../state";
+import { DebugLoggerFactory } from "./debug-logger-factory";
+import { DebugSettingsProvider } from "./debug-settings-provider";
+
+export class DebugPluginFactory {
+    constructor(
+        private readonly tick_provider: TickProvider,
+        private readonly settings_provider: DebugSettingsProvider
+    ) { }
+
+    private readonly log_factory: DebugLoggerFactory = new DebugLoggerFactory(this.tick_provider, this.settings_provider)
+
+
+    public inserterHandContentsChangePlugin(inserter_state_machine: InserterStateMachine): InserterHandContentsChangePlugin {
+        const debugLog = this.log_factory.forEntity(inserter_state_machine.inserter_state.inserter);
+        return new InserterHandContentsChangePlugin(inserter_state_machine.inserter_state, (oldContents, newContents) => {
+            if (!newContents) {
+                return;
+            }
+
+            let message = `held_item "${newContents?.item_name}"=${newContents?.quantity}`
+
+            debugLog(chalk.dim(message));
+        })
+    }
+
+    public inserterModeChangePlugin(inserter_state_machine: InserterStateMachine): ModePlugin<InserterMode> {
+        const debugLog = this.log_factory.forEntity(inserter_state_machine.inserter_state.inserter);
+        return {
+            onTransition(fromMode, transition) {
+                const new_status = transition.toMode.status;
+                let message = `status=${new_status} \t reason="${transition.reason}"`;
+
+                debugLog(chalk.dim(message));
+            },
+        }
+    }
+
+
+    public machineModeChangePlugin(machine_state: MachineState): ModePlugin<MachineMode> {
+        const debugLog = this.log_factory.forEntity(machine_state.machine);
+        return {
+            onTransition(fromMode, transition) {
+                const new_status = transition.toMode.status;
+                debugLog(chalk.yellow(`${fromMode.status} -> ${new_status} reason=${transition.reason}`));
+            }
+        }
+    }
+
+    public machineCraftEventPlugin(machine_state: MachineState) {
+        const debugLog = this.log_factory.forEntity(machine_state.machine);
+        return new CraftEventListenerPlugin(machine_state, this.tick_provider, ({ craft_ticks, state }) => {
+            let message = `craft event #${machine_state.craftCount}:`;
+            state.machine.inputs.forEach((input) => {
+                const input_quantity = state.inventoryState.getQuantity(input.ingredient.name);
+                message += ` \t "${input.ingredient.name}"=${input_quantity}`;
+            });
+
+            const output_quantity = state.inventoryState.getQuantity(state.machine.output.ingredient.name);
+            const output_name = state.machine.output.ingredient.name;
+            message += ` \t "${output_name}"=${output_quantity}`;
+            debugLog(chalk.green(message));
+        })
+    }
+}

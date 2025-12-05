@@ -12,8 +12,10 @@ import { InserterStateMachine } from "../../control-logic/inserter/inserter-stat
 import { MachineStateMachine } from "../../control-logic/machine/machine-state-machine";
 import { ActiveInserterTrackerPlugin } from "../../control-logic/inserter/plugins/active-inserter-tracker-plugin";
 import { InserterTransferTrackerPlugin } from "../../control-logic/inserter/plugins/inserter-transfer-tracker-plugin";
-import { DebugPluginConfig, DebugPluginFactory } from "./debug-plugins";
 import { InserterHandContentsChangePlugin } from "../../control-logic/inserter/plugins";
+import { DebugSettings } from "./debug/debug-settings";
+import { DebugPluginFactory } from "./debug/debug-plugin-factory";
+import { DebugSettingsProvider } from "./debug/debug-settings-provider";
 
 export interface CraftEvent {
     machine_state: Readonly<MachineState>;
@@ -70,7 +72,7 @@ function simulate(args: {
     inserterStateMachines: InserterStateMachine[],
     tickProvider: MutableTickProvider,
     maxTicks?: number,
-    debug?: Partial<DebugPluginConfig>,
+    debug?: Partial<DebugSettings>,
 }): CraftingSequence {
     const { machine_state_machine, inserterStateMachines, tickProvider, maxTicks = 1800, debug } = args;
     const crafts: CraftEvent[] = [];
@@ -81,7 +83,10 @@ function simulate(args: {
     const primaryMachineState = machine_state_machine.machine_state;
     let sim_craft_index: number = 1;
 
-    const debug_plugin_factory = new DebugPluginFactory(tickProvider, debug ?? {});
+    const debug_plugin_factory = new DebugPluginFactory(tickProvider, DebugSettingsProvider.immutable({
+        enabled: debug?.enabled ?? false,
+        ...debug
+    }));
 
     inserterStateMachines.forEach(inserter_state_machine => {
 
