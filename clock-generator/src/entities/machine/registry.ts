@@ -11,6 +11,9 @@ export interface ReadableMachineRegistry {
     getAllMachines(): Machine[];
 }
 
+/**
+ * @deprecated Use EntityRegistry directly
+ */
 export class MachineRegistry implements ReadableMachineRegistry {
     constructor(private readonly entityRegistry: ReadableEntityRegistry) { }
 

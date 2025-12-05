@@ -11,6 +11,9 @@ export interface ReadableBeltRegistry {
     getBeltsForIngredient(ingredientName: ItemName): Belt[];
 }
 
+/**
+ * @deprecated Use EntityRegistry directly
+ */
 export class BeltRegistry implements ReadableBeltRegistry {
     
 

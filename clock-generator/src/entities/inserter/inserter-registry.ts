@@ -11,6 +11,9 @@ export interface ReadableInserterRegistry {
     getInsertersForMachine(machineId: EntityId): Inserter[];
 }
 
+/**
+ * @deprecated Use EntityRegistry directly
+ */
 export class InserterRegistry implements ReadableInserterRegistry {
     
     constructor(
