@@ -15,9 +15,12 @@ export function simulateFromContext(context: SimulationContext, duration: Durati
         ]
     )
 
+    const start_tick = context.tick_provider.getCurrentTick();
+    const end_tick = start_tick + duration.ticks;
+
     while (true) {
         const current_tick = context.tick_provider.getCurrentTick();
-        if (current_tick >= duration.ticks) {
+        if (current_tick >= end_tick) {
             break;
         }
         control_logic.executeForTick();
