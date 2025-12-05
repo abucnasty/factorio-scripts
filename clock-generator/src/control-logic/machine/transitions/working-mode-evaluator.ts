@@ -1,3 +1,4 @@
+import { MachineState } from "../../../state";
 import { ModeTransition, ModeTransitionEvaluator } from "../../mode";
 import { MachineIngredientShortageMode, MachineMode, MachineOutputFullMode, MachineWorkingMode } from "../modes";
 
@@ -7,6 +8,7 @@ export class WorkingModeTransitionEvaluator implements ModeTransitionEvaluator<M
         private readonly ingredient_shortage_mode: MachineIngredientShortageMode,
         private readonly output_full_mode: MachineOutputFullMode,
         private readonly working_mode: MachineWorkingMode,
+        private readonly machine_state: MachineState,
     ) { }
 
     public onEnter(fromMode: MachineMode): void { }
@@ -17,8 +19,9 @@ export class WorkingModeTransitionEvaluator implements ModeTransitionEvaluator<M
         }
 
         const output_item = this.working_mode.output_item;
+        const output_block = this.machine_state.machine.output.outputBlock
 
-        if (output_item.quantity > 0) {
+        if (output_item.quantity >= output_block.quantity) {
             return ModeTransition.transition(this.output_full_mode, `output item "${output_item.item_name}" = ${output_item.quantity} waiting to be removed`);
         }
 
