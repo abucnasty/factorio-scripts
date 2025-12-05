@@ -1,4 +1,4 @@
-import { InserterTransfer } from "../../../crafting/crafting-sequence";
+import { InserterTransfer } from "../../../crafting/sequence/single-crafting-sequence";
 import { OpenRange } from "../../../data-types";
 import { InserterHandContents, InserterState, InserterStatus } from "../../../state";
 import { TickProvider } from "../../current-tick-provider";

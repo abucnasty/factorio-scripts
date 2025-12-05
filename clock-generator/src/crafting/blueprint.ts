@@ -3,7 +3,7 @@ import { Position, SignalId } from "../blueprints/components";
 import { DeciderCombinatorEntity } from "../blueprints/entity/decider-combinator";
 import { OpenRange } from "../data-types";
 import { ReadableEntityRegistry, Inserter, EntityId } from "../entities";
-import { CraftingSequence, InserterTransfer } from "./crafting-sequence";
+import { CraftingSequence, InserterTransfer } from "./sequence/single-crafting-sequence";
 
 
 function createClockFromCraftingSequence(

@@ -1,7 +1,7 @@
 import { fraction } from "fractionability";
-import { CraftingSequence } from "../crafting/crafting-sequence";
+import { CraftingSequence, InserterTransfer } from "../crafting/sequence/single-crafting-sequence";
 import { OpenRange } from "../data-types";
-import { EntityRegistry, Inserter } from "../entities";
+import { EntityId, EntityRegistry, Inserter } from "../entities";
 
 export function printCraftSnapshots(craftingSequence: CraftingSequence) {
     console.log("------------------------------")
@@ -21,11 +21,10 @@ export function printCraftSnapshots(craftingSequence: CraftingSequence) {
 
 export function printCraftingSequence(
     craftingSequence: CraftingSequence,
-    entityRegistry: EntityRegistry,
     relative_tick_mod: number = 0
 ) {
     printCraftingStatistics(craftingSequence);
-    printInserterTransfers(craftingSequence, entityRegistry, relative_tick_mod);
+    printInserterTransfers(craftingSequence.inserter_transfers, relative_tick_mod);
 }
 
 export function printCraftingStatistics(
@@ -52,14 +51,11 @@ export function printCraftingStatistics(
 }
 
 export function printInserterTransfers(
-    craftingSequence: CraftingSequence,
-    entityRegistry: EntityRegistry,
+    inserter_transfers: Map<EntityId, InserterTransfer[]>,
     relative_tick_mod: number = 0
 ): void {
-    craftingSequence.inserter_transfers!.forEach((transfers, entityId) => {
-        const inserter: Inserter = entityRegistry.getEntityByIdOrThrow(entityId);
-        const items = Array.from(inserter.filtered_items).join(", ");
-        console.log(`Inserter Transfer Ranges for ${entityId} ${items}`);
+    inserter_transfers!.forEach((transfers, entityId) => {
+        console.log(`Inserter Transfer Ranges for ${entityId}`);
         transfers.forEach((transfer) => {
             const start_inclusive = transfer.tick_range.start_inclusive;
             const end_inclusive = transfer.tick_range.end_inclusive;
@@ -75,11 +71,11 @@ export function printInserterTransfers(
 }
 
 export function printInserterActiveRanges(
-    craftingSequence: CraftingSequence,
+    inserter_active_ranges: Map<EntityId, OpenRange[]>,
     entityRegistry: EntityRegistry,
     relative_tick_mod: number = 0
 ): void {
-    craftingSequence.inserter_active_ranges!.forEach((active_ranges, entity_id) => {
+    inserter_active_ranges!.forEach((active_ranges, entity_id) => {
         const inserter: Inserter = entityRegistry.getEntityByIdOrThrow(entity_id);
         const items = Array.from(inserter.filtered_items).join(", ");
         console.log("------------------------------")

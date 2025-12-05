@@ -1,17 +1,19 @@
-import { OpenRange } from "../data-types/open-range";
-import { MachineState } from "../state/machine-state";
-import { EntityId } from "../entities";
-import { Duration } from "../data-types";
-import { InserterState, InserterStatus } from "../state/inserter-state";
-import { CompositeControlLogic } from "../control-logic/composite-control-logic";
-import { MutableTickProvider } from "../control-logic/current-tick-provider";
+import { OpenRange } from "../../data-types/open-range";
+import { MachineState } from "../../state/machine-state";
+import { EntityId } from "../../entities";
+import { Duration } from "../../data-types";
+import { InserterState, InserterStatus } from "../../state/inserter-state";
+import { CompositeControlLogic } from "../../control-logic/composite-control-logic";
+import { MutableTickProvider } from "../../control-logic/current-tick-provider";
 import chalk from "chalk"
-import { ItemName } from "../data/factorio-data-types";
-import { TickControlLogic } from "../control-logic/tick-control-logic";
-import { InserterStateMachine } from "../control-logic/inserter/inserter-state-machine";
-import { MachineStateMachine } from "../control-logic/machine/machine-state-machine";
-import { ActiveInserterTrackerPlugin } from "../control-logic/inserter/plugins/active-inserter-tracker-plugin";
-import { InserterTransferTrackerPlugin } from "../control-logic/inserter/plugins/inserter-transfer-tracker-plugin";
+import { ItemName } from "../../data/factorio-data-types";
+import { TickControlLogic } from "../../control-logic/tick-control-logic";
+import { InserterStateMachine } from "../../control-logic/inserter/inserter-state-machine";
+import { MachineStateMachine } from "../../control-logic/machine/machine-state-machine";
+import { ActiveInserterTrackerPlugin } from "../../control-logic/inserter/plugins/active-inserter-tracker-plugin";
+import { InserterTransferTrackerPlugin } from "../../control-logic/inserter/plugins/inserter-transfer-tracker-plugin";
+import { DebugPluginConfig, DebugPluginFactory } from "./debug-plugins";
+import { InserterHandContentsChangePlugin } from "../../control-logic/inserter/plugins";
 
 export interface CraftEvent {
     machine_state: Readonly<MachineState>;
@@ -68,10 +70,7 @@ function simulate(args: {
     inserterStateMachines: InserterStateMachine[],
     tickProvider: MutableTickProvider,
     maxTicks?: number,
-    debug?: Partial<{
-        enabled: boolean,
-        relative_tick_mod: number
-    }>,
+    debug?: Partial<DebugPluginConfig>,
 }): CraftingSequence {
     const { machine_state_machine, inserterStateMachines, tickProvider, maxTicks = 1800, debug } = args;
     const crafts: CraftEvent[] = [];
@@ -82,62 +81,16 @@ function simulate(args: {
     const primaryMachineState = machine_state_machine.machine_state;
     let sim_craft_index: number = 1;
 
-    const debugLog = (message: string) => {
-        if (!debug?.enabled) {
-            return;
-        }
-        const tick = tickProvider.getCurrentTick();
-        const tickPadded = tick.toString().padStart(4, '0');
-
-        let messageOutput = `Tick ${tickPadded}`
-
-        if (debug?.relative_tick_mod) {
-            const relativeTick = tick % debug.relative_tick_mod
-            messageOutput += ` (${relativeTick.toString().padStart(3, '0')})`
-        }
-
-
-
-        messageOutput += `: ${message}`
-        console.log(messageOutput);
-    }
+    const debug_plugin_factory = new DebugPluginFactory(tickProvider, debug ?? {});
 
     inserterStateMachines.forEach(inserter_state_machine => {
 
         const source_id = inserter_state_machine.inserter_state.inserter.source.entity_id;
         const primary_machine_id = machine_state_machine.machine_state.machine.entity_id;
 
-        inserter_state_machine.addHandContentsChangePlugin((oldContents, newContents) => {
-            const id = inserter_state_machine.entity_id;
+        inserter_state_machine.addPlugin(debug_plugin_factory.inserterHandContentsChangePlugin(inserter_state_machine));
 
-            if (!newContents) {
-                return;
-            }
-
-            let message = `${id} \t held_item "${newContents?.item_name}"=${newContents?.quantity}`
-
-            if (source_id.id === primary_machine_id.id) {
-                debugLog(chalk.magentaBright(message));
-                return;
-            }
-            debugLog(chalk.dim(message));
-        })
-
-
-        inserter_state_machine.addPlugin({
-            onTransition(fromMode, transition) {
-                const id = inserter_state_machine.entity_id;
-                const new_status = transition.toMode.status;
-                let message = `${id} \t status=${new_status} \t reason="${transition.reason}`;
-
-                if (source_id.id === machine_state_machine.machine_state.machine.entity_id.id) {
-                    debugLog(chalk.magentaBright(message));
-                    return;
-                }
-
-                debugLog(chalk.dim(message));
-            },
-        })
+        inserter_state_machine.addPlugin(debug_plugin_factory.inserterModeChangePlugin(inserter_state_machine));
 
         inserter_state_machine.addPlugin(new ActiveInserterTrackerPlugin(
             tickProvider,
@@ -159,28 +112,10 @@ function simulate(args: {
         }))
     });
 
-    machine_state_machine.addPlugin({
-        onTransition(fromMode, transition) {
-            const state = machine_state_machine.machine_state;
-            const id = state.machine.entity_id.id;
-            const new_status = transition.toMode.status;
-            debugLog(chalk.yellow(`${id} \t ${fromMode.status} -> ${new_status} reason=${transition.reason}`));
-        }
-    });
+    machine_state_machine.addPlugin(debug_plugin_factory.machineModeChangePlugin(machine_state_machine.machine_state));
+    machine_state_machine.addPlugin(debug_plugin_factory.machineCraftEventPlugin(machine_state_machine.machine_state));
 
     machine_state_machine.addCraftEventPlugin(tickProvider, ({ craft_ticks, state }) => {
-        const id = state.machine.entity_id.id;
-        let message = `${id} \t craft event #${sim_craft_index}:`;
-
-        state.machine.inputs.forEach((input) => {
-            const input_quantity = state.inventoryState.getQuantity(input.ingredient.name);
-            message += ` \t "${input.ingredient.name}"=${input_quantity}`;
-        });
-
-        const output_quantity = state.inventoryState.getQuantity(state.machine.output.ingredient.name);
-        const output_name = state.machine.output.ingredient.name;
-        message += ` \t "${output_name}"=${output_quantity}`;
-        debugLog(chalk.green(message));
         crafts.push({
             craft_index: sim_craft_index,
             machine_state: MachineState.clone(state),
@@ -201,7 +136,7 @@ function simulate(args: {
     // arbitrary end condition to prevent infinite loops
     while (true) {
         controlLogic.executeForTick();
-        if (tickProvider.getCurrentTick() > maxTicks) {
+        if (tickProvider.getCurrentTick() >= maxTicks) {
             break;
         }
 

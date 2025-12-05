@@ -2,11 +2,12 @@ import Fraction from "fractionability";
 import { ProductionRate } from "./production-rate";
 import { Ingredient } from "../../../data/factorio-data-types";
 import { OutputBlock } from "./output-block";
+import { EnrichedIngredient } from "../../../data/factorio-data-service";
 
 export interface MachineOutput {
     readonly item_name: string;
     readonly amount_per_craft: Fraction;
     readonly production_rate: ProductionRate;
-    readonly ingredient: Ingredient;
+    readonly ingredient: EnrichedIngredient;
     readonly outputBlock: OutputBlock;
 }

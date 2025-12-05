@@ -1,5 +1,5 @@
 import assert from "assert";
-import { CraftingSequence, InserterTransfer } from "../crafting/crafting-sequence";
+import { CraftingSequence, InserterTransfer } from "../crafting/sequence/single-crafting-sequence";
 import { TargetProductionRate } from "../crafting/target-production-rate";
 import { Duration, OpenRange } from "../data-types";
 import { EntityRegistry, EntityId, Inserter } from "../entities";

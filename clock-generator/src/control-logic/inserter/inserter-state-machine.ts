@@ -24,10 +24,6 @@ export class InserterStateMachine extends ModeStateMachine<InserterMode> {
         super(initialMode, transitionGraph, plugins);
         this.entity_id = inserter_state.entity_id;
     }
-
-    addHandContentsChangePlugin(onHandContentsChanged: OnHandContentsChanged): void {
-        this.addPlugin(new InserterHandContentsChangePlugin(this.inserter_state, onHandContentsChanged));
-    }
 };
 
 function createInserterStateMachine(args: {

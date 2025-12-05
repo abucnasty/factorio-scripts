@@ -43,17 +43,25 @@ export class MachineWorkingMode implements MachineMode {
     private computeRemainingCrafts(): void {
         const machine = this.state.machine;
 
+        const max_item_stack_size = machine.output.ingredient.item.stack_size
+
         const recipe = machine.metadata.recipe;
 
-        let remaining_crafts = Infinity;
+        let remaining_crafts_from_inputs = Infinity;
 
         for (const ingredient of recipe.raw.ingredients) {
             const availableQuantity = this.inventory_state.getQuantity(ingredient.name);
             const requiredQuantity = recipe.inputsPerCraft.get(ingredient.name)!.amount;
-            remaining_crafts = Math.min(remaining_crafts, availableQuantity / requiredQuantity)
+            remaining_crafts_from_inputs = Math.min(remaining_crafts_from_inputs, availableQuantity / requiredQuantity)
         }
 
-        this.remaining_crafts = remaining_crafts;
+
+        const current_output_quantity = this.inventory_state.getQuantity(machine.output.ingredient.name);
+        const output_amount_per_craft = machine.output.ingredient.amount;
+        const available_output_space = max_item_stack_size - current_output_quantity;
+        const possible_crafts_from_output_space = Math.floor(available_output_space / output_amount_per_craft);
+
+        this.remaining_crafts = Math.min(remaining_crafts_from_inputs, possible_crafts_from_output_space);
     }
 
     private craftsPossibleThisTick(): number {

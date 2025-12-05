@@ -2,7 +2,7 @@ import { TickProvider } from "../control-logic/current-tick-provider";
 import { AlwaysEnabledControl } from "../control-logic/enable-control";
 import { InserterStateMachine } from "../control-logic/inserter/inserter-state-machine";
 import { MachineStateMachine } from "../control-logic/machine/machine-state-machine";
-import { CraftingSequence } from "../crafting/crafting-sequence";
+import { CraftingSequence } from "../crafting/sequence/single-crafting-sequence";
 import { Machine } from "../entities";
 import { EntityRegistry } from "../entities/entity-registry";
 import { EntityStateRegistry, EntityStateFactory, EntityState } from "../state";

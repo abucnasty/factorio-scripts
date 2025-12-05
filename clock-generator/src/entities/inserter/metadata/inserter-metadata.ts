@@ -25,7 +25,7 @@ function create(
     overrides: InserterAnimationOverrideConfig
 ): InserterMetadata {
     
-    assert(Object.values<number>(InserterStackSize).includes(stackSize), `Inserter has an invalid stack size of ${stackSize}`)
+    // assert(Object.values<number>(InserterStackSize).includes(stackSize), `Inserter has an invalid stack size of ${stackSize}`)
 
     // only support legendary for now
     const qualityIdType: QualityIdType = "legendary";

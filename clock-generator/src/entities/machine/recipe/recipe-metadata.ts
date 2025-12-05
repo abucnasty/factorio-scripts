@@ -1,25 +1,25 @@
 import Fraction, { fraction } from "fractionability";
 import assert from "assert"
 import { Ingredient, ItemName, Recipe } from "../../../data/factorio-data-types";
-import { FactorioDataService } from "../../../data/factorio-data-service";
+import { EnrichedIngredient, EnrichedRecipe, FactorioDataService } from "../../../data/factorio-data-service";
 
 export interface IngredientRatio {
-    input: Ingredient;
-    output: Ingredient;
+    input: EnrichedIngredient;
+    output: EnrichedIngredient;
     fraction: Fraction;
 }
 
 export interface RecipeMetadata {
     readonly name: string;
     readonly energy_required: number;
-    readonly output: Ingredient;
+    readonly output: EnrichedIngredient;
     readonly inputToOutputRatios: Map<ItemName, IngredientRatio>;
     readonly outputToInputRatios: Map<ItemName, IngredientRatio>;
-    readonly inputsPerCraft: Map<ItemName, Ingredient>;
-    readonly raw: Recipe;
+    readonly inputsPerCraft: Map<ItemName, EnrichedIngredient>;
+    readonly raw: EnrichedRecipe;
 }
 
-function fromRecipe(recipe: Recipe): RecipeMetadata {
+function fromRecipe(recipe: EnrichedRecipe): RecipeMetadata {
     const {
         name,
         energy_required,
@@ -32,15 +32,16 @@ function fromRecipe(recipe: Recipe): RecipeMetadata {
 
     const output = results[0];
 
-    const outputItemAmount: Ingredient = {
+    const output_item: EnrichedIngredient = {
         name: output.name,
         amount: output.amount,
         type: output.type,
+        item: output.item,
     };
 
     const inputToOutputRatios: Map<ItemName, IngredientRatio> = new Map();
     const outputToInputRatios: Map<ItemName, IngredientRatio> = new Map();
-    const inputsPerCraft: Map<ItemName, Ingredient> = new Map();
+    const inputsPerCraft: Map<ItemName, EnrichedIngredient> = new Map();
 
     ingredients.forEach(input => {
         inputToOutputRatios.set(input.name, {
@@ -48,24 +49,27 @@ function fromRecipe(recipe: Recipe): RecipeMetadata {
                 name: input.name,
                 amount: input.amount,
                 type: input.type,
+                item: input.item,
             },
-            output: outputItemAmount,
-            fraction: fraction(input.amount, outputItemAmount.amount),
+            output: output_item,
+            fraction: fraction(input.amount, output_item.amount),
         });
         outputToInputRatios.set(input.name, {
             input: {
                 name: input.name,
                 amount: input.amount,
                 type: input.type,
+                item: input.item,
             },
-            output: outputItemAmount,
-            fraction: fraction(outputItemAmount.amount, input.amount),
+            output: output_item,
+            fraction: fraction(output_item.amount, input.amount),
         });
 
         inputsPerCraft.set(input.name, {
             name: input.name,
             amount: input.amount,
             type: input.type,
+            item: input.item,
         })
     })
 
@@ -73,7 +77,7 @@ function fromRecipe(recipe: Recipe): RecipeMetadata {
     return {
         name,
         energy_required,
-        output: outputItemAmount,
+        output: output_item,
         inputToOutputRatios,
         outputToInputRatios,
         inputsPerCraft,

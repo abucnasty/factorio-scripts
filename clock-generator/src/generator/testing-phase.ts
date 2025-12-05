@@ -3,7 +3,7 @@ import { MutableTickProvider, TickProvider } from "../control-logic/current-tick
 import { EnableControl, AlwaysEnabledControl, createPeriodicEnableControl, PeriodicEnableControl } from "../control-logic/enable-control";
 import { InserterStateMachine } from "../control-logic/inserter/inserter-state-machine";
 import { MachineStateMachine } from "../control-logic/machine/machine-state-machine";
-import { CraftingSequence } from "../crafting/crafting-sequence";
+import { CraftingSequence } from "../crafting/sequence/single-crafting-sequence";
 import { Duration, OpenRange } from "../data-types";
 import { EntityRegistry, Machine, EntityId, Inserter } from "../entities";
 import { ReadableEntityStateRegistry, EntityStateFactory, EntityStateRegistry, EntityState } from "../state";

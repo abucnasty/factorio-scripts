@@ -94,6 +94,7 @@ function printMachineFacts(machine: Machine): void {
     console.log(`  Productivity: ${machine.metadata.productivity}%`);
     console.log(`  Output Per Craft: ${machine.output.amount_per_craft.toDecimal().toFixed(2)}`);
     console.log(`  Output Rate: ${machine.output.production_rate.rate_per_second.toDecimal().toFixed(2)} per second`);
+    console.log(`  Output Block: ${machine.output.outputBlock.quantity} ${machine.output.outputBlock.item_name}`);
     console.log(`  Overload Multiplier: ${machine.overload_multiplier.overload_multiplier.toString()}`);
     console.log(`  Ticks per craft: ${machine.crafting_rate.ticks_per_craft.toFixed(2)} ticks`);
     console.log(`  Ticks per Bonus Craft: ${machine.bonus_productivity_rate.ticks_per_bonus.toFixed(2)} ticks`);

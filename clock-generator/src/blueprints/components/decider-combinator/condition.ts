@@ -1,4 +1,4 @@
-import { InserterTransfer } from "../../../crafting/crafting-sequence";
+import { InserterTransfer } from "../../../crafting/sequence/single-crafting-sequence";
 import { OpenRange } from "../../../data-types/open-range";
 import { SignalId } from "../signal";
 import { ComparatorString, CompareType, CircuitNetworkSelection } from "./constants";

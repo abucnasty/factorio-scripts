@@ -1,6 +1,6 @@
 import { Config } from './config/config';
 import * as EXAMPLES from './config/examples';
-import { CraftingSequence, InserterTransfer } from './crafting/crafting-sequence';
+import { CraftingSequence, InserterTransfer } from './crafting/sequence/single-crafting-sequence';
 import assert from 'assert';
 import {
     Belt,
@@ -44,8 +44,7 @@ const main = () => {
     const entityRegistry = new EntityRegistry();
     const machineRegistry = new MachineRegistry(entityRegistry);
     const inserterRegistry = new InserterRegistry(entityRegistry);
-    const beltRegistry = new BeltRegistry(entityRegistry);
-    const inserterFactory = new InserterFactory(machineRegistry, beltRegistry);
+    const inserterFactory = new InserterFactory(entityRegistry);
 
 
     config.belts.forEach(beltConfig => {
@@ -164,8 +163,8 @@ const main = () => {
     console.log("------------------------------")
     console.log(chalk.green("Refinement Phase Complete:"));
     printCraftingStatistics(finalCraftingSequence);
-    printInserterTransfers(finalCraftingSequence, entityRegistry, crafting_period.ticks);
-    printInserterActiveRanges(finalCraftingSequence, entityRegistry, crafting_period.ticks);
+    printInserterTransfers(finalCraftingSequence.inserter_transfers, crafting_period.ticks);
+    printInserterActiveRanges(finalCraftingSequence.inserter_active_ranges, entityRegistry, crafting_period.ticks);
 
     let blueprint: FactorioBlueprint | null = null;
 

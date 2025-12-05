@@ -322,7 +322,7 @@ export const ELECTRIC_FURNACE_CONFIG: Config = {
         {
             id: 2,
             recipe: "casting-steel",
-            productivity: 50,
+            productivity: 300,
             crafting_speed: 185,
         },
         {
@@ -380,15 +380,50 @@ export const ELECTRIC_FURNACE_CONFIG: Config = {
             sink: { type: "belt", id: 2 },
             filters: ["electric-furnace"],
             stack_size: 16,
-        }
+        },
+        { // simulated mining drill...
+            source: { type: "belt", id: 3 },
+            sink: { type: "machine", id: 3 },
+            filters: ["stone"],
+            stack_size: 100,
+        },
+        { // simulated mining drill...
+            source: { type: "belt", id: 3 },
+            sink: { type: "machine", id: 4 },
+            filters: ["stone"],
+            stack_size: 100,
+        },
+        { // simulated mining drill...
+            source: { type: "belt", id: 3 },
+            sink: { type: "machine", id: 5 },
+            filters: ["stone"],
+            stack_size: 100,
+        },
     ],
     belts: [
+        
         {
             id: 1,
             type: "turbo-transport-belt",
             lanes: [
                 { ingredient: "advanced-circuit", stack_size: 4 },
                 { ingredient: "advanced-circuit", stack_size: 4 }
+            ]
+        },
+        {
+            id: 2,
+            type: "turbo-transport-belt",
+            lanes: [
+                { ingredient: "electric-furnace", stack_size: 4 },
+                { ingredient: "electric-furnace", stack_size: 4 }
+            ]
+        },
+        {
+            id: 3,
+            type: "turbo-transport-belt",
+            lanes: [
+                { ingredient: "stone", stack_size: 4 },
+                { ingredient: "stone", stack_size: 4 }
             ]
         }
     ]
