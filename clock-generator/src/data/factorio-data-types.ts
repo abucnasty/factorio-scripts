@@ -27,4 +27,5 @@ export type Item = {
 export interface FactorioData {
   recipe: Record<RecipeName, Recipe>
   item: Record<ItemName, Item>
+  tool: Record<ItemName, Item>
 }

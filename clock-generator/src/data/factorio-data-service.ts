@@ -56,12 +56,13 @@ export class FactorioDataService {
 
     public static findItemOrThrow(itemName: ItemName) {
         const item = this.readRawDump().item[itemName];
+        const tool = this.readRawDump().tool[itemName];
 
-        if(!item) {
+        if(!item && !tool) {
             throw new Error(`Item ${itemName} was not found`);
         }
 
-        return item;
+        return item ?? tool;
     }
 
 }

@@ -51942,5 +51942,599 @@ export const data: any = {
         ]
       }
     }
+  },
+  "tool": {
+    "automation-science-pack": {
+      "type": "tool",
+      "name": "automation-science-pack",
+      "localised_description": [
+        "item-description.science-pack"
+      ],
+      "icon": "__base__/graphics/icons/automation-science-pack.png",
+      "subgroup": "science-pack",
+      "color_hint": {
+        "text": "A"
+      },
+      "order": "a[automation-science-pack]",
+      "inventory_move_sound": {
+        "filename": "__base__/sound/item/science-inventory-move.ogg",
+        "volume": 0.6,
+        "aggregation": {
+          "max_count": 1,
+          "remove": true
+        }
+      },
+      "pick_sound": {
+        "filename": "__base__/sound/item/science-inventory-pickup.ogg",
+        "volume": 0.6,
+        "aggregation": {
+          "max_count": 1,
+          "remove": true
+        }
+      },
+      "drop_sound": {
+        "filename": "__base__/sound/item/science-inventory-move.ogg",
+        "volume": 0.6,
+        "aggregation": {
+          "max_count": 1,
+          "remove": true
+        }
+      },
+      "stack_size": 200,
+      "weight": 1000,
+      "durability": 1,
+      "durability_description_key": "description.science-pack-remaining-amount-key",
+      "factoriopedia_durability_description_key": "description.factoriopedia-science-pack-remaining-amount-key",
+      "durability_description_value": "description.science-pack-remaining-amount-value",
+      "random_tint_color": [
+        0.9200000000000002,
+        0.97,
+        0.97,
+        1
+      ]
+    },
+    "logistic-science-pack": {
+      "type": "tool",
+      "name": "logistic-science-pack",
+      "localised_description": [
+        "item-description.science-pack"
+      ],
+      "icon": "__base__/graphics/icons/logistic-science-pack.png",
+      "subgroup": "science-pack",
+      "color_hint": {
+        "text": "L"
+      },
+      "order": "b[logistic-science-pack]",
+      "inventory_move_sound": {
+        "filename": "__base__/sound/item/science-inventory-move.ogg",
+        "volume": 0.6,
+        "aggregation": {
+          "max_count": 1,
+          "remove": true
+        }
+      },
+      "pick_sound": {
+        "filename": "__base__/sound/item/science-inventory-pickup.ogg",
+        "volume": 0.6,
+        "aggregation": {
+          "max_count": 1,
+          "remove": true
+        }
+      },
+      "drop_sound": {
+        "filename": "__base__/sound/item/science-inventory-move.ogg",
+        "volume": 0.6,
+        "aggregation": {
+          "max_count": 1,
+          "remove": true
+        }
+      },
+      "stack_size": 200,
+      "weight": 1000,
+      "durability": 1,
+      "durability_description_key": "description.science-pack-remaining-amount-key",
+      "factoriopedia_durability_description_key": "description.factoriopedia-science-pack-remaining-amount-key",
+      "durability_description_value": "description.science-pack-remaining-amount-value",
+      "random_tint_color": [
+        0.9200000000000002,
+        0.97,
+        0.97,
+        1
+      ]
+    },
+    "chemical-science-pack": {
+      "type": "tool",
+      "name": "chemical-science-pack",
+      "localised_description": [
+        "item-description.science-pack"
+      ],
+      "icon": "__base__/graphics/icons/chemical-science-pack.png",
+      "subgroup": "science-pack",
+      "color_hint": {
+        "text": "C"
+      },
+      "order": "d[chemical-science-pack]",
+      "inventory_move_sound": {
+        "filename": "__base__/sound/item/science-inventory-move.ogg",
+        "volume": 0.6,
+        "aggregation": {
+          "max_count": 1,
+          "remove": true
+        }
+      },
+      "pick_sound": {
+        "filename": "__base__/sound/item/science-inventory-pickup.ogg",
+        "volume": 0.6,
+        "aggregation": {
+          "max_count": 1,
+          "remove": true
+        }
+      },
+      "drop_sound": {
+        "filename": "__base__/sound/item/science-inventory-move.ogg",
+        "volume": 0.6,
+        "aggregation": {
+          "max_count": 1,
+          "remove": true
+        }
+      },
+      "stack_size": 200,
+      "weight": 1000,
+      "durability": 1,
+      "durability_description_key": "description.science-pack-remaining-amount-key",
+      "factoriopedia_durability_description_key": "description.factoriopedia-science-pack-remaining-amount-key",
+      "durability_description_value": "description.science-pack-remaining-amount-value",
+      "random_tint_color": [
+        0.9200000000000002,
+        0.97,
+        0.97,
+        1
+      ]
+    },
+    "military-science-pack": {
+      "type": "tool",
+      "name": "military-science-pack",
+      "localised_description": [
+        "item-description.science-pack"
+      ],
+      "icon": "__base__/graphics/icons/military-science-pack.png",
+      "subgroup": "science-pack",
+      "color_hint": {
+        "text": "M"
+      },
+      "order": "c[military-science-pack]",
+      "inventory_move_sound": {
+        "filename": "__base__/sound/item/science-inventory-move.ogg",
+        "volume": 0.6,
+        "aggregation": {
+          "max_count": 1,
+          "remove": true
+        }
+      },
+      "pick_sound": {
+        "filename": "__base__/sound/item/science-inventory-pickup.ogg",
+        "volume": 0.6,
+        "aggregation": {
+          "max_count": 1,
+          "remove": true
+        }
+      },
+      "drop_sound": {
+        "filename": "__base__/sound/item/science-inventory-move.ogg",
+        "volume": 0.6,
+        "aggregation": {
+          "max_count": 1,
+          "remove": true
+        }
+      },
+      "stack_size": 200,
+      "weight": 1000,
+      "durability": 1,
+      "durability_description_key": "description.science-pack-remaining-amount-key",
+      "factoriopedia_durability_description_key": "description.factoriopedia-science-pack-remaining-amount-key",
+      "durability_description_value": "description.science-pack-remaining-amount-value",
+      "random_tint_color": [
+        0.9200000000000002,
+        0.97,
+        0.97,
+        1
+      ]
+    },
+    "production-science-pack": {
+      "type": "tool",
+      "name": "production-science-pack",
+      "localised_description": [
+        "item-description.science-pack"
+      ],
+      "icon": "__base__/graphics/icons/production-science-pack.png",
+      "subgroup": "science-pack",
+      "color_hint": {
+        "text": "P"
+      },
+      "order": "e[production-science-pack]",
+      "inventory_move_sound": {
+        "filename": "__base__/sound/item/science-inventory-move.ogg",
+        "volume": 0.6,
+        "aggregation": {
+          "max_count": 1,
+          "remove": true
+        }
+      },
+      "pick_sound": {
+        "filename": "__base__/sound/item/science-inventory-pickup.ogg",
+        "volume": 0.6,
+        "aggregation": {
+          "max_count": 1,
+          "remove": true
+        }
+      },
+      "drop_sound": {
+        "filename": "__base__/sound/item/science-inventory-move.ogg",
+        "volume": 0.6,
+        "aggregation": {
+          "max_count": 1,
+          "remove": true
+        }
+      },
+      "stack_size": 200,
+      "weight": 1000,
+      "durability": 1,
+      "durability_description_key": "description.science-pack-remaining-amount-key",
+      "factoriopedia_durability_description_key": "description.factoriopedia-science-pack-remaining-amount-key",
+      "durability_description_value": "description.science-pack-remaining-amount-value",
+      "random_tint_color": [
+        0.9200000000000002,
+        0.97,
+        0.97,
+        1
+      ]
+    },
+    "utility-science-pack": {
+      "type": "tool",
+      "name": "utility-science-pack",
+      "localised_description": [
+        "item-description.science-pack"
+      ],
+      "icon": "__base__/graphics/icons/utility-science-pack.png",
+      "subgroup": "science-pack",
+      "color_hint": {
+        "text": "U"
+      },
+      "order": "f[utility-science-pack]",
+      "inventory_move_sound": {
+        "filename": "__base__/sound/item/science-inventory-move.ogg",
+        "volume": 0.6,
+        "aggregation": {
+          "max_count": 1,
+          "remove": true
+        }
+      },
+      "pick_sound": {
+        "filename": "__base__/sound/item/science-inventory-pickup.ogg",
+        "volume": 0.6,
+        "aggregation": {
+          "max_count": 1,
+          "remove": true
+        }
+      },
+      "drop_sound": {
+        "filename": "__base__/sound/item/science-inventory-move.ogg",
+        "volume": 0.6,
+        "aggregation": {
+          "max_count": 1,
+          "remove": true
+        }
+      },
+      "stack_size": 200,
+      "weight": 1000,
+      "durability": 1,
+      "durability_description_key": "description.science-pack-remaining-amount-key",
+      "factoriopedia_durability_description_key": "description.factoriopedia-science-pack-remaining-amount-key",
+      "durability_description_value": "description.science-pack-remaining-amount-value",
+      "random_tint_color": [
+        0.9200000000000002,
+        0.97,
+        0.97,
+        1
+      ]
+    },
+    "space-science-pack": {
+      "type": "tool",
+      "name": "space-science-pack",
+      "icon": "__base__/graphics/icons/space-science-pack.png",
+      "subgroup": "science-pack",
+      "color_hint": {
+        "text": "S"
+      },
+      "order": "g[space-science-pack]",
+      "inventory_move_sound": {
+        "filename": "__base__/sound/item/science-inventory-move.ogg",
+        "volume": 0.6,
+        "aggregation": {
+          "max_count": 1,
+          "remove": true
+        }
+      },
+      "pick_sound": {
+        "filename": "__base__/sound/item/science-inventory-pickup.ogg",
+        "volume": 0.6,
+        "aggregation": {
+          "max_count": 1,
+          "remove": true
+        }
+      },
+      "drop_sound": {
+        "filename": "__base__/sound/item/science-inventory-move.ogg",
+        "volume": 0.6,
+        "aggregation": {
+          "max_count": 1,
+          "remove": true
+        }
+      },
+      "stack_size": 200,
+      "weight": 1000,
+      "durability": 1,
+      "durability_description_key": "description.science-pack-remaining-amount-key",
+      "factoriopedia_durability_description_key": "description.factoriopedia-science-pack-remaining-amount-key",
+      "durability_description_value": "description.science-pack-remaining-amount-value",
+      "random_tint_color": [
+        0.9200000000000002,
+        0.97,
+        0.97,
+        1
+      ]
+    },
+    "metallurgic-science-pack": {
+      "type": "tool",
+      "name": "metallurgic-science-pack",
+      "localised_description": [
+        "item-description.science-pack"
+      ],
+      "icon": "__space-age__/graphics/icons/metallurgic-science-pack.png",
+      "subgroup": "science-pack",
+      "color_hint": {
+        "text": "M"
+      },
+      "order": "h",
+      "inventory_move_sound": {
+        "filename": "__base__/sound/item/science-inventory-move.ogg",
+        "volume": 0.6,
+        "aggregation": {
+          "max_count": 1,
+          "remove": true
+        }
+      },
+      "pick_sound": {
+        "filename": "__base__/sound/item/science-inventory-pickup.ogg",
+        "volume": 0.6,
+        "aggregation": {
+          "max_count": 1,
+          "remove": true
+        }
+      },
+      "drop_sound": {
+        "filename": "__base__/sound/item/science-inventory-move.ogg",
+        "volume": 0.6,
+        "aggregation": {
+          "max_count": 1,
+          "remove": true
+        }
+      },
+      "stack_size": 200,
+      "default_import_location": "vulcanus",
+      "weight": 1000,
+      "durability": 1,
+      "durability_description_key": "description.science-pack-remaining-amount-key",
+      "factoriopedia_durability_description_key": "description.factoriopedia-science-pack-remaining-amount-key",
+      "durability_description_value": "description.science-pack-remaining-amount-value",
+      "random_tint_color": [
+        0.9200000000000002,
+        0.97,
+        0.97,
+        1
+      ]
+    },
+    "agricultural-science-pack": {
+      "type": "tool",
+      "name": "agricultural-science-pack",
+      "localised_description": [
+        "item-description.science-pack"
+      ],
+      "icon": "__space-age__/graphics/icons/agricultural-science-pack.png",
+      "subgroup": "science-pack",
+      "color_hint": {
+        "text": "G"
+      },
+      "order": "i",
+      "inventory_move_sound": {
+        "filename": "__base__/sound/item/science-inventory-move.ogg",
+        "volume": 0.6,
+        "aggregation": {
+          "max_count": 1,
+          "remove": true
+        }
+      },
+      "pick_sound": {
+        "filename": "__base__/sound/item/science-inventory-pickup.ogg",
+        "volume": 0.6,
+        "aggregation": {
+          "max_count": 1,
+          "remove": true
+        }
+      },
+      "drop_sound": {
+        "filename": "__base__/sound/item/science-inventory-move.ogg",
+        "volume": 0.6,
+        "aggregation": {
+          "max_count": 1,
+          "remove": true
+        }
+      },
+      "stack_size": 200,
+      "default_import_location": "gleba",
+      "weight": 1000,
+      "durability": 1,
+      "durability_description_key": "description.science-pack-remaining-amount-key",
+      "factoriopedia_durability_description_key": "description.factoriopedia-science-pack-remaining-amount-key",
+      "durability_description_value": "description.science-pack-remaining-amount-value",
+      "spoil_ticks": 216000,
+      "spoil_result": "spoilage",
+      "random_tint_color": [
+        0.9200000000000002,
+        0.97,
+        0.97,
+        1
+      ]
+    },
+    "electromagnetic-science-pack": {
+      "type": "tool",
+      "name": "electromagnetic-science-pack",
+      "localised_description": [
+        "item-description.science-pack"
+      ],
+      "icon": "__space-age__/graphics/icons/electromagnetic-science-pack.png",
+      "subgroup": "science-pack",
+      "color_hint": {
+        "text": "E"
+      },
+      "order": "j",
+      "inventory_move_sound": {
+        "filename": "__base__/sound/item/science-inventory-move.ogg",
+        "volume": 0.6,
+        "aggregation": {
+          "max_count": 1,
+          "remove": true
+        }
+      },
+      "pick_sound": {
+        "filename": "__base__/sound/item/science-inventory-pickup.ogg",
+        "volume": 0.6,
+        "aggregation": {
+          "max_count": 1,
+          "remove": true
+        }
+      },
+      "drop_sound": {
+        "filename": "__base__/sound/item/science-inventory-move.ogg",
+        "volume": 0.6,
+        "aggregation": {
+          "max_count": 1,
+          "remove": true
+        }
+      },
+      "stack_size": 200,
+      "default_import_location": "fulgora",
+      "weight": 1000,
+      "durability": 1,
+      "durability_description_key": "description.science-pack-remaining-amount-key",
+      "factoriopedia_durability_description_key": "description.factoriopedia-science-pack-remaining-amount-key",
+      "durability_description_value": "description.science-pack-remaining-amount-value",
+      "random_tint_color": [
+        0.9200000000000002,
+        0.97,
+        0.97,
+        1
+      ]
+    },
+    "cryogenic-science-pack": {
+      "type": "tool",
+      "name": "cryogenic-science-pack",
+      "localised_description": [
+        "item-description.science-pack"
+      ],
+      "icon": "__space-age__/graphics/icons/cryogenic-science-pack.png",
+      "subgroup": "science-pack",
+      "color_hint": {
+        "text": "R"
+      },
+      "order": "k",
+      "inventory_move_sound": {
+        "filename": "__base__/sound/item/science-inventory-move.ogg",
+        "volume": 0.6,
+        "aggregation": {
+          "max_count": 1,
+          "remove": true
+        }
+      },
+      "pick_sound": {
+        "filename": "__base__/sound/item/science-inventory-pickup.ogg",
+        "volume": 0.6,
+        "aggregation": {
+          "max_count": 1,
+          "remove": true
+        }
+      },
+      "drop_sound": {
+        "filename": "__base__/sound/item/science-inventory-move.ogg",
+        "volume": 0.6,
+        "aggregation": {
+          "max_count": 1,
+          "remove": true
+        }
+      },
+      "stack_size": 200,
+      "default_import_location": "aquilo",
+      "weight": 1000,
+      "durability": 1,
+      "durability_description_key": "description.science-pack-remaining-amount-key",
+      "factoriopedia_durability_description_key": "description.factoriopedia-science-pack-remaining-amount-key",
+      "durability_description_value": "description.science-pack-remaining-amount-value",
+      "random_tint_color": [
+        0.9200000000000002,
+        0.97,
+        0.97,
+        1
+      ]
+    },
+    "promethium-science-pack": {
+      "type": "tool",
+      "name": "promethium-science-pack",
+      "localised_description": [
+        "item-description.science-pack"
+      ],
+      "icon": "__space-age__/graphics/icons/promethium-science-pack.png",
+      "subgroup": "science-pack",
+      "color_hint": {
+        "text": "I"
+      },
+      "order": "l",
+      "inventory_move_sound": {
+        "filename": "__base__/sound/item/science-inventory-move.ogg",
+        "volume": 0.6,
+        "aggregation": {
+          "max_count": 1,
+          "remove": true
+        }
+      },
+      "pick_sound": {
+        "filename": "__base__/sound/item/science-inventory-pickup.ogg",
+        "volume": 0.6,
+        "aggregation": {
+          "max_count": 1,
+          "remove": true
+        }
+      },
+      "drop_sound": {
+        "filename": "__base__/sound/item/science-inventory-move.ogg",
+        "volume": 0.6,
+        "aggregation": {
+          "max_count": 1,
+          "remove": true
+        }
+      },
+      "stack_size": 200,
+      "default_import_location": "aquilo",
+      "weight": 1000,
+      "durability": 1,
+      "durability_description_key": "description.science-pack-remaining-amount-key",
+      "factoriopedia_durability_description_key": "description.factoriopedia-science-pack-remaining-amount-key",
+      "durability_description_value": "description.science-pack-remaining-amount-value",
+      "random_tint_color": [
+        0.9200000000000002,
+        0.97,
+        0.97,
+        1
+      ]
+    }
   }
 }

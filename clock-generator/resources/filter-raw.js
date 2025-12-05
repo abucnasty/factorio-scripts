@@ -3,6 +3,7 @@ const fs = require("fs/promises");
 const category_allow_list = new Set([
     "item",
     "recipe",
+    "tool"
 ])
 
 fs.readFile("./data-raw-dump.json")
