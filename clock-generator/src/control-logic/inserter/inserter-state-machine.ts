@@ -89,13 +89,13 @@ function createInserterStateMachine(args: {
         idle_mode,
     );
 
-    const graph: Map<InserterMode, ModeTransitionEvaluator<InserterMode>> = new Map();
-
-    graph.set(idle_mode, idle_mode_evaluator);
-    graph.set(swing_mode, swing_mode_evaluator);
-    graph.set(drop_mode, drop_mode_evaluator);
-    graph.set(pickup_mode, pickup_mode_evaluator)
-    graph.set(disabled_mode, disabled_mode_evaluator)
+    const graph = new Map<InserterMode, ModeTransitionEvaluator<InserterMode>>([
+        [idle_mode,     idle_mode_evaluator],
+        [swing_mode,    swing_mode_evaluator],
+        [drop_mode,     drop_mode_evaluator],
+        [pickup_mode,   pickup_mode_evaluator],
+        [disabled_mode, disabled_mode_evaluator],
+    ]);
 
     const initial_mode = idle_mode;
 
