@@ -10,9 +10,9 @@ export class MachineWorkingMode implements MachineMode {
         private readonly state: MachineState
     ) { }
 
-    public onEnter(fromMode: MachineMode): void {}
+    public onEnter(fromMode: MachineMode): void { }
 
-    public onExit(toMode: MachineMode): void {}
+    public onExit(toMode: MachineMode): void { }
 
     public executeForTick(): void {
         this.computeRemainingCrafts();
@@ -52,7 +52,14 @@ export class MachineWorkingMode implements MachineMode {
         for (const ingredient of recipe.raw.ingredients) {
             const availableQuantity = this.inventory_state.getQuantity(ingredient.name);
             const requiredQuantity = recipe.inputsPerCraft.get(ingredient.name)!.amount;
-            remaining_crafts_from_inputs = Math.min(remaining_crafts_from_inputs, availableQuantity / requiredQuantity)
+            const possible_crafts_for_ingredient = availableQuantity / requiredQuantity;
+
+            if (possible_crafts_for_ingredient < 1) {
+                remaining_crafts_from_inputs = 0;
+                break;
+            }
+
+            remaining_crafts_from_inputs = Math.min(remaining_crafts_from_inputs, possible_crafts_for_ingredient)
         }
 
 
@@ -81,7 +88,7 @@ export class MachineWorkingMode implements MachineMode {
     private bonusCraftsPossibleThisTick(): number {
         const crafts_possible_this_tick = this.craftsPossibleThisTick()
         const bonus_per_craft = this.state.machine.bonus_productivity_rate.bonus_per_craft
-        
+
         return crafts_possible_this_tick * bonus_per_craft
     }
 
@@ -119,7 +126,7 @@ export class MachineWorkingMode implements MachineMode {
     private consumeInputsForCraftCount(crafts: number): void {
         this.state.machine.inputs.forEach(input => {
             this.inventory_state.removeQuantity(
-                input.ingredient.name, 
+                input.ingredient.name,
                 input.consumption_rate.amount_per_craft * crafts
             );
         })
