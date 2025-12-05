@@ -1,3 +1,4 @@
+import assert from "assert"
 import { Belt } from "./belt";
 import { EntityId } from "./entity-id";
 import { Inserter } from "./inserter";
@@ -17,6 +18,18 @@ function isMachine(entity: Entity): entity is Machine {
 
 function isBelt(entity: Entity): entity is Belt {
     return EntityId.isBelt(entity.entity_id);
+}
+
+export function assertIsInserter(entity: Entity): asserts entity is Inserter {
+    assert(isInserter(entity), `Entity with id ${entity.entity_id} is not an inserter`);
+}
+
+export function assertIsMachine(entity: Entity): asserts entity is Machine {
+    assert(isMachine(entity), `Entity with id ${entity.entity_id} is not a machine`);
+}
+
+export function assertIsBelt(entity: Entity): asserts entity is Belt {
+    assert(isBelt(entity), `Entity with id ${entity.entity_id} is not a belt`);
 }
 
 export const Entity = {

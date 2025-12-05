@@ -6,8 +6,9 @@ import { ReadableMachineRegistry } from "../machine";
 import { InserterMetadata } from "./metadata/inserter-metadata";
 import { InserterAnimation } from "./inserter-animation";
 import assert from "assert";
-import { Entity } from "../entity";
+import { assertIsBelt, assertIsMachine, Entity } from "../entity";
 import { EntityId } from "../entity-id";
+import { EntityRegistry } from "../entity-registry";
 
 export interface InserterTarget {
     item_names: Set<ItemName>;
@@ -26,8 +27,7 @@ export interface Inserter extends Entity {
 
 export class InserterFactory {
     constructor(
-        public readonly machineRegistry: ReadableMachineRegistry,
-        public readonly beltRegistry: ReadableBeltRegistry,
+        public readonly entity_registry: EntityRegistry,
     ) { }
 
 
@@ -51,14 +51,16 @@ export class InserterFactory {
         const sink_consumed_items: Set<ItemName> = new Set()
 
         if (source.type === EntityType.BELT) {
-            const belt = this.beltRegistry.getBeltByIdOrThrow(source.id);
+            const belt = this.entity_registry.getEntityByIdOrThrow(EntityId.forBelt(source.id));
+            assertIsBelt(belt)
             belt.lanes.forEach(lane => {
                 source_provided_items.add(lane.ingredient_name)
             })
         }
 
         if (source.type === EntityType.MACHINE) {
-            const machine = this.machineRegistry.getMachineByIdOrThrow(source.id)
+            const machine = this.entity_registry.getEntityByIdOrThrow(EntityId.forMachine(source.id))
+            assertIsMachine(machine)
             source_provided_items.add(machine.output.ingredient.name)
         }
 
@@ -67,7 +69,8 @@ export class InserterFactory {
         }
 
         if (sink.type === EntityType.MACHINE) {
-            const machine = this.machineRegistry.getMachineByIdOrThrow(sink.id)
+            const machine = this.entity_registry.getEntityByIdOrThrow(EntityId.forMachine(sink.id))
+            assertIsMachine(machine)
             machine.inputs.forEach((input) => {
                 sink_consumed_items.add(input.ingredient.name)
             })
