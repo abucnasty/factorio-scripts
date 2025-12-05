@@ -1,23 +1,50 @@
+import { Duration, OpenRange } from "../../../data-types";
 import { MachineState, MachineStatus } from "../../../state";
+import { TickProvider } from "../../current-tick-provider";
 import { ModePlugin, Transition } from "../../mode";
 import { MachineMode, MachineWorkingMode } from "../modes";
 
-export type CraftEventListener = (craftIndex: number, state: MachineState) => void;
+export interface CraftEventListenerArgs {
+    readonly craft_index: number,
+    readonly state: Readonly<MachineState>
+    readonly craft_ticks: OpenRange
+}
+export type CraftEventListener = (args: CraftEventListenerArgs) => void;
 
 export class CraftEventListenerPlugin implements ModePlugin<MachineMode> {
     constructor(
         private readonly machine_state: MachineState,
+        private readonly tick_provider: TickProvider,
         private readonly onCraftEvent: CraftEventListener,
     ) { }
 
     private craft_index = 0;
 
-    onTransition(fromMode: MachineMode, transition: Transition<MachineMode>): void {}
+    private readonly craft_duration = Duration.ofTicks(
+        this.machine_state.machine.crafting_rate.ticks_per_craft
+    )
+
+    private last_craft_tick: number = 0;
+
+    onTransition(fromMode: MachineMode, transition: Transition<MachineMode>): void {
+        if (transition.toMode.status === MachineStatus.WORKING) {
+            this.last_craft_tick = this.tick_provider.getCurrentTick();
+        }
+    }
 
     executeForTick(): void {
         if (this.machine_state.craftCount > this.craft_index) {
-            this.onCraftEvent(this.machine_state.craftCount - 1, this.machine_state);
+            const current_tick = this.tick_provider.getCurrentTick();
+            this.onCraftEvent({
+                craft_index: this.craft_index,
+                state: MachineState.clone(this.machine_state),
+                craft_ticks: OpenRange.from(
+                    this.last_craft_tick,
+                    current_tick
+                ),
+            });
             this.craft_index = this.machine_state.craftCount;
+            this.last_craft_tick = current_tick;
         }
     }
 }

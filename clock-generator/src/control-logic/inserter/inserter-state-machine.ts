@@ -83,7 +83,9 @@ function createInserterStateMachine(args: {
 
     const pickup_mode_evaluator = new PickupModeTransitionEvaluator(
         inserter_state,
-        swing_mode
+        swing_mode,
+        disabled_mode,
+        enable_control,
     );
 
     const disabled_mode_evaluator = new DisabledModeTransitionEvaluator(
@@ -106,7 +108,7 @@ function createInserterStateMachine(args: {
     return new InserterStateMachine(
         initial_mode,
         graph,
-        plugins.concat(inserter_status_plugin),
+        [inserter_status_plugin, ...plugins],
         inserter_state,
     );
 }
