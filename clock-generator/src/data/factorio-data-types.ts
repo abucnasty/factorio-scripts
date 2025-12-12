@@ -1,4 +1,7 @@
+import { MiningDrillType } from "../entities/drill/mining-drill";
+
 export type ItemName = string;
+
 export interface Ingredient {
   type: "item" | "fluid",
   name: ItemName,
@@ -24,8 +27,33 @@ export type Item = {
   stack_size: number
 } & Record<string, any>
 
+export interface MiningDrillSpec {
+  type: "mining-drill"
+  name: MiningDrillType
+  mining_speed: number
+}
+
+export type Minable = {
+  minable: {
+    mining_time: number
+    result: ItemName
+  }
+}
+
+export type ResourceName = string;
+export type Resource = Minable & {
+  type: "resource"
+  minable: {
+    mining_time: number,
+    result: ItemName
+  },
+}
+
+
 export interface FactorioData {
-  recipe: Record<RecipeName, Recipe>
-  item: Record<ItemName, Item>
-  tool: Record<ItemName, Item>
+  "recipe": Record<RecipeName, Recipe>
+  "item": Record<ItemName, Item>
+  "tool": Record<ItemName, Item>
+  "mining-drill": Record<MiningDrillType, MiningDrillSpec>
+  "resource": Record<ResourceName, Resource>
 }

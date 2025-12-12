@@ -381,27 +381,35 @@ export const ELECTRIC_FURNACE_CONFIG: Config = {
             filters: ["electric-furnace"],
             stack_size: 16,
         },
-        { // simulated mining drill...
-            source: { type: "belt", id: 3 },
-            sink: { type: "machine", id: 3 },
-            filters: ["stone"],
-            stack_size: 100,
-        },
-        { // simulated mining drill...
-            source: { type: "belt", id: 3 },
-            sink: { type: "machine", id: 4 },
-            filters: ["stone"],
-            stack_size: 100,
-        },
-        { // simulated mining drill...
-            source: { type: "belt", id: 3 },
-            sink: { type: "machine", id: 5 },
-            filters: ["stone"],
-            stack_size: 100,
-        },
     ],
+    drills: {
+        mining_productivity_level: 8000,
+        configs: [
+            {
+                id: 1,
+                type: "electric-mining-drill",
+                mined_item_name: "stone",
+                speed_bonus: 12.5,
+                target: { type: "machine", id: 3 }
+            },
+            {
+                id: 2,
+                type: "electric-mining-drill",
+                mined_item_name: "stone",
+                speed_bonus: 12.5,
+                target: { type: "machine", id: 4 }
+            },
+            {
+                id: 3,
+                type: "electric-mining-drill",
+                mined_item_name: "stone",
+                speed_bonus: 12.5,
+                target: { type: "machine", id: 5 }
+            }
+        ]
+    },
     belts: [
-        
+
         {
             id: 1,
             type: "turbo-transport-belt",

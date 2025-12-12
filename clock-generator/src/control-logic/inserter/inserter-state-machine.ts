@@ -6,7 +6,7 @@ import { EntityState, InserterState, ReadableEntityStateRegistry } from "../../s
 import { TickProvider } from "../current-tick-provider";
 import { EnableControl } from "../enable-control";
 import { InserterDisabledMode } from "./modes/disabled-mode";
-import { InserterStatusPlugin, InserterHandContentsChangePlugin, OnHandContentsChanged } from "./plugins";
+import { InserterStatusPlugin } from "./plugins";
 import { IdleModeTransitionEvaluator, InserterSwingModeTransitionEvaluator, DropModeTransitionEvaluator, PickupModeTransitionEvaluator, DisabledModeTransitionEvaluator } from "./transitions";
 
 export class InserterStateMachine extends ModeStateMachine<InserterMode> {

@@ -1,6 +1,5 @@
 import Fraction, { fraction } from "fractionability";
-import { ProductionRate } from "./production-rate";
-import { OverloadMultiplier } from "../output";
+import { OverloadMultiplier, ProductionRate } from "../output";
 
 /**
  * Represents a range of ticks during which an inserter can insert items.
@@ -13,7 +12,7 @@ export interface InsertionDuration {
 
 function create(productionRate: ProductionRate, overloadMultiplier: OverloadMultiplier): InsertionDuration {
     return {
-        tick_duration: fraction(overloadMultiplier.overload_multiplier).divide(productionRate.rate_per_tick)
+        tick_duration: fraction(overloadMultiplier.overload_multiplier).divide(productionRate.amount_per_tick)
     }
 }
 

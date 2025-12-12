@@ -51,25 +51,25 @@ function createMachine(
         })
     );
 
+    const craftingRate = CraftingRate.fromCraftingSpeed(
+        fraction(recipe.output.amount),
+        metadata.crafting_speed,
+        recipe.energy_required
+    );
+
     const machineOutput: MachineOutput = {
         item_name: recipe.output.name,
         amount_per_craft: fraction(recipe.output.amount).multiply(fraction(1).add(fraction(metadata.productivity).divide(100))),
-        production_rate: ProductionRate.fromCraftingSpeed(
+        production_rate: ProductionRate.fromCraftingRate(
             recipe.output.name,
-            metadata.crafting_speed,
-            recipe.energy_required,
-            recipe.output.amount,
+            craftingRate,
             metadata.productivity / 100,
         ),
         ingredient: recipe.output,
         outputBlock: OutputBlock.fromRecipe(recipe, overload_multiplier)
     };
 
-    const craftingRate = CraftingRate.fromCraftingSpeed(
-        fraction(recipe.output.amount),
-        metadata.crafting_speed,
-        recipe.energy_required
-    );
+    
 
     const insertionDurationPeriod = InsertionDuration.create(machineOutput.production_rate, overload_multiplier)
 
@@ -93,7 +93,7 @@ function printMachineFacts(machine: Machine): void {
     console.log(`  Crafting Speed: ${machine.metadata.crafting_speed}`);
     console.log(`  Productivity: ${machine.metadata.productivity}%`);
     console.log(`  Output Per Craft: ${machine.output.amount_per_craft.toDecimal().toFixed(2)}`);
-    console.log(`  Output Rate: ${machine.output.production_rate.rate_per_second.toDecimal().toFixed(2)} per second`);
+    console.log(`  Output Rate: ${machine.output.production_rate.amount_per_second.toDecimal().toFixed(2)} per second`);
     console.log(`  Output Block: ${machine.output.outputBlock.quantity} ${machine.output.outputBlock.item_name}`);
     console.log(`  Overload Multiplier: ${machine.overload_multiplier.overload_multiplier.toString()}`);
     console.log(`  Ticks per craft: ${machine.crafting_rate.ticks_per_craft.toFixed(2)} ticks`);

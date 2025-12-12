@@ -18,6 +18,10 @@ export class EntityId {
         return this.forEntity(id, EntityType.MACHINE);
     }
 
+    public static forDrill(id: number): EntityId {
+        return this.forEntity(id, EntityType.DRILL);
+    }
+
     public static isInserter(entityId: EntityId): boolean {
         return entityId.type === EntityType.INSERTER;
     }
@@ -28,6 +32,10 @@ export class EntityId {
 
     public static isMachine(entityId: EntityId): boolean {
         return entityId.type === EntityType.MACHINE;
+    }
+
+    public static isDrill(entityId: EntityId): boolean {
+        return entityId.type === EntityType.DRILL;
     }
 
     private constructor(

@@ -1,10 +1,11 @@
 import { Config } from "../../config/config";
-import { ControlLogic } from "../../control-logic/control-logic";
 import { MutableTickProvider } from "../../control-logic/current-tick-provider";
 import { AlwaysEnabledControl } from "../../control-logic/enable-control";
 import { InserterStateMachine } from "../../control-logic/inserter/inserter-state-machine";
 import { MachineStateMachine } from "../../control-logic/machine/machine-state-machine";
 import { Belt, EntityRegistry, InserterFactory, Machine } from "../../entities";
+import { MiningDrill } from "../../entities/drill/mining-drill";
+import { MiningProductivity } from "../../entities/drill/mining-productivity";
 import { EntityState, EntityStateFactory, EntityStateRegistry } from "../../state";
 
 export interface SimulationContext {
@@ -38,6 +39,15 @@ export function createSimulationContextFromConfig(
     config.inserters.forEach((inserterConfig, index) => {
         entity_registry.add(inserter_factory.fromConfig(index + 1, inserterConfig))
     });
+
+    const drills = config.drills
+
+    if (drills) {
+        const mining_productivity = MiningProductivity.fromLevel(drills.mining_productivity_level)
+        drills.configs.forEach((drill_config, index) => {
+            entity_registry.add(MiningDrill.fromConfig(mining_productivity, drill_config))
+        })
+    }
 
 
     const state_factory = new EntityStateFactory(entity_registry);

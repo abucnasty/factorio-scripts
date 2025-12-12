@@ -4,6 +4,7 @@ import { RecipeMetadata } from './recipe'
 import { MachineMetadata } from './machine-metadata';
 import { Ingredient } from '../../data/factorio-data-types';
 import { fraction } from 'fractionability';
+import { TICKS_PER_SECOND } from '../../data-types';
 
 
 const createMachine = (recipeName: string, metadata: Partial<MachineMetadata> = {}): Machine => {
@@ -26,7 +27,8 @@ describe("Machine Entity", () => {
         const expectedIngredients: Ingredient[] = [
             { type: "item", name: "iron-plate", amount: 2 }
         ]
-        expect(ingredients).toEqual(expectedIngredients)
+        expect(ingredients.map(it => it.name)).toEqual(expectedIngredients.map(it => it.name))
+        expect(ingredients.map(it => it.amount)).toEqual(expectedIngredients.map(it => it.amount))
     })
 
     test("throws an error for unknown recipe", () => {
@@ -78,9 +80,9 @@ describe("Machine Entity - Input Consumption Rates", () => {
         })
         const iron_plate_input = machine.inputs.get("iron-plate")
         expect(iron_plate_input).toBeDefined()
-        const expected_rate_per_second = fraction(iron_plate_input!.ingredient.amount).divide(machine.metadata.recipe.energy_required)
+        const expected_rate_per_second = iron_plate_input!.ingredient.amount / machine.metadata.recipe.energy_required
         expect(iron_plate_input!.consumption_rate.rate_per_second).toStrictEqual(expected_rate_per_second)
-        const expected_rate_per_tick = expected_rate_per_second.divide(60)
+        const expected_rate_per_tick = expected_rate_per_second / TICKS_PER_SECOND.toDecimal()
         expect(iron_plate_input!.consumption_rate.rate_per_tick).toStrictEqual(expected_rate_per_tick)
     })
 
@@ -91,9 +93,9 @@ describe("Machine Entity - Input Consumption Rates", () => {
         })
         const iron_plate_input = machine.inputs.get("iron-plate")
         expect(iron_plate_input).toBeDefined()
-        const expected_rate_per_second = fraction(iron_plate_input!.ingredient.amount).divide(machine.metadata.recipe.energy_required).multiply(crafting_speed)
+        const expected_rate_per_second = (iron_plate_input!.ingredient.amount / machine.metadata.recipe.energy_required) * crafting_speed
         expect(iron_plate_input!.consumption_rate.rate_per_second).toStrictEqual(expected_rate_per_second)
-        const expected_rate_per_tick = expected_rate_per_second.divide(60)
+        const expected_rate_per_tick = expected_rate_per_second / TICKS_PER_SECOND.toDecimal()
         expect(iron_plate_input!.consumption_rate.rate_per_tick).toStrictEqual(expected_rate_per_tick)
     })
 
@@ -108,17 +110,17 @@ describe("Machine Entity - Input Consumption Rates", () => {
 
         const electronicCircuitInput = machine.inputs.get("electronic-circuit")
         expect(electronicCircuitInput).toBeDefined()
-        const expectedElectronicCircuitRatePerSecond = fraction(electronicCircuitInput!.ingredient.amount).divide(machine.metadata.recipe.energy_required)
+        const expectedElectronicCircuitRatePerSecond = electronicCircuitInput!.ingredient.amount / machine.metadata.recipe.energy_required
         expect(electronicCircuitInput!.consumption_rate.rate_per_second).toStrictEqual(expectedElectronicCircuitRatePerSecond)
 
         const plasticBarInput = machine.inputs.get("plastic-bar")
         expect(plasticBarInput).toBeDefined()
-        const expectedPlasticBarRatePerSecond = fraction(plasticBarInput!.ingredient.amount).divide(machine.metadata.recipe.energy_required)
+        const expectedPlasticBarRatePerSecond = plasticBarInput!.ingredient.amount / machine.metadata.recipe.energy_required
         expect(plasticBarInput!.consumption_rate.rate_per_second).toStrictEqual(expectedPlasticBarRatePerSecond)
 
         const copperCableInput = machine.inputs.get("copper-cable")
         expect(copperCableInput).toBeDefined()
-        const expectedCopperCableRatePerSecond = fraction(copperCableInput!.ingredient.amount).divide(machine.metadata.recipe.energy_required)
+        const expectedCopperCableRatePerSecond = copperCableInput!.ingredient.amount / machine.metadata.recipe.energy_required
         expect(copperCableInput!.consumption_rate.rate_per_second).toStrictEqual(expectedCopperCableRatePerSecond)
     })
 
@@ -129,7 +131,7 @@ describe("Machine Entity - Input Consumption Rates", () => {
         })
         const ironPlateInput = machine.inputs.get("iron-plate")
         expect(ironPlateInput).toBeDefined()
-        const expected_rate_per_second = fraction(ironPlateInput!.ingredient.amount).divide(machine.metadata.recipe.energy_required)
+        const expected_rate_per_second = ironPlateInput!.ingredient.amount / machine.metadata.recipe.energy_required
         expect(ironPlateInput!.consumption_rate.rate_per_second).toStrictEqual(expected_rate_per_second)
     })
 })
@@ -157,8 +159,8 @@ describe("Machine Entity - Output Production Rates", () => {
         const baseAmount = machine.metadata.recipe.output.amount;
         const expectedAmountPerCraft = Math.floor(baseAmount * (1 + productivity / 100));
         const expected_rate_per_second = fraction(expectedAmountPerCraft).divide(machine.metadata.recipe.energy_required)
-        expect(output.production_rate.rate_per_second).toStrictEqual(expected_rate_per_second)
+        expect(output.production_rate.amount_per_second).toStrictEqual(expected_rate_per_second)
         const expected_rate_per_tick = expected_rate_per_second.divide(60)
-        expect(output.production_rate.rate_per_tick).toStrictEqual(expected_rate_per_tick)
+        expect(output.production_rate.amount_per_tick).toStrictEqual(expected_rate_per_tick)
     })
 })

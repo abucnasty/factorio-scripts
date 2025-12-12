@@ -2,26 +2,19 @@ import { OpenRange } from "../../data-types/open-range";
 import { MachineState } from "../../state/machine-state";
 import { EntityId } from "../../entities";
 import { Duration } from "../../data-types";
-import { InserterState, InserterStatus } from "../../state/inserter-state";
+import { InserterState } from "../../state/inserter-state";
 import { CompositeControlLogic } from "../../control-logic/composite-control-logic";
 import { MutableTickProvider } from "../../control-logic/current-tick-provider";
-import chalk from "chalk"
 import { ItemName } from "../../data/factorio-data-types";
 import { TickControlLogic } from "../../control-logic/tick-control-logic";
 import { InserterStateMachine } from "../../control-logic/inserter/inserter-state-machine";
 import { MachineStateMachine } from "../../control-logic/machine/machine-state-machine";
 import { ActiveInserterTrackerPlugin } from "../../control-logic/inserter/plugins/active-inserter-tracker-plugin";
 import { InserterTransferTrackerPlugin } from "../../control-logic/inserter/plugins/inserter-transfer-tracker-plugin";
-import { InserterHandContentsChangePlugin } from "../../control-logic/inserter/plugins";
 import { DebugSettings } from "./debug/debug-settings";
 import { DebugPluginFactory } from "./debug/debug-plugin-factory";
 import { DebugSettingsProvider } from "./debug/debug-settings-provider";
-
-export interface CraftEvent {
-    machine_state: Readonly<MachineState>;
-    tick_range: OpenRange;
-    craft_index: number;
-}
+import { CraftEvent } from "./models";
 
 export interface TickSnapshot {
     tick: number;
@@ -90,9 +83,6 @@ function simulate(args: {
 
     inserterStateMachines.forEach(inserter_state_machine => {
 
-        const source_id = inserter_state_machine.inserter_state.inserter.source.entity_id;
-        const primary_machine_id = machine_state_machine.machine_state.machine.entity_id;
-
         inserter_state_machine.addPlugin(debug_plugin_factory.inserterHandContentsChangePlugin(inserter_state_machine));
 
         inserter_state_machine.addPlugin(debug_plugin_factory.inserterModeChangePlugin(inserter_state_machine));
@@ -138,7 +128,6 @@ function simulate(args: {
     const start_sim_time = Date.now()
     const start_tick = tickProvider.getCurrentTick();
 
-    // arbitrary end condition to prevent infinite loops
     while (true) {
         controlLogic.executeForTick();
         if (tickProvider.getCurrentTick() >= maxTicks) {

@@ -1,5 +1,6 @@
-import { Belt, Entity, EntityId, EntityType, Inserter, Machine, ReadableEntityRegistry } from "../entities";
+import { Belt, Entity, EntityId, ReadableEntityRegistry } from "../entities";
 import { BeltState } from "./belt-state";
+import { DrillState } from "./drill-state";
 import { EntityState } from "./entity-state";
 import { InserterState } from "./inserter-state";
 import { MachineState } from "./machine-state";
@@ -24,6 +25,10 @@ export class EntityStateFactory {
 
         if (Entity.isInserter(entity)) {
             return InserterState.createIdle(entity);
+        }
+
+        if (Entity.isDrill(entity)) {
+            return DrillState.fromEntity(entity);
         }
 
         throw new Error(`Cannot create state for unsupported entity type: ${entity.entity_id.type}`);

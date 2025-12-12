@@ -61,24 +61,24 @@ simulation_context.inserters.forEach(it => {
 console.log(`Created simulation context with ${simulation_context.machines.length} machines and ${simulation_context.inserters.length} inserters.`);
 
 console.log("Pre loading all machines until output blocked...");
+
 debug.enable()
 simulateUntilAllMachinesAreOutputBlocked(simulation_context);
-printInserterTransfers(inserter_transfers)
 inserter_transfers.clear();
 offset_tick = simulation_context.tick_provider.getCurrentTick();
 debug.disable()
+
 console.log("All machines are output blocked. Starting warm up simulation...");
 
 console.log("Warming up simulation...");
-const warm_up_start = new Date()
+
+const warm_up_start = new Date();
 simulateFromContext(simulation_context, warmup_period);
 const warm_up_end = new Date();
 const warm_up_simulation_time = warm_up_end.getTime() - warm_up_start.getTime();
 console.log(`Warm up simulation executed ${warmup_period.ticks} ticks in ${warm_up_simulation_time} ms (${(warmup_period.ticks / (warm_up_simulation_time / 1000)).toFixed(2)} UPS)`);
 console.log(`Starting simulation for ${duration.ticks} ticks`);
 // logging
-
-
 
 simulateFromContext(simulation_context, duration);
 

@@ -1,6 +1,7 @@
 import { EntityType } from "../entities";
 import { EntityId } from "../entities/entity-id";
 import { BeltState } from "./belt-state";
+import { DrillState } from "./drill-state";
 import { InserterState } from "./inserter-state";
 import { WritableInventoryState } from "./inventory-state";
 import { MachineState } from "./machine-state";
@@ -23,8 +24,13 @@ export function isInserter(state: EntityState): state is InserterState {
     return EntityId.isInserter(state.entity_id);
 }
 
+export function isDrill(state: EntityState): state is DrillState {
+    return EntityId.isDrill(state.entity_id);
+}
+
 export const EntityState = {
     isBelt: isBelt,
     isMachine: isMachine,
     isInserter: isInserter,
+    isDrill: isDrill,
 }

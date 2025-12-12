@@ -1,5 +1,7 @@
 import fs from "fs";
-import { FactorioData, Ingredient, Item, ItemName, Recipe } from "./factorio-data-types";
+import { FactorioData, Ingredient, Item, ItemName, MiningDrillSpec, Recipe, Resource, ResourceName } from "./factorio-data-types";
+import { MiningDrillType } from "../entities/drill/mining-drill";
+import assert from "assert";
 
 export type EnrichedIngredient = Ingredient & {
     item: Item;
@@ -56,7 +58,7 @@ export class FactorioDataService {
         }
     }
 
-    public static findItemOrThrow(itemName: ItemName) {
+    public static findItemOrThrow(itemName: ItemName): Item {
         const item = this.factorio_data.item[itemName];
         const tool = this.factorio_data.tool[itemName];
 
@@ -65,6 +67,18 @@ export class FactorioDataService {
         }
 
         return item ?? tool;
+    }
+
+    public static getMiningDrillSpec(type: MiningDrillType): MiningDrillSpec {
+        const spec = this.factorio_data["mining-drill"][type];
+        assert(spec, `Mining drill spec for type ${type} was not found`);
+        return spec;
+    }
+
+    public static getResourceOrThrow(itemName: ResourceName): Resource {
+        const resource = this.factorio_data["resource"][itemName];
+        assert(resource, `Resource ${itemName} was not found`);
+        return resource;
     }
 
 }

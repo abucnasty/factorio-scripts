@@ -1,4 +1,5 @@
-import { ItemName } from "../data/factorio-data-types";
+import { ItemName, ResourceName } from "../data/factorio-data-types";
+import { MiningDrillType } from "../entities/drill/mining-drill";
 
 export type RecipeName = string;
 
@@ -17,6 +18,26 @@ export interface TargetProductionRateConfig {
         output_swings?: number;
     }
 }
+
+export type DrillTargetMachineConfig = { type: "machine"; id: number; }
+
+/**
+ * TODO: not supported yet but will need this for direct insertion mining drills
+ */
+export interface MiningDrillConfig {
+    id: number;
+    type: MiningDrillType;
+    mined_item_name: ResourceName;
+    /**
+     * the speed bonus can be obtained by hovering over the drill and typing:
+     * 
+     * `/c game.print(game.player.selected.speed_bonus)`
+     */
+    speed_bonus: number;
+    target: DrillTargetMachineConfig;
+}
+
+
 
 export type InserterStackSizeConfig = { stack_size: number }
 export type InserterFilterConfig = { filters: ItemName[] }
@@ -54,10 +75,22 @@ export interface BeltConfig {
     lanes: [BeltLaneConfig] | [BeltLaneConfig, BeltLaneConfig]
 }
 
+export type DrillsConfig = {
+    /**
+     * The mining productivity level to apply to all mining drills.
+     * The value here is the current researched level and can be set in-game by running the command:
+     * 
+     * `/c game.player.force.technologies['mining-productivity-3'].level = X+1`
+     */
+    mining_productivity_level: number;
+    configs: MiningDrillConfig[];
+}
+
 
 export interface Config {
     target_output: TargetProductionRateConfig;
     machines: MachineConfiguration[];
+    drills?: DrillsConfig;
     inserters: InserterConfig[];
     belts: BeltConfig[];
 }

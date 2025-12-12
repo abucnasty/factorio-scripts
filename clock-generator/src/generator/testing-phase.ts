@@ -111,7 +111,7 @@ export function createOutputInserterControlLogicFromPlan(
 
     const max_swings_possible = fraction(output_crafted).divide(outputInserter.metadata.stack_size)
     const max_output_possible = max_swings_possible.multiply(outputInserter.metadata.stack_size)
-    const required_output = targetProductionRate.machine_production_rate.rate_per_tick.multiply(craftingSequenceDuration)
+    const required_output = targetProductionRate.machine_production_rate.amount_per_tick.multiply(craftingSequenceDuration)
 
     console.log(`Output Inserter ${outputInserter.entity_id} can perform a maximum of ${max_swings_possible.toDecimal()} swings over ${craftingSequenceDuration} ticks.`)
 
@@ -122,7 +122,7 @@ export function createOutputInserterControlLogicFromPlan(
     //     `but maximum possible output is ${max_output_possible.toDecimal()}`
     // );
 
-    const total_period_ticks = max_output_possible.divide(targetProductionRate.machine_production_rate.rate_per_tick)
+    const total_period_ticks = max_output_possible.divide(targetProductionRate.machine_production_rate.amount_per_tick)
 
     assert(total_period_ticks.getDenominator === 1, `The total period ticks must be a whole number, got ${total_period_ticks.toString()}`)
 

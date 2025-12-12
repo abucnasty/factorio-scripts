@@ -1,6 +1,5 @@
 import Fraction from "fractionability";
 import { ProductionRate } from "./production-rate";
-import { Ingredient } from "../../../data/factorio-data-types";
 import { OutputBlock } from "./output-block";
 import { EnrichedIngredient } from "../../../data/factorio-data-service";
 

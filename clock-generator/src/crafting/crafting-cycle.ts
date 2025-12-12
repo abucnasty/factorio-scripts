@@ -23,7 +23,7 @@ function fromItemsPerSecond(itemsPerSecond: Fraction, totalItems: Fraction): Cra
 }
 
 function fromProductionRate(productionRate: ProductionRate, stackSize: number): CraftingCycle {
-    return fromItemsPerSecond(productionRate.rate_per_second, fraction(stackSize));
+    return fromItemsPerSecond(productionRate.amount_per_second, fraction(stackSize));
 }
 
 function fromMachine(
