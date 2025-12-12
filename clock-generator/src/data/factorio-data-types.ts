@@ -41,13 +41,9 @@ export type Minable = {
 }
 
 export type ResourceName = string;
-export type Resource = Minable & {
+export type Resource = {
   type: "resource"
-  minable: {
-    mining_time: number,
-    result: ItemName
-  },
-}
+} & Minable
 
 
 export interface FactorioData {

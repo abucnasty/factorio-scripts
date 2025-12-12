@@ -1,6 +1,6 @@
 import { MiningDrillConfig } from "../../config/config";
 import { FactorioDataService } from "../../data/factorio-data-service";
-import { MiningDrillSpec, Resource } from "../../data/factorio-data-types";
+import { Item, MiningDrillSpec, Resource } from "../../data/factorio-data-types";
 import { Entity } from "../entity";
 import { EntityId } from "../entity-id";
 import { CraftingRate } from "../machine/traits";
@@ -18,12 +18,17 @@ export type MiningDrillType = typeof MiningDrillType[keyof typeof MiningDrillTyp
 
 export interface MiningDrillMetadata {
     type: MiningDrillType;
-    resource: Resource;
 }
 
-export interface MiningDrill extends Entity, MiningProductivity {
+export interface MiningDrillOutput {
+    item: Item;
+    resource: Resource;
     production_rate: ProductionRate;
-    crafting_rate: CraftingRate,
+    crafting_rate: CraftingRate;
+    sink_id: EntityId
+}
+
+export interface MiningDrill extends Entity, MiningProductivity, MiningDrillOutput {
     meta: MiningDrillMetadata
 }
 
@@ -33,17 +38,20 @@ function create(args: {
     type: MiningDrillType,
     resource: Resource,
     crafting_rate: CraftingRate,
-    production_rate: ProductionRate
+    production_rate: ProductionRate,
+    sink_id: EntityId
 }): MiningDrill {
     return {
         productivity: args.productivity.productivity,
         entity_id: EntityId.forDrill(args.id),
         meta: {
             type: args.type,
-            resource: args.resource
         },
+        resource: args.resource,
+        item: FactorioDataService.findItemOrThrow(args.resource.minable.result),
         crafting_rate: args.crafting_rate,
-        production_rate: args.production_rate
+        production_rate: args.production_rate,
+        sink_id: args.sink_id
     }
 }
 
@@ -86,7 +94,8 @@ function createFromConfig(mining_prod: MiningProductivity, config: MiningDrillCo
         type: config.type,
         resource: resource,
         crafting_rate: crafting_rate,
-        production_rate: production_rate
+        production_rate: production_rate,
+        sink_id: EntityId.forMachine(config.target.id)
     })
 }
 

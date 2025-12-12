@@ -1,11 +1,9 @@
-import { MiningDrill } from "../entities";
+import { EntityId, MiningDrill } from "../entities";
 import { EntityState } from "./entity-state";
 import { InventoryState, WritableInventoryState } from "./inventory-state";
 
 export const DrillStatus = {
-    IDLE: 'IDLE',
     WORKING: 'WORKING',
-    TARGET_FULL: 'TARGET_FULL',
     DISABLED: 'DISABLED',
 } as const;
 
@@ -21,7 +19,7 @@ export interface DrillState extends EntityState {
 function fromMiningDrillEntity(drill: MiningDrill): DrillState {
     return {
         entity_id: drill.entity_id,
-        status: DrillStatus.IDLE,
+        status: DrillStatus.WORKING,
         drill: drill,
         inventoryState: InventoryState.createEmptyForSingleItem(drill.production_rate.item),
     }

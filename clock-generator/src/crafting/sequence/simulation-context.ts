@@ -1,17 +1,19 @@
 import { Config } from "../../config/config";
 import { MutableTickProvider } from "../../control-logic/current-tick-provider";
+import { DrillStateMachine } from "../../control-logic/drill/drill-state-machine";
 import { AlwaysEnabledControl } from "../../control-logic/enable-control";
 import { InserterStateMachine } from "../../control-logic/inserter/inserter-state-machine";
 import { MachineStateMachine } from "../../control-logic/machine/machine-state-machine";
 import { Belt, EntityRegistry, InserterFactory, Machine } from "../../entities";
 import { MiningDrill } from "../../entities/drill/mining-drill";
 import { MiningProductivity } from "../../entities/drill/mining-productivity";
-import { EntityState, EntityStateFactory, EntityStateRegistry } from "../../state";
+import { DrillStatus, EntityState, EntityStateFactory, EntityStateRegistry } from "../../state";
 
 export interface SimulationContext {
     tick_provider: MutableTickProvider;
     machines: MachineStateMachine[];
     inserters: InserterStateMachine[];
+    drills: DrillStateMachine[]
 }
 
 export type MachineStateMachineInterceptor = (entity_state: EntityState) => MachineStateMachine | null
@@ -87,9 +89,25 @@ export function createSimulationContextFromConfig(
             })
         })
 
+
+    const drill_state_machines: DrillStateMachine[] = entity_state_registry
+        .getAllStates()
+        .filter(EntityState.isDrill)
+        .map(drill_state => {
+            return DrillStateMachine.create({
+                drill_state: drill_state,
+                initial_mode_status: DrillStatus.WORKING,
+                enable_control: AlwaysEnabledControl,
+                sink_state: entity_state_registry.getStateByEntityIdOrThrow(drill_state.drill.sink_id),
+            })
+        })
+
+    
+
     return {
         tick_provider: tick_provider,
         machines: machine_state_machines,
         inserters: inserter_state_machines,
+        drills: drill_state_machines,
     }
 }

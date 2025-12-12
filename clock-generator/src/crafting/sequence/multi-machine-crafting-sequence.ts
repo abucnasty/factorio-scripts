@@ -13,6 +13,7 @@ export function simulateFromContext(context: SimulationContext, duration: Durati
         [
             tick_control_logic,
             ...context.machines,
+            ...context.drills,
             ...context.inserters
         ]
     )
@@ -42,7 +43,8 @@ export function simulateUntilAllMachinesAreOutputBlocked(
         [
             tick_control_logic,
             ...context.machines,
-            ...input_inserters_only
+            ...context.drills,
+            ...input_inserters_only,
         ]
     )
 

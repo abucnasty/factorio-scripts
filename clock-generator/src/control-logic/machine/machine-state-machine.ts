@@ -28,7 +28,6 @@ export class MachineStateMachine extends ModeStateMachine<MachineMode> {
     }
 }
 
-
 function create(args: {
     machine_state: MachineState,
     initial_mode_status?: MachineStatus

@@ -28,6 +28,12 @@ export function isDrill(state: EntityState): state is DrillState {
     return EntityId.isDrill(state.entity_id);
 }
 
+export function assertIsMachineState(state: EntityState): asserts state is MachineState {
+    if (!isMachine(state)) {
+        throw new Error(`Expected machine state, got ${state.entity_id.type}`);
+    }
+}
+
 export const EntityState = {
     isBelt: isBelt,
     isMachine: isMachine,
