@@ -1,7 +1,7 @@
 import { FactorioBlueprint, BlueprintBuilder } from "../blueprints/blueprint";
 import { Position, SignalId } from "../blueprints/components";
 import { DeciderCombinatorEntity } from "../blueprints/entity/decider-combinator";
-import { OpenRange } from "../data-types";
+import { Duration, OpenRange } from "../data-types";
 import { ReadableEntityRegistry, Inserter, EntityId } from "../entities";
 import { CraftingSequence, InserterTransfer } from "./sequence/single-crafting-sequence";
 
@@ -147,19 +147,22 @@ export function createInserterControlLogicFromActiveRanges(
 }
 
 export function createSignalPerInserterBlueprint(
-    craftingSequence: CraftingSequence,
+    final_output_item_name: string,
+    total_duration: Duration,
+    inserter_transfers: Map<EntityId, InserterTransfer[]>,
     entityRegistry: ReadableEntityRegistry
 ): FactorioBlueprint {
-    const machine = craftingSequence.craft_events[0].machine_state.machine;
+    
+    const blueprint_label: string = final_output_item_name + " Inserter Clock Schedule"
     let x = 0.5;
-    const clock = createClockFromCraftingSequence(
-        craftingSequence,
-        Position.fromXY(x, 0)
-    );
+    const clock = DeciderCombinatorEntity
+        .clock(total_duration.ticks, 1)
+        .setPosition(Position.fromXY(x, 0))
+        .build();
 
     const deciderCombinatorEntities: DeciderCombinatorEntity[] = []
 
-    craftingSequence.inserter_transfers.forEach((transfers, entityId) => {
+    inserter_transfers.forEach((transfers, entityId) => {
         x += 1;
         deciderCombinatorEntities.push(
             createDeciderCombinatorForTransfers(
@@ -172,7 +175,7 @@ export function createSignalPerInserterBlueprint(
     })
 
     return new BlueprintBuilder()
-        .setLabel(machine.output.item_name + " Inserter Clock Schedule")
+        .setLabel(blueprint_label)
         .setEntities([
             clock,
             ...deciderCombinatorEntities

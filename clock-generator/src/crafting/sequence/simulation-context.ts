@@ -1,16 +1,18 @@
 import { Config } from "../../config/config";
 import { MutableTickProvider } from "../../control-logic/current-tick-provider";
 import { DrillStateMachine } from "../../control-logic/drill/drill-state-machine";
-import { AlwaysEnabledControl } from "../../control-logic/enable-control";
+import { AlwaysEnabledControl, EnableControl } from "../../control-logic/enable-control";
 import { InserterStateMachine } from "../../control-logic/inserter/inserter-state-machine";
 import { MachineStateMachine } from "../../control-logic/machine/machine-state-machine";
-import { Belt, EntityRegistry, InserterFactory, Machine } from "../../entities";
+import { Belt, EntityId, EntityRegistry, InserterFactory, Machine, WritableEntityRegistry } from "../../entities";
 import { MiningDrill } from "../../entities/drill/mining-drill";
 import { MiningProductivity } from "../../entities/drill/mining-productivity";
-import { DrillStatus, EntityState, EntityStateFactory, EntityStateRegistry } from "../../state";
+import { assertIsMachineState, DrillState, DrillStatus, EntityState, EntityStateFactory, EntityStateRegistry, InserterState, MachineState, WritableEntityStateRegistry } from "../../state";
 
 export interface SimulationContext {
     tick_provider: MutableTickProvider;
+    entity_registry: WritableEntityRegistry
+    state_registry: WritableEntityStateRegistry;
     machines: MachineStateMachine[];
     inserters: InserterStateMachine[];
     drills: DrillStateMachine[]
@@ -71,7 +73,7 @@ export function createSimulationContextFromConfig(
                 machine_state: machine_state,
             });
         })
-    
+
     const inserter_state_machines: InserterStateMachine[] = entity_state_registry
         .getAllStates()
         .filter(EntityState.isInserter)
@@ -102,12 +104,62 @@ export function createSimulationContextFromConfig(
             })
         })
 
-    
-
     return {
         tick_provider: tick_provider,
+        state_registry: entity_state_registry,
+        entity_registry: entity_registry,
         machines: machine_state_machines,
         inserters: inserter_state_machines,
         drills: drill_state_machines,
     }
+}
+
+export function cloneSimulationContextWithInterceptors(
+    context: SimulationContext,
+    interceptors: {
+        inserter?: (inserter_state: InserterState, source_state: EntityState, sink_state: EntityState) => EnableControl,
+        drill?: (drill_state: DrillState, sink_state: MachineState) => EnableControl,
+    } = {}
+): SimulationContext {
+
+    const entity_state_registry = context.state_registry;
+
+    const new_context: SimulationContext = {
+        ...context
+    }
+
+    if (interceptors.inserter) {
+        new_context.inserters = context.inserters.map(inserter_state_machine => {
+            const inserter_state = inserter_state_machine.inserter_state;
+            const source_state = entity_state_registry.getStateByEntityIdOrThrow(inserter_state.inserter.source.entity_id)
+            const sink_state = entity_state_registry.getStateByEntityIdOrThrow(inserter_state.inserter.sink.entity_id)
+            const enable_control = interceptors.inserter!(inserter_state_machine.inserter_state, source_state, sink_state);
+            
+            return InserterStateMachine.create({
+                inserter_state: inserter_state_machine.inserter_state,
+                source_state: source_state,
+                sink_state: sink_state,
+                enable_control: enable_control,
+                tick_provider: context.tick_provider,
+                plugins: inserter_state_machine.getPlugins()
+            })
+        })
+    }
+
+    if (interceptors.drill) {
+        new_context.drills = context.drills.map(drill_state_machine => {
+            const sink_state = entity_state_registry.getStateByEntityIdOrThrow(drill_state_machine.drill_state.drill.sink_id);
+            assertIsMachineState(sink_state);
+            const enable_control = interceptors.drill!(drill_state_machine.drill_state, sink_state);
+            return DrillStateMachine.create({
+                drill_state: drill_state_machine.drill_state,
+                initial_mode_status: DrillStatus.WORKING,
+                enable_control: enable_control,
+                sink_state: sink_state,
+                plugins: drill_state_machine.getPlugins()
+            })
+        })
+    }
+
+    return new_context;
 }

@@ -175,7 +175,9 @@ const main = () => {
         )
     } else {
         blueprint = createSignalPerInserterBlueprint(
-            finalCraftingSequence,
+            primaryMachine.output.item_name,
+            finalCraftingSequence.total_duration,
+            finalCraftingSequence.inserter_transfers,
             entityRegistry
         )
     }

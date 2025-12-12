@@ -70,6 +70,48 @@ export class LatchedEnableControl implements EnableControl {
     }
 }
 
+export class AllEnableControl implements EnableControl { 
+
+    public static create(enable_controls: ReadonlyArray<EnableControl>): EnableControl {
+        if (enable_controls.length === 0) {
+            return AlwaysEnabledControl;
+        }
+        if (enable_controls.length === 1) {
+            return enable_controls[0];
+        }
+        return new AllEnableControl(enable_controls);
+    }
+
+    constructor(
+        private readonly enableControls: ReadonlyArray<EnableControl>
+    ) { }
+
+    public isEnabled(): boolean {
+        return this.enableControls.every(control => control.isEnabled());
+    }
+}
+
+export class AnyEnableControl implements EnableControl { 
+
+    public static create(enable_controls: ReadonlyArray<EnableControl>): EnableControl {
+        if (enable_controls.length === 0) {
+            return AlwaysEnabledControl;
+        }
+        if (enable_controls.length === 1) {
+            return enable_controls[0];
+        }
+        return new AnyEnableControl(enable_controls);
+    }
+
+    constructor(
+        private readonly enableControls: ReadonlyArray<EnableControl>
+    ) { }
+
+    public isEnabled(): boolean {
+        return this.enableControls.some(control => control.isEnabled());
+    }
+}
+
 /**
  * Creates an EnableControl that enables for a specified duration within a repeating period, with an optional offset.
  */
@@ -106,15 +148,14 @@ export function createLatchedEnableControl(args: {
     )
 }
 
-export function createLambdaEnableControl(args: {
-    enabledFn: () => boolean
-}): EnableControl {
-    const { enabledFn } = args;
+export function createLambdaEnableControl(enabledFn: () => boolean): EnableControl {
     return new EnableControlLambda(enabledFn);
 }
 
 export const EnableControl = {
     latched: createLatchedEnableControl,
     lambda: createLambdaEnableControl,
-    periodic: createPeriodicEnableControl
+    periodic: createPeriodicEnableControl,
+    all: AllEnableControl.create,
+    any: AnyEnableControl.create
 }

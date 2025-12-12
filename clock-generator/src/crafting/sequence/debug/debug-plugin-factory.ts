@@ -6,9 +6,10 @@ import { InserterHandContentsChangePlugin } from "../../../control-logic/inserte
 import { MachineMode } from "../../../control-logic/machine/modes";
 import { CraftEventListenerPlugin } from "../../../control-logic/machine/plugins";
 import { ModePlugin } from "../../../control-logic/mode";
-import { MachineState } from "../../../state";
+import { DrillState, MachineState } from "../../../state";
 import { DebugLoggerFactory } from "./debug-logger-factory";
 import { DebugSettingsProvider } from "./debug-settings-provider";
+import { DrillMode } from "../../../control-logic/drill/modes/drill-mode";
 
 export class DebugPluginFactory {
     constructor(
@@ -69,5 +70,15 @@ export class DebugPluginFactory {
             message += ` \t "${output_name}"=${output_quantity}`;
             debugLog(chalk.green(message));
         })
+    }
+
+    public drillModeChangePlugin(drill_state: DrillState): ModePlugin<DrillMode> {
+        const debugLog = this.log_factory.forEntity(drill_state.drill);
+        return {
+            onTransition(fromMode, transition) {
+                const new_status = transition.toMode.status;
+                debugLog(chalk.yellow(`${fromMode.status} -> ${new_status} reason=${transition.reason}`));
+            }
+        }
     }
 }

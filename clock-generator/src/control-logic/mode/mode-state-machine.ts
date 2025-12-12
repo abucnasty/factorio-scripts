@@ -86,4 +86,8 @@ export class ModeStateMachine<M extends Mode> implements ModeProvider<M> {
     public addPlugin(plugin: ModePlugin<M>): void {
         this.plugins.push(plugin);
     }
+
+    public getPlugins(): ModePlugin<M>[] {
+        return [...this.plugins];
+    }
 }
