@@ -1,5 +1,6 @@
 import Fraction, { fraction } from "fractionability";
 import { CraftingRate } from "./crafting-rate";
+import { Percentage } from "../../../data-types/percent";
 
 export interface BonusProductivityRate {
     readonly progress_per_second: number;
@@ -23,10 +24,10 @@ function createEmpty(): BonusProductivityRate {
 
 function fromCraftingRate(
     craftingRate: CraftingRate,
-    productivityPercent: number
+    productivityPercent: Percentage
 ): BonusProductivityRate {
     // if the productivity percent is 0, there is no bonus productivity and thus no need to calculate further
-    if (productivityPercent === 0) {
+    if (productivityPercent.value === 0) {
         return createEmpty();
     }
 
@@ -36,7 +37,7 @@ function fromCraftingRate(
     // if the productivity is 100%, then the bonus productivity will occur every craft.
     // if the crafting rate is 120 ticks per craft, and the productivity is 50%, then
     // the bonus productivity will occur every 240 ticks.
-    const productivity = productivityPercent / 100;
+    const productivity = productivityPercent.normalized;
     const progressPerTick = craftingRate.crafts_per_tick * productivity;
     const progressPerSecond = progressPerTick * 60;
 

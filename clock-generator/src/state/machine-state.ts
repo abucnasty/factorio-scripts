@@ -82,10 +82,25 @@ function machineIsOutputBlocked(machineState: MachineState): boolean {
     return currentQuantity >= outputBlock.quantity
 }
 
+
+function printMachineState(machineState: MachineState): void {
+    console.log(`Machine ${machineState.entity_id}: (recipe = ${machineState.machine.metadata.recipe.name})`);
+    console.log(`  Status: ${machineState.status}`);
+    console.log(`  Craft Count: ${machineState.craftCount}`);
+    console.log(`  Total Crafted: ${machineState.totalCrafted}`);
+    console.log(`  Crafting Progress: ${machineState.craftingProgress.progress}`);
+    console.log(`  Bonus Progress: ${machineState.bonusProgress.progress}`);
+    console.log(`  Inventory State:`);
+    for (const inventory_item of machineState.inventoryState.getAllItems()) {
+        console.log(`    ${inventory_item.item_name}: ${inventory_item.quantity}`);
+    }
+}
+
 export const MachineState = {
     forMachine: forMachine,
     clone: clone,
     machineInputIsBlocked: machineInputIsBlocked,
     machineIsOutputBlocked: machineIsOutputBlocked,
     machineAcceptsItem: machineAcceptsItem,
+    print: printMachineState
 }

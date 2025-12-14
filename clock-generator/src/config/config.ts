@@ -8,6 +8,7 @@ export interface MachineConfiguration {
     recipe: RecipeName;
     productivity: number;
     crafting_speed: number;
+    type?: "machine" | "furnace"
 }
 
 export interface TargetProductionRateConfig {

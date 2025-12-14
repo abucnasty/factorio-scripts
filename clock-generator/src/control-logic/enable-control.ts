@@ -11,6 +11,12 @@ export const AlwaysEnabledControl: EnableControl = {
     }
 };
 
+const NeverEnabledControl: EnableControl = {
+    isEnabled(): boolean {
+        return false;
+    }
+};
+
 export class EnableControlLambda implements EnableControl {
     constructor(
         private readonly enabledFn: () => boolean
@@ -35,38 +41,39 @@ export class PeriodicEnableControl implements EnableControl {
     }
 }
 
+/**
+ * Latches the enabled state until another condition is met
+ */
 export class LatchedEnableControl implements EnableControl {
-    private latchStartTick: number | null = null;
 
-    constructor(
-        private readonly enableControl: EnableControl,
-        private readonly latchDuration: Duration,
-        private readonly tickProvider: TickProvider
-    ) { }
-
-    public isEnabled(): boolean {
-        const currentlyEnabled = this.enableControl.isEnabled();
-        const currentTick = this.tickProvider.getCurrentTick();
-
-        if (currentlyEnabled) {
-            this.latchStartTick = currentTick;
-            return true;
-        }
-
-        if (this.latchStartTick !== null) {
-            const ticksSinceLatch = currentTick - this.latchStartTick;
-            if (ticksSinceLatch < this.latchDuration.ticks) {
-                return true;
-            } else {
-                this.reset();
-            }
-        }
-
-        return false;
+    static create(args: {
+        base: EnableControl,
+        release: EnableControl,
+    }): LatchedEnableControl {
+        return new LatchedEnableControl(
+            args.base,
+            args.release,
+        );
     }
 
-    public reset(): void {
-        this.latchStartTick = null;
+    constructor(
+        private readonly base: EnableControl,
+        private readonly release: EnableControl,
+    ) { }
+
+    private latched: boolean = false;
+
+    public isEnabled(): boolean {
+        if (this.latched && this.release.isEnabled()) {
+            if (this.release.isEnabled()) {
+                this.latched = false;
+            }
+        } else {
+            if (this.base.isEnabled()) {
+                this.latched = true;
+            }
+        }
+        return this.latched;
     }
 }
 
@@ -135,27 +142,15 @@ export function createPeriodicEnableControl(args: {
     );
 }
 
-export function createLatchedEnableControl(args: {
-    enableControl: EnableControl,
-    latchDuration: Duration,
-    tickProvider: TickProvider
-}): EnableControl {
-    const { enableControl, latchDuration, tickProvider } = args;
-    return new LatchedEnableControl(
-        enableControl,
-        latchDuration,
-        tickProvider
-    )
-}
-
 export function createLambdaEnableControl(enabledFn: () => boolean): EnableControl {
     return new EnableControlLambda(enabledFn);
 }
 
 export const EnableControl = {
-    latched: createLatchedEnableControl,
     lambda: createLambdaEnableControl,
     periodic: createPeriodicEnableControl,
     all: AllEnableControl.create,
-    any: AnyEnableControl.create
+    any: AnyEnableControl.create,
+    latched: LatchedEnableControl.create,
+    never: NeverEnabledControl,
 }

@@ -8,6 +8,7 @@ import { RecipeMetadata } from "./recipe";
 import { BonusProductivityRate, CraftingRate, InsertionDuration } from "./traits";
 import { Entity } from "../entity";
 import { EntityId } from "../entity-id";
+import { Percentage } from "../../data-types/percent";
 
 
 export interface Machine extends Entity {
@@ -25,6 +26,7 @@ function fromConfig(config: MachineConfiguration): Machine {
         recipe: RecipeMetadata.fromRecipeName(config.recipe),
         productivity: config.productivity,
         crafting_speed: config.crafting_speed,
+        type: config.type ?? "machine",
     });
 }
 
@@ -63,17 +65,17 @@ function createMachine(
         production_rate: ProductionRate.fromCraftingRate(
             recipe.output.name,
             craftingRate,
-            metadata.productivity / 100,
+            new Percentage(metadata.productivity),
         ),
         ingredient: recipe.output,
-        outputBlock: OutputBlock.fromRecipe(recipe, overload_multiplier)
+        outputBlock: OutputBlock.fromRecipe(metadata.type, recipe, overload_multiplier)
     };
 
     
 
     const insertionDurationPeriod = InsertionDuration.create(machineOutput.production_rate, overload_multiplier)
 
-    const bonusProductivityRate = BonusProductivityRate.fromCraftingRate(craftingRate, metadata.productivity);
+    const bonusProductivityRate = BonusProductivityRate.fromCraftingRate(craftingRate, new Percentage(metadata.productivity));
     return {
         entity_id: EntityId.forMachine(id),
         metadata,

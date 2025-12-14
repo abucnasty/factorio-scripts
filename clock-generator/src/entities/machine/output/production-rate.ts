@@ -2,6 +2,7 @@ import Fraction, { fraction } from "fractionability";
 import { TICKS_PER_SECOND } from "../../../data-types";
 import { CraftingRate } from "../traits";
 import { ItemName } from "../../../data/factorio-data-types";
+import { Percentage } from "../../../data-types/percent";
 
 export interface ProductionRate {
     readonly item: string;
@@ -37,11 +38,11 @@ function fromItemsPerTick(item: ItemName, rate_per_tick: Fraction): ProductionRa
     };
 }
 
-function fromCraftingRate(item: ItemName, crafting_rate: CraftingRate, productivity: number = 0) {
+function fromCraftingRate(item: ItemName, crafting_rate: CraftingRate, productivity: Percentage) {
     const rate_per_second = fraction(crafting_rate.amount_per_second)
         .multiply(
             fraction(1).add(
-                fraction(productivity).divide(100)
+                fraction(productivity.value).divide(100)
             )
         );
     return fromItemsPerSecond(item, rate_per_second);

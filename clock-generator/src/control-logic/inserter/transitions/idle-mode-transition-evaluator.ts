@@ -50,6 +50,7 @@ export class IdleModeTransitionEvaluator implements ModeTransitionEvaluator<Inse
     public onExit(toMode: InserterMode): void {}
 
     public evaluateTransition(): ModeTransition<InserterMode> {
+
         const current_tick = this.tick_provider.getCurrentTick();
         if (current_tick < this.next_evaluation_tick) {
             return ModeTransition.NONE;

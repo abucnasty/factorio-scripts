@@ -6,6 +6,7 @@ export interface InserterAnimation {
     rotation: Duration
     drop: Duration
     total: Duration
+    pickup_to_drop: Duration
 }
 
 
@@ -25,6 +26,9 @@ function animationFromMetadata(
         rotation: rotation_duration,
         total: Duration.ofTicks(
             pickup_duration.ticks + drop_duration.ticks + rotation_duration.ticks * 2
+        ),
+        pickup_to_drop: Duration.ofTicks(
+            pickup_duration.ticks + rotation_duration.ticks + drop_duration.ticks
         )
     }
 

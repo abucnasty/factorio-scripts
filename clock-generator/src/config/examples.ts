@@ -80,8 +80,7 @@ export const LOGISTIC_SCIENCE_CONFIG: Config = {
             id: 1,
             recipe: "logistic-science-pack",
             productivity: 100,
-            crafting_speed: 68.90625,
-            // crafting_speed: 68.906247615814
+            crafting_speed: 68.906247615814,
         },
     ],
     inserters: [
@@ -330,18 +329,21 @@ export const ELECTRIC_FURNACE_CONFIG: Config = {
             recipe: "stone-brick",
             productivity: 50,
             crafting_speed: 80.05,
+            type: "furnace"
         },
         {
             id: 4,
             recipe: "stone-brick",
             productivity: 50,
             crafting_speed: 80.05,
+            type: "furnace"
         },
         {
             id: 5,
             recipe: "stone-brick",
             productivity: 50,
             crafting_speed: 80.05,
+            type: "furnace"
         }
     ],
     inserters: [
@@ -409,7 +411,6 @@ export const ELECTRIC_FURNACE_CONFIG: Config = {
         ]
     },
     belts: [
-
         {
             id: 1,
             type: "turbo-transport-belt",
@@ -434,5 +435,99 @@ export const ELECTRIC_FURNACE_CONFIG: Config = {
                 { ingredient: "stone", stack_size: 4 }
             ]
         }
+    ]
+}
+
+export const PRODUCTION_SCIENCE_CONFIG: Config = {
+    target_output: {
+        recipe: "production-science-pack",
+        items_per_second: 120,
+        machines: 7,
+    },
+    machines: [
+        {
+            id: 1,
+            recipe: "production-science-pack",
+            productivity: 100,
+            crafting_speed: 63,
+        },
+        {
+            id: 2,
+            recipe: "rail",
+            productivity: 0,
+            crafting_speed: 46.375,
+        },
+        {
+            id: 3,
+            recipe: "casting-steel",
+            productivity: 300,
+            crafting_speed: 122.5,
+        },
+        {
+            id: 4,
+            recipe: "casting-iron-stick",
+            productivity: 150,
+            crafting_speed: 66.5,
+        },
+    ],
+    drills: {
+        mining_productivity_level: 8000,
+        configs: [
+            {
+                id: 1,
+                type: "electric-mining-drill",
+                mined_item_name: "stone",
+                speed_bonus: 8.84,
+                target: { type: "machine", id: 2 }
+            },
+        ]
+    },
+    inserters: [
+        {
+            source: { type: "machine", id: 1 },
+            sink: { type: "belt", id: 1 },
+            filters: ["production-science-pack"],
+            stack_size: 16,
+        },
+        {
+            source: { type: "belt", id: 1 },
+            sink: { type: "machine", id: 1 },
+            filters: ["productivity-module"],
+            stack_size: 16,
+        },
+        {
+            source: { type: "belt", id: 1 },
+            sink: { type: "machine", id: 1 },
+            filters: ["electric-furnace"],
+            stack_size: 16,
+        },
+        {
+            source: { type: "machine", id: 2 },
+            sink: { type: "machine", id: 1 },
+            // filters: ["rail"],
+            stack_size: 16,
+        },
+        {
+            source: { type: "machine", id: 3 },
+            sink: { type: "machine", id: 2 },
+            // filters: ["steel-plate"],
+            stack_size: 16,
+        },
+        {
+            source: { type: "machine", id: 4 },
+            sink: { type: "machine", id: 2 },
+            // filters: ["iron-stick"],
+            stack_size: 16,
+        },
+    ],
+    belts: [
+        {
+            id: 1,
+            type: "turbo-transport-belt",
+            lanes: [
+                { ingredient: "productivity-module", stack_size: 4 },
+                { ingredient: "electric-furnace", stack_size: 4 }
+            ]
+        },
     ]
 }

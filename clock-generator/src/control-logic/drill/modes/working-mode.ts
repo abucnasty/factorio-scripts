@@ -2,6 +2,7 @@ import assert from "assert";
 import { assertIsMachineState, DrillState, DrillStatus, EntityState, MachineState } from "../../../state";
 import { DrillMode } from "./drill-mode";
 import { Item } from "../../../data/factorio-data-types";
+import { miningDrillMaxInsertion } from "../../../entities";
 
 export class DrillWorkingMode implements DrillMode {
 
@@ -60,25 +61,14 @@ export class DrillWorkingMode implements DrillMode {
     }
 
     private get mining_insertion_limit(): number {
-        // the actual limit of how much the drill can insert into a machine per tick is the automated insertion limit + 64
-        // however, in practice it is observed that the mining drill will stop at a minimum of 114 items
-        // the assumption is due to the stack size of stone being 50 + 64 = 114
-
-        const automated_insertion_limit = this.sink_automated_insertion_limit;
-        const mined_item_stack_size = this.mined_item.stack_size;
-        const max_insertion_per_tick = Math.min(mined_item_stack_size, automated_insertion_limit);
-        return max_insertion_per_tick + 64;
+        return miningDrillMaxInsertion(
+            this.state.drill,
+            this.sink_state.machine,
+        );
     }
 
     private get mined_item(): Item {
         return this.state.drill.item;
-    }
-
-    private get sink_automated_insertion_limit(): number {
-        const sink_state = this.sink_state;
-        const machine_input = sink_state.machine.inputs.get(this.mined_item.name);
-        assert(machine_input, `Machine ${sink_state.entity_id} does not have an input for ${this.mined_item.name}`);
-        return machine_input.automated_insertion_limit.quantity;
     }
 
     private get sink_current_inventory_quantity(): number {

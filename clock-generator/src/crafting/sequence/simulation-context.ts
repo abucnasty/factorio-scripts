@@ -8,6 +8,7 @@ import { Belt, EntityId, EntityRegistry, InserterFactory, Machine, WritableEntit
 import { MiningDrill } from "../../entities/drill/mining-drill";
 import { MiningProductivity } from "../../entities/drill/mining-productivity";
 import { assertIsMachineState, DrillState, DrillStatus, EntityState, EntityStateFactory, EntityStateRegistry, InserterState, MachineState, WritableEntityStateRegistry } from "../../state";
+import { InserterInterceptor } from "./interceptors/inserter-interceptor";
 
 export interface SimulationContext {
     tick_provider: MutableTickProvider;
@@ -117,7 +118,7 @@ export function createSimulationContextFromConfig(
 export function cloneSimulationContextWithInterceptors(
     context: SimulationContext,
     interceptors: {
-        inserter?: (inserter_state: InserterState, source_state: EntityState, sink_state: EntityState) => EnableControl,
+        inserter?: InserterInterceptor,
         drill?: (drill_state: DrillState, sink_state: MachineState) => EnableControl,
     } = {}
 ): SimulationContext {
@@ -134,7 +135,7 @@ export function cloneSimulationContextWithInterceptors(
             const source_state = entity_state_registry.getStateByEntityIdOrThrow(inserter_state.inserter.source.entity_id)
             const sink_state = entity_state_registry.getStateByEntityIdOrThrow(inserter_state.inserter.sink.entity_id)
             const enable_control = interceptors.inserter!(inserter_state_machine.inserter_state, source_state, sink_state);
-            
+
             return InserterStateMachine.create({
                 inserter_state: inserter_state_machine.inserter_state,
                 source_state: source_state,

@@ -23,6 +23,11 @@ export class FactorioDataService {
 
     public static readonly DEFAULT_ENERGY_REQUIRED = 0.5
 
+
+    public static interceptor: Map<string, Item> = new Map([
+        ["rail", { name: "rail", type: "item", stack_size: 100 }],
+    ]);
+
     public static findRecipeOrThrow(recipeName: string): EnrichedRecipe {
         const recipe = this.factorio_data.recipe[recipeName]
 
@@ -59,14 +64,23 @@ export class FactorioDataService {
     }
 
     public static findItemOrThrow(itemName: ItemName): Item {
+        const interceptor = this.interceptor.get(itemName);
+        if(interceptor) {
+            return interceptor
+        }
         const item = this.factorio_data.item[itemName];
         const tool = this.factorio_data.tool[itemName];
+        const module = this.factorio_data.module[itemName];
+        const straight_rail = this.factorio_data["straight-rail"][itemName];
 
-        if(!item && !tool) {
+        if(!item && !tool && !module && !straight_rail) {
             throw new Error(`Item ${itemName} was not found`);
         }
 
-        return item ?? tool;
+        const result = item ?? tool ?? module ?? straight_rail;
+
+        result.name = itemName;
+        return result;
     }
 
     public static getMiningDrillSpec(type: MiningDrillType): MiningDrillSpec {

@@ -6,6 +6,8 @@ const category_allow_list = new Set([
     "tool",
     "mining-drill",
     "resource",
+    "module",
+    "straight-rail",
 ])
 
 fs.readFile("./data-raw-dump.json")

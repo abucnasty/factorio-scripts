@@ -2,6 +2,7 @@ import { fraction } from "fractionability";
 import { CraftingSequence, InserterTransfer } from "../crafting/sequence/single-crafting-sequence";
 import { OpenRange } from "../data-types";
 import { EntityId, EntityRegistry, Inserter } from "../entities";
+import { InventoryTransfer } from "../crafting/sequence/inventory-transfer";
 
 export function printCraftSnapshots(craftingSequence: CraftingSequence) {
     console.log("------------------------------")
@@ -17,14 +18,6 @@ export function printCraftSnapshots(craftingSequence: CraftingSequence) {
         })
     })
     console.log("------------------------------")
-}
-
-export function printCraftingSequence(
-    craftingSequence: CraftingSequence,
-    relative_tick_mod: number = 0
-) {
-    printCraftingStatistics(craftingSequence);
-    printInserterTransfers(craftingSequence.inserter_transfers, relative_tick_mod);
 }
 
 export function printCraftingStatistics(
@@ -50,12 +43,12 @@ export function printCraftingStatistics(
     console.log("------------------------------")
 }
 
-export function printInserterTransfers(
-    inserter_transfers: Map<EntityId, InserterTransfer[]>,
+export function printInventoryTransfers(
+    inventory_transfers: Map<EntityId, InventoryTransfer[]>,
     relative_tick_mod: number = 0
 ): void {
-    inserter_transfers!.forEach((transfers, entityId) => {
-        console.log(`Inserter Transfer Ranges for ${entityId}`);
+    inventory_transfers.forEach((transfers, entityId) => {
+        console.log(`Transfer Ranges for ${entityId}`);
         transfers.forEach((transfer) => {
             const start_inclusive = transfer.tick_range.start_inclusive;
             const end_inclusive = transfer.tick_range.end_inclusive;

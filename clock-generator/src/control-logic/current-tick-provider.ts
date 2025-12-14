@@ -3,6 +3,11 @@ export interface TickProvider {
 }
 
 export class MutableTickProvider implements TickProvider {
+
+    static create(initialTick: number = 0): MutableTickProvider {
+        return new MutableTickProvider(initialTick);
+    }
+
     private currentTick: number;
 
     constructor(initialTick: number = 0) {
@@ -22,6 +27,26 @@ export class MutableTickProvider implements TickProvider {
     }
 }
 
+export class OffsetTickProvider implements TickProvider {
+    static create(args: {
+        base: TickProvider,
+        offset: () => number,
+    }): OffsetTickProvider {
+        return new OffsetTickProvider(
+            args.base,
+            args.offset,
+        );
+    }
+    constructor(
+        private readonly base: TickProvider,
+        private readonly offset: () => number,
+    ) {}
+
+    public getCurrentTick(): number {
+        return this.base.getCurrentTick() + this.offset();
+    }
+}
+
 export function create(tickProvider: () => number): TickProvider {
     return {
         getCurrentTick(): number {
@@ -32,5 +57,6 @@ export function create(tickProvider: () => number): TickProvider {
 
 export const TickProvider = {
     create: create,
-    mutable: (initialTick: number = 0) => new MutableTickProvider(initialTick),
+    mutable: MutableTickProvider.create,
+    offset: OffsetTickProvider.create,
 };

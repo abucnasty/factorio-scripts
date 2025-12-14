@@ -96,43 +96,43 @@ export class MachineWorkingMode implements MachineMode {
         const output_name = this.state.machine.output.ingredient.name;
         const max_stack_size = this.state.machine.output.ingredient.item.stack_size;
         const current_output = this.inventory_state.getQuantity(output_name);
-        
+
         // Calculate potential craft output
         const craft_output = Math.floor(amount_per_craft * crafts_whole);
-        
+
         // Calculate potential bonus output
         const bonus_per_craft = this.state.machine.bonus_productivity_rate.bonus_per_craft
         const bonus_crafts_possible = crafts_possible * bonus_per_craft
         const bonus_progress = this.state.bonusProgress.progress + bonus_crafts_possible
         const bonus_crafts_whole = Math.floor(bonus_progress);
         const bonus_craft_output = Math.floor(amount_per_craft * bonus_crafts_whole);
-        
+
         // Total output that would be produced
         const total_output = craft_output + bonus_craft_output;
         const available_space = max_stack_size - current_output;
-        
+
         // If total output exceeds available space, we need to adjust
         if (total_output > available_space) {
             // Calculate how much we can actually produce
             const actual_craft_output = Math.min(craft_output, available_space);
             const remaining_space = available_space - actual_craft_output;
             const actual_bonus_output = Math.min(bonus_craft_output, remaining_space);
-            
+
             // Calculate the actual crafts that can complete based on output space
             const actual_crafts_whole = Math.floor(actual_craft_output / amount_per_craft);
             const actual_bonus_crafts_whole = Math.floor(actual_bonus_output / amount_per_craft);
-            
+
             // Update progress based on what we can actually complete
             this.state.craftingProgress.progress = crafts_remainder;
             this.state.bonusProgress.progress = this.state.bonusProgress.progress + (actual_bonus_crafts_whole * amount_per_craft) / amount_per_craft;
-            
+
             // Add the clamped outputs
             this.inventory_state.addQuantity(output_name, actual_craft_output);
             this.state.totalCrafted += actual_craft_output;
-            
+
             this.inventory_state.addQuantity(output_name, actual_bonus_output);
             this.state.totalCrafted += actual_bonus_output;
-            
+
             // Consume inputs
             if (actual_crafts_whole >= 1) {
                 this.state.craftCount += actual_crafts_whole;
@@ -141,16 +141,16 @@ export class MachineWorkingMode implements MachineMode {
         } else {
             // Normal flow - everything fits
             this.state.craftingProgress.progress = crafts_remainder;
-            
+
             const bonus_crafts_remainder = bonus_progress - bonus_crafts_whole;
             this.state.bonusProgress.progress = bonus_crafts_remainder;
-            
+
             this.inventory_state.addQuantity(output_name, craft_output);
             this.state.totalCrafted += craft_output;
-            
+
             this.inventory_state.addQuantity(output_name, bonus_craft_output);
             this.state.totalCrafted += bonus_craft_output;
-            
+
             // conume inputs
             if (crafts_whole >= 1) {
                 this.state.craftCount += crafts_whole;

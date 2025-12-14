@@ -2,7 +2,8 @@ import { FactorioBlueprint, BlueprintBuilder } from "../blueprints/blueprint";
 import { Position, SignalId } from "../blueprints/components";
 import { DeciderCombinatorEntity } from "../blueprints/entity/decider-combinator";
 import { Duration, OpenRange } from "../data-types";
-import { ReadableEntityRegistry, Inserter, EntityId } from "../entities";
+import { ReadableEntityRegistry, Inserter, EntityId, Entity } from "../entities";
+import { InventoryTransfer } from "./sequence/inventory-transfer";
 import { CraftingSequence, InserterTransfer } from "./sequence/single-crafting-sequence";
 
 
@@ -18,27 +19,35 @@ function createClockFromCraftingSequence(
 }
 
 function createDeciderCombinatorForTransfers(
-    inserter_transfers: InserterTransfer[],
-    inserter_id: EntityId,
+    inventory_transfers: InventoryTransfer[],
+    entity_id: EntityId,
     entity_registry: ReadableEntityRegistry,
     position: Position
 ): DeciderCombinatorEntity {
-    const inserter: Inserter = entity_registry.getEntityByIdOrThrow(inserter_id)
-    const inserter_number = inserter_id.id.split(":")[1]
-    let outputSignalId = SignalId.virtual(`signal-${inserter_number}`);
+    const entity = entity_registry.getEntityByIdOrThrow(entity_id)
+    const entity_number = entity_id.id.split(":")[1]
+    let outputSignalId = SignalId.virtual(`signal-${entity_number}`);
 
     let description_lines: string[] = []
 
-    description_lines.push(`Inserter ${inserter_number} for: `)
+    description_lines.push(`Inserter ${entity_number} for: `)
 
-    const items = new Set(inserter.filtered_items);
+    const items = new Set<string>();
+
+    if(Entity.isInserter(entity)) {
+        entity.filtered_items.forEach(item_name => items.add(item_name));
+    } else if(Entity.isDrill(entity)) {
+        items.add(entity.item.name);
+    } else {
+        throw new Error(`Entity ${entity_id} is not an inserter or drill`);
+    }
 
     items.forEach(item_name => {
         const item_icon = SignalId.toDescriptionString(SignalId.item(item_name))
         description_lines.push(`- ${item_icon}`)
     })
 
-    const swing_count = inserter_transfers.length
+    const swing_count = inventory_transfers.length
 
     description_lines.push("")
     description_lines.push(`Total Swings: ${swing_count}`)
@@ -49,7 +58,7 @@ function createDeciderCombinatorForTransfers(
         outputSignalId = SignalId.item(Array.from(items)[0])
     }
 
-    const ranges = OpenRange.reduceRanges(inserter_transfers.map(transfer => transfer.tick_range));
+    const ranges = OpenRange.reduceRanges(inventory_transfers.map(transfer => transfer.tick_range));
 
     const deciderCombinator = DeciderCombinatorEntity
         .fromRanges(
@@ -149,7 +158,7 @@ export function createInserterControlLogicFromActiveRanges(
 export function createSignalPerInserterBlueprint(
     final_output_item_name: string,
     total_duration: Duration,
-    inserter_transfers: Map<EntityId, InserterTransfer[]>,
+    inventory_transfers: Map<EntityId, InventoryTransfer[]>,
     entityRegistry: ReadableEntityRegistry
 ): FactorioBlueprint {
     
@@ -162,7 +171,10 @@ export function createSignalPerInserterBlueprint(
 
     const deciderCombinatorEntities: DeciderCombinatorEntity[] = []
 
-    inserter_transfers.forEach((transfers, entityId) => {
+    const sortedEntityIds = Array.from(inventory_transfers.keys()).sort((a, b) => a.id.localeCompare(b.id));
+
+    sortedEntityIds.forEach(entityId => {
+        const transfers = inventory_transfers.get(entityId)!;
         x += 1;
         deciderCombinatorEntities.push(
             createDeciderCombinatorForTransfers(

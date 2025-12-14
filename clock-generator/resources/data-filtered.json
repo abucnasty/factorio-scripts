@@ -73815,5 +73815,1616 @@
         }
       }
     }
+  },
+  "module": {
+    "speed-module": {
+      "type": "module",
+      "name": "speed-module",
+      "localised_description": [
+        "item-description.speed-module"
+      ],
+      "icon": "__base__/graphics/icons/speed-module.png",
+      "subgroup": "module",
+      "color_hint": {
+        "text": "S"
+      },
+      "category": "speed",
+      "tier": 1,
+      "order": "a[speed]-a[speed-module-1]",
+      "inventory_move_sound": {
+        "filename": "__base__/sound/item/module-inventory-move.ogg",
+        "volume": 0.8,
+        "aggregation": {
+          "max_count": 1,
+          "remove": true
+        }
+      },
+      "pick_sound": {
+        "filename": "__base__/sound/item/module-inventory-pickup.ogg",
+        "volume": 0.8,
+        "aggregation": {
+          "max_count": 1,
+          "remove": true
+        }
+      },
+      "drop_sound": {
+        "filename": "__base__/sound/item/module-inventory-move.ogg",
+        "volume": 0.8,
+        "aggregation": {
+          "max_count": 1,
+          "remove": true
+        }
+      },
+      "stack_size": 50,
+      "weight": 20000,
+      "effect": {
+        "speed": 0.2,
+        "consumption": 0.5,
+        "quality": -0.1
+      },
+      "beacon_tint": {
+        "primary": [
+          0.441,
+          0.714,
+          1,
+          1
+        ],
+        "secondary": [
+          0.388,
+          0.976,
+          1,
+          1
+        ]
+      },
+      "art_style": "vanilla",
+      "requires_beacon_alt_mode": false
+    },
+    "speed-module-2": {
+      "type": "module",
+      "name": "speed-module-2",
+      "localised_description": [
+        "item-description.speed-module"
+      ],
+      "icon": "__base__/graphics/icons/speed-module-2.png",
+      "subgroup": "module",
+      "category": "speed",
+      "color_hint": {
+        "text": "S"
+      },
+      "tier": 2,
+      "order": "a[speed]-b[speed-module-2]",
+      "inventory_move_sound": {
+        "filename": "__base__/sound/item/module-inventory-move.ogg",
+        "volume": 0.8,
+        "aggregation": {
+          "max_count": 1,
+          "remove": true
+        }
+      },
+      "pick_sound": {
+        "filename": "__base__/sound/item/module-inventory-pickup.ogg",
+        "volume": 0.8,
+        "aggregation": {
+          "max_count": 1,
+          "remove": true
+        }
+      },
+      "drop_sound": {
+        "filename": "__base__/sound/item/module-inventory-move.ogg",
+        "volume": 0.8,
+        "aggregation": {
+          "max_count": 1,
+          "remove": true
+        }
+      },
+      "stack_size": 50,
+      "weight": 20000,
+      "effect": {
+        "speed": 0.3,
+        "consumption": 0.6,
+        "quality": -0.15
+      },
+      "beacon_tint": {
+        "primary": [
+          0.441,
+          0.714,
+          1,
+          1
+        ],
+        "secondary": [
+          0.388,
+          0.976,
+          1,
+          1
+        ]
+      },
+      "art_style": "vanilla",
+      "requires_beacon_alt_mode": false
+    },
+    "speed-module-3": {
+      "type": "module",
+      "name": "speed-module-3",
+      "localised_description": [
+        "item-description.speed-module"
+      ],
+      "icon": "__base__/graphics/icons/speed-module-3.png",
+      "subgroup": "module",
+      "color_hint": {
+        "text": "S"
+      },
+      "category": "speed",
+      "tier": 3,
+      "order": "a[speed]-c[speed-module-3]",
+      "inventory_move_sound": {
+        "filename": "__base__/sound/item/module-inventory-move.ogg",
+        "volume": 0.8,
+        "aggregation": {
+          "max_count": 1,
+          "remove": true
+        }
+      },
+      "pick_sound": {
+        "filename": "__base__/sound/item/module-inventory-pickup.ogg",
+        "volume": 0.8,
+        "aggregation": {
+          "max_count": 1,
+          "remove": true
+        }
+      },
+      "drop_sound": {
+        "filename": "__base__/sound/item/module-inventory-move.ogg",
+        "volume": 0.8,
+        "aggregation": {
+          "max_count": 1,
+          "remove": true
+        }
+      },
+      "stack_size": 50,
+      "weight": 20000,
+      "effect": {
+        "speed": 0.5,
+        "consumption": 0.7,
+        "quality": -0.25
+      },
+      "beacon_tint": {
+        "primary": [
+          0.441,
+          0.714,
+          1,
+          1
+        ],
+        "secondary": [
+          0.388,
+          0.976,
+          1,
+          1
+        ]
+      },
+      "art_style": "vanilla",
+      "requires_beacon_alt_mode": false
+    },
+    "efficiency-module": {
+      "type": "module",
+      "name": "efficiency-module",
+      "localised_description": [
+        "item-description.efficiency-module"
+      ],
+      "icon": "__base__/graphics/icons/efficiency-module.png",
+      "subgroup": "module",
+      "color_hint": {
+        "text": "E"
+      },
+      "category": "efficiency",
+      "tier": 1,
+      "order": "c[efficiency]-a[efficiency-module-1]",
+      "inventory_move_sound": {
+        "filename": "__base__/sound/item/module-inventory-move.ogg",
+        "volume": 0.8,
+        "aggregation": {
+          "max_count": 1,
+          "remove": true
+        }
+      },
+      "pick_sound": {
+        "filename": "__base__/sound/item/module-inventory-pickup.ogg",
+        "volume": 0.8,
+        "aggregation": {
+          "max_count": 1,
+          "remove": true
+        }
+      },
+      "drop_sound": {
+        "filename": "__base__/sound/item/module-inventory-move.ogg",
+        "volume": 0.8,
+        "aggregation": {
+          "max_count": 1,
+          "remove": true
+        }
+      },
+      "stack_size": 50,
+      "weight": 20000,
+      "effect": {
+        "consumption": -0.3
+      },
+      "beacon_tint": {
+        "primary": [
+          0,
+          1,
+          0
+        ],
+        "secondary": [
+          0.37,
+          1,
+          0.37,
+          1
+        ]
+      },
+      "art_style": "vanilla",
+      "requires_beacon_alt_mode": false
+    },
+    "efficiency-module-2": {
+      "type": "module",
+      "name": "efficiency-module-2",
+      "localised_description": [
+        "item-description.efficiency-module"
+      ],
+      "icon": "__base__/graphics/icons/efficiency-module-2.png",
+      "subgroup": "module",
+      "color_hint": {
+        "text": "E"
+      },
+      "category": "efficiency",
+      "tier": 2,
+      "order": "c[efficiency]-b[efficiency-module-2]",
+      "inventory_move_sound": {
+        "filename": "__base__/sound/item/module-inventory-move.ogg",
+        "volume": 0.8,
+        "aggregation": {
+          "max_count": 1,
+          "remove": true
+        }
+      },
+      "pick_sound": {
+        "filename": "__base__/sound/item/module-inventory-pickup.ogg",
+        "volume": 0.8,
+        "aggregation": {
+          "max_count": 1,
+          "remove": true
+        }
+      },
+      "drop_sound": {
+        "filename": "__base__/sound/item/module-inventory-move.ogg",
+        "volume": 0.8,
+        "aggregation": {
+          "max_count": 1,
+          "remove": true
+        }
+      },
+      "stack_size": 50,
+      "weight": 20000,
+      "effect": {
+        "consumption": -0.4
+      },
+      "beacon_tint": {
+        "primary": [
+          0,
+          1,
+          0
+        ],
+        "secondary": [
+          0.37,
+          1,
+          0.37,
+          1
+        ]
+      },
+      "art_style": "vanilla",
+      "requires_beacon_alt_mode": false
+    },
+    "efficiency-module-3": {
+      "type": "module",
+      "name": "efficiency-module-3",
+      "localised_description": [
+        "item-description.efficiency-module"
+      ],
+      "icon": "__base__/graphics/icons/efficiency-module-3.png",
+      "subgroup": "module",
+      "color_hint": {
+        "text": "E"
+      },
+      "category": "efficiency",
+      "tier": 3,
+      "order": "c[efficiency]-c[efficiency-module-3]",
+      "inventory_move_sound": {
+        "filename": "__base__/sound/item/module-inventory-move.ogg",
+        "volume": 0.8,
+        "aggregation": {
+          "max_count": 1,
+          "remove": true
+        }
+      },
+      "pick_sound": {
+        "filename": "__base__/sound/item/module-inventory-pickup.ogg",
+        "volume": 0.8,
+        "aggregation": {
+          "max_count": 1,
+          "remove": true
+        }
+      },
+      "drop_sound": {
+        "filename": "__base__/sound/item/module-inventory-move.ogg",
+        "volume": 0.8,
+        "aggregation": {
+          "max_count": 1,
+          "remove": true
+        }
+      },
+      "stack_size": 50,
+      "weight": 20000,
+      "effect": {
+        "consumption": -0.5
+      },
+      "beacon_tint": {
+        "primary": [
+          0,
+          1,
+          0
+        ],
+        "secondary": [
+          0.37,
+          1,
+          0.37,
+          1
+        ]
+      },
+      "art_style": "vanilla",
+      "requires_beacon_alt_mode": false
+    },
+    "productivity-module": {
+      "type": "module",
+      "name": "productivity-module",
+      "localised_description": [
+        "item-description.productivity-module"
+      ],
+      "icon": "__base__/graphics/icons/productivity-module.png",
+      "subgroup": "module",
+      "color_hint": {
+        "text": "P"
+      },
+      "category": "productivity",
+      "tier": 1,
+      "order": "c[productivity]-a[productivity-module-1]",
+      "inventory_move_sound": {
+        "filename": "__base__/sound/item/module-inventory-move.ogg",
+        "volume": 0.8,
+        "aggregation": {
+          "max_count": 1,
+          "remove": true
+        }
+      },
+      "pick_sound": {
+        "filename": "__base__/sound/item/module-inventory-pickup.ogg",
+        "volume": 0.8,
+        "aggregation": {
+          "max_count": 1,
+          "remove": true
+        }
+      },
+      "drop_sound": {
+        "filename": "__base__/sound/item/module-inventory-move.ogg",
+        "volume": 0.8,
+        "aggregation": {
+          "max_count": 1,
+          "remove": true
+        }
+      },
+      "stack_size": 50,
+      "weight": 20000,
+      "effect": {
+        "productivity": 0.04,
+        "consumption": 0.4,
+        "pollution": 0.05,
+        "speed": -0.05
+      }
+    },
+    "productivity-module-2": {
+      "type": "module",
+      "name": "productivity-module-2",
+      "localised_description": [
+        "item-description.productivity-module"
+      ],
+      "icon": "__base__/graphics/icons/productivity-module-2.png",
+      "subgroup": "module",
+      "color_hint": {
+        "text": "P"
+      },
+      "category": "productivity",
+      "tier": 2,
+      "order": "c[productivity]-b[productivity-module-2]",
+      "inventory_move_sound": {
+        "filename": "__base__/sound/item/module-inventory-move.ogg",
+        "volume": 0.8,
+        "aggregation": {
+          "max_count": 1,
+          "remove": true
+        }
+      },
+      "pick_sound": {
+        "filename": "__base__/sound/item/module-inventory-pickup.ogg",
+        "volume": 0.8,
+        "aggregation": {
+          "max_count": 1,
+          "remove": true
+        }
+      },
+      "drop_sound": {
+        "filename": "__base__/sound/item/module-inventory-move.ogg",
+        "volume": 0.8,
+        "aggregation": {
+          "max_count": 1,
+          "remove": true
+        }
+      },
+      "stack_size": 50,
+      "weight": 20000,
+      "effect": {
+        "productivity": 0.06,
+        "consumption": 0.6,
+        "pollution": 0.07,
+        "speed": -0.1
+      }
+    },
+    "productivity-module-3": {
+      "type": "module",
+      "name": "productivity-module-3",
+      "localised_description": [
+        "item-description.productivity-module"
+      ],
+      "icon": "__base__/graphics/icons/productivity-module-3.png",
+      "subgroup": "module",
+      "color_hint": {
+        "text": "P"
+      },
+      "category": "productivity",
+      "tier": 3,
+      "order": "c[productivity]-c[productivity-module-3]",
+      "inventory_move_sound": {
+        "filename": "__base__/sound/item/module-inventory-move.ogg",
+        "volume": 0.8,
+        "aggregation": {
+          "max_count": 1,
+          "remove": true
+        }
+      },
+      "pick_sound": {
+        "filename": "__base__/sound/item/module-inventory-pickup.ogg",
+        "volume": 0.8,
+        "aggregation": {
+          "max_count": 1,
+          "remove": true
+        }
+      },
+      "drop_sound": {
+        "filename": "__base__/sound/item/module-inventory-move.ogg",
+        "volume": 0.8,
+        "aggregation": {
+          "max_count": 1,
+          "remove": true
+        }
+      },
+      "stack_size": 50,
+      "weight": 20000,
+      "effect": {
+        "productivity": 0.1,
+        "consumption": 0.8,
+        "pollution": 0.1,
+        "speed": -0.15
+      }
+    },
+    "quality-module": {
+      "type": "module",
+      "name": "quality-module",
+      "localised_description": [
+        "item-description.quality-module"
+      ],
+      "icon": "__quality__/graphics/icons/quality-module.png",
+      "subgroup": "module",
+      "color_hint": {
+        "text": "Q"
+      },
+      "category": "quality",
+      "tier": 1,
+      "order": "d[quality]-a[quality-module-1]",
+      "inventory_move_sound": {
+        "filename": "__base__/sound/item/module-inventory-move.ogg",
+        "volume": 0.8,
+        "aggregation": {
+          "max_count": 1,
+          "remove": true
+        }
+      },
+      "pick_sound": {
+        "filename": "__base__/sound/item/module-inventory-pickup.ogg",
+        "volume": 0.8,
+        "aggregation": {
+          "max_count": 1,
+          "remove": true
+        }
+      },
+      "drop_sound": {
+        "filename": "__base__/sound/item/module-inventory-move.ogg",
+        "volume": 0.8,
+        "aggregation": {
+          "max_count": 1,
+          "remove": true
+        }
+      },
+      "stack_size": 50,
+      "weight": 20000,
+      "effect": {
+        "quality": 0.1,
+        "speed": -0.05
+      }
+    },
+    "quality-module-2": {
+      "type": "module",
+      "name": "quality-module-2",
+      "localised_description": [
+        "item-description.quality-module"
+      ],
+      "icon": "__quality__/graphics/icons/quality-module-2.png",
+      "subgroup": "module",
+      "color_hint": {
+        "text": "Q"
+      },
+      "category": "quality",
+      "tier": 2,
+      "order": "d[quality]-b[quality-module-2]",
+      "inventory_move_sound": {
+        "filename": "__base__/sound/item/module-inventory-move.ogg",
+        "volume": 0.8,
+        "aggregation": {
+          "max_count": 1,
+          "remove": true
+        }
+      },
+      "pick_sound": {
+        "filename": "__base__/sound/item/module-inventory-pickup.ogg",
+        "volume": 0.8,
+        "aggregation": {
+          "max_count": 1,
+          "remove": true
+        }
+      },
+      "drop_sound": {
+        "filename": "__base__/sound/item/module-inventory-move.ogg",
+        "volume": 0.8,
+        "aggregation": {
+          "max_count": 1,
+          "remove": true
+        }
+      },
+      "stack_size": 50,
+      "weight": 20000,
+      "effect": {
+        "quality": 0.2,
+        "speed": -0.05
+      }
+    },
+    "quality-module-3": {
+      "type": "module",
+      "name": "quality-module-3",
+      "localised_description": [
+        "item-description.quality-module"
+      ],
+      "icon": "__quality__/graphics/icons/quality-module-3.png",
+      "subgroup": "module",
+      "color_hint": {
+        "text": "Q"
+      },
+      "category": "quality",
+      "tier": 3,
+      "order": "d[quality]-c[quality-module-3]",
+      "inventory_move_sound": {
+        "filename": "__base__/sound/item/module-inventory-move.ogg",
+        "volume": 0.8,
+        "aggregation": {
+          "max_count": 1,
+          "remove": true
+        }
+      },
+      "pick_sound": {
+        "filename": "__base__/sound/item/module-inventory-pickup.ogg",
+        "volume": 0.8,
+        "aggregation": {
+          "max_count": 1,
+          "remove": true
+        }
+      },
+      "drop_sound": {
+        "filename": "__base__/sound/item/module-inventory-move.ogg",
+        "volume": 0.8,
+        "aggregation": {
+          "max_count": 1,
+          "remove": true
+        }
+      },
+      "stack_size": 50,
+      "weight": 20000,
+      "effect": {
+        "quality": 0.25,
+        "speed": -0.05
+      }
+    },
+    "ee-super-speed-module": {
+      "type": "module",
+      "subgroup": "ee-modules",
+      "stack_size": 50,
+      "art_style": "vanilla",
+      "name": "ee-super-speed-module",
+      "hidden_in_factoriopedia": true,
+      "order": "ba",
+      "category": "speed",
+      "tier": 50,
+      "effect": {
+        "speed": 2.5
+      },
+      "icons": [
+        {
+          "icon": "__EditorExtensions__/graphics/item/module-3.png",
+          "icon_size": 64,
+          "tint": {
+            "r": 0.4,
+            "g": 0.6,
+            "b": 1
+          }
+        }
+      ],
+      "beacon_tint": {
+        "primary": {
+          "r": 0.4,
+          "g": 0.6,
+          "b": 1
+        },
+        "secondary": {
+          "r": 0.4,
+          "g": 0.6,
+          "b": 1
+        },
+        "tertiary": {
+          "r": 0.4,
+          "g": 0.6,
+          "b": 1
+        },
+        "quaternary": {
+          "r": 0.4,
+          "g": 0.6,
+          "b": 1
+        }
+      }
+    },
+    "ee-super-efficiency-module": {
+      "type": "module",
+      "subgroup": "ee-modules",
+      "stack_size": 50,
+      "art_style": "vanilla",
+      "name": "ee-super-efficiency-module",
+      "hidden_in_factoriopedia": true,
+      "order": "bb",
+      "category": "efficiency",
+      "tier": 50,
+      "effect": {
+        "consumption": -2.5
+      },
+      "icons": [
+        {
+          "icon": "__EditorExtensions__/graphics/item/module-3.png",
+          "icon_size": 64,
+          "tint": {
+            "r": 0.4,
+            "g": 1,
+            "b": 0.4
+          }
+        }
+      ],
+      "beacon_tint": {
+        "primary": {
+          "r": 0.4,
+          "g": 1,
+          "b": 0.4
+        },
+        "secondary": {
+          "r": 0.4,
+          "g": 1,
+          "b": 0.4
+        },
+        "tertiary": {
+          "r": 0.4,
+          "g": 1,
+          "b": 0.4
+        },
+        "quaternary": {
+          "r": 0.4,
+          "g": 1,
+          "b": 0.4
+        }
+      }
+    },
+    "ee-super-productivity-module": {
+      "type": "module",
+      "subgroup": "ee-modules",
+      "stack_size": 50,
+      "art_style": "vanilla",
+      "name": "ee-super-productivity-module",
+      "hidden_in_factoriopedia": true,
+      "order": "bc",
+      "category": "productivity",
+      "tier": 50,
+      "effect": {
+        "productivity": 2.5
+      },
+      "icons": [
+        {
+          "icon": "__EditorExtensions__/graphics/item/module-3.png",
+          "icon_size": 64,
+          "tint": {
+            "r": 1,
+            "g": 0.4,
+            "b": 0.4
+          }
+        }
+      ],
+      "beacon_tint": {
+        "primary": {
+          "r": 1,
+          "g": 0.4,
+          "b": 0.4
+        },
+        "secondary": {
+          "r": 1,
+          "g": 0.4,
+          "b": 0.4
+        },
+        "tertiary": {
+          "r": 1,
+          "g": 0.4,
+          "b": 0.4
+        },
+        "quaternary": {
+          "r": 1,
+          "g": 0.4,
+          "b": 0.4
+        }
+      }
+    },
+    "ee-super-clean-module": {
+      "type": "module",
+      "subgroup": "ee-modules",
+      "stack_size": 50,
+      "art_style": "vanilla",
+      "name": "ee-super-clean-module",
+      "hidden_in_factoriopedia": true,
+      "order": "bd",
+      "category": "efficiency",
+      "tier": 50,
+      "effect": {
+        "pollution": -2.5
+      },
+      "icons": [
+        {
+          "icon": "__EditorExtensions__/graphics/item/module-3.png",
+          "icon_size": 64,
+          "tint": {
+            "r": 0.4,
+            "g": 1,
+            "b": 1
+          }
+        }
+      ],
+      "beacon_tint": {
+        "primary": {
+          "r": 0.4,
+          "g": 1,
+          "b": 1
+        },
+        "secondary": {
+          "r": 0.4,
+          "g": 1,
+          "b": 1
+        },
+        "tertiary": {
+          "r": 0.4,
+          "g": 1,
+          "b": 1
+        },
+        "quaternary": {
+          "r": 0.4,
+          "g": 1,
+          "b": 1
+        }
+      }
+    },
+    "ee-super-slow-module": {
+      "type": "module",
+      "subgroup": "ee-modules",
+      "stack_size": 50,
+      "art_style": "vanilla",
+      "name": "ee-super-slow-module",
+      "hidden_in_factoriopedia": true,
+      "order": "ca",
+      "category": "speed",
+      "tier": 50,
+      "effect": {
+        "speed": -2.5
+      },
+      "icons": [
+        {
+          "icon": "__EditorExtensions__/graphics/item/module-1.png",
+          "icon_size": 64,
+          "tint": {
+            "r": 0.4,
+            "g": 0.6,
+            "b": 1
+          }
+        }
+      ],
+      "beacon_tint": {
+        "primary": {
+          "r": 0.4,
+          "g": 0.6,
+          "b": 1
+        },
+        "secondary": {
+          "r": 0.4,
+          "g": 0.6,
+          "b": 1
+        },
+        "tertiary": {
+          "r": 0.4,
+          "g": 0.6,
+          "b": 1
+        },
+        "quaternary": {
+          "r": 0.4,
+          "g": 0.6,
+          "b": 1
+        }
+      }
+    },
+    "ee-super-inefficiency-module": {
+      "type": "module",
+      "subgroup": "ee-modules",
+      "stack_size": 50,
+      "art_style": "vanilla",
+      "name": "ee-super-inefficiency-module",
+      "hidden_in_factoriopedia": true,
+      "order": "cb",
+      "category": "efficiency",
+      "tier": 50,
+      "effect": {
+        "consumption": 2.5
+      },
+      "icons": [
+        {
+          "icon": "__EditorExtensions__/graphics/item/module-1.png",
+          "icon_size": 64,
+          "tint": {
+            "r": 0.4,
+            "g": 1,
+            "b": 0.4
+          }
+        }
+      ],
+      "beacon_tint": {
+        "primary": {
+          "r": 0.4,
+          "g": 1,
+          "b": 0.4
+        },
+        "secondary": {
+          "r": 0.4,
+          "g": 1,
+          "b": 0.4
+        },
+        "tertiary": {
+          "r": 0.4,
+          "g": 1,
+          "b": 0.4
+        },
+        "quaternary": {
+          "r": 0.4,
+          "g": 1,
+          "b": 0.4
+        }
+      }
+    },
+    "ee-super-dirty-module": {
+      "type": "module",
+      "subgroup": "ee-modules",
+      "stack_size": 50,
+      "art_style": "vanilla",
+      "name": "ee-super-dirty-module",
+      "hidden_in_factoriopedia": true,
+      "order": "cc",
+      "category": "efficiency",
+      "tier": 50,
+      "effect": {
+        "pollution": 2.5
+      },
+      "icons": [
+        {
+          "icon": "__EditorExtensions__/graphics/item/module-1.png",
+          "icon_size": 64,
+          "tint": {
+            "r": 0.4,
+            "g": 1,
+            "b": 1
+          }
+        }
+      ],
+      "beacon_tint": {
+        "primary": {
+          "r": 0.4,
+          "g": 1,
+          "b": 1
+        },
+        "secondary": {
+          "r": 0.4,
+          "g": 1,
+          "b": 1
+        },
+        "tertiary": {
+          "r": 0.4,
+          "g": 1,
+          "b": 1
+        },
+        "quaternary": {
+          "r": 0.4,
+          "g": 1,
+          "b": 1
+        }
+      }
+    }
+  },
+  "straight-rail": {
+    "straight-rail": {
+      "type": "straight-rail",
+      "name": "straight-rail",
+      "order": "a[ground-rail]-a[straight-rail]",
+      "icon": "__base__/graphics/icons/rail.png",
+      "collision_box": [
+        [
+          -1,
+          -1
+        ],
+        [
+          1,
+          1
+        ]
+      ],
+      "flags": [
+        "placeable-neutral",
+        "player-creation",
+        "building-direction-8-way"
+      ],
+      "minable": {
+        "mining_time": 0.2,
+        "result": "rail",
+        "count": 1
+      },
+      "max_health": 200,
+      "corpse": "straight-rail-remnants",
+      "dying_explosion": {
+        "name": "rail-explosion"
+      },
+      "resistances": [
+        {
+          "type": "fire",
+          "percent": 100
+        },
+        {
+          "type": "acid",
+          "percent": 80
+        }
+      ],
+      "selection_box": [
+        [
+          -1.7,
+          -0.8
+        ],
+        [
+          1.7,
+          0.8
+        ]
+      ],
+      "damaged_trigger_effect": {
+        "type": "create-entity",
+        "entity_name": "wall-damaged-explosion",
+        "offset_deviation": [
+          [
+            -0.5,
+            -0.5
+          ],
+          [
+            0.5,
+            0.5
+          ]
+        ],
+        "offsets": [
+          [
+            0,
+            1
+          ]
+        ],
+        "damage_type_filters": "fire"
+      },
+      "pictures": {
+        "north": {
+          "metals": {
+            "filename": "__base__/graphics/entity/rails/rail/rail-metals.png",
+            "priority": "extra-high",
+            "flags": [
+              "trilinear-filtering"
+            ],
+            "width": 256,
+            "height": 256,
+            "x": 0,
+            "y": 256,
+            "scale": 0.5,
+            "shift": [
+              0,
+              0
+            ],
+            "variation_count": 8,
+            "usage": "rail"
+          },
+          "backplates": {
+            "filename": "__base__/graphics/entity/rails/rail/rail-backplates.png",
+            "priority": "extra-high",
+            "flags": [
+              "trilinear-filtering"
+            ],
+            "width": 256,
+            "height": 256,
+            "x": 0,
+            "y": 256,
+            "scale": 0.5,
+            "shift": [
+              0,
+              0
+            ],
+            "variation_count": 8,
+            "usage": "rail"
+          },
+          "ties": {
+            "filename": "__base__/graphics/entity/rails/rail/rail-ties.png",
+            "priority": "extra-high",
+            "flags": [
+              "low-object"
+            ],
+            "width": 256,
+            "height": 256,
+            "x": 0,
+            "y": 256,
+            "scale": 0.5,
+            "shift": [
+              0,
+              0
+            ],
+            "variation_count": 8,
+            "usage": "rail"
+          },
+          "stone_path": {
+            "filename": "__base__/graphics/entity/rails/rail/rail-stone-path-inside.png",
+            "priority": "extra-high",
+            "flags": [
+              "low-object"
+            ],
+            "width": 256,
+            "height": 256,
+            "x": 0,
+            "y": 256,
+            "scale": 0.5,
+            "shift": [
+              0,
+              0
+            ],
+            "variation_count": 8,
+            "usage": "rail"
+          },
+          "stone_path_background": {
+            "filename": "__base__/graphics/entity/rails/rail/rail-stone-path.png",
+            "priority": "extra-high",
+            "flags": [
+              "low-object"
+            ],
+            "width": 256,
+            "height": 256,
+            "x": 0,
+            "y": 256,
+            "scale": 0.5,
+            "shift": [
+              0,
+              0
+            ],
+            "variation_count": 8,
+            "usage": "rail"
+          },
+          "segment_visualisation_middle": {
+            "filename": "__base__/graphics/entity/rails/rail/rail-segment-visualisations-middle.png",
+            "priority": "extra-high",
+            "flags": [
+              "low-object"
+            ],
+            "width": 256,
+            "height": 256,
+            "x": 0,
+            "y": 256,
+            "scale": 0.5,
+            "shift": [
+              0,
+              0
+            ],
+            "usage": "rail"
+          }
+        },
+        "northeast": {
+          "metals": {
+            "filename": "__base__/graphics/entity/rails/rail/rail-metals.png",
+            "priority": "extra-high",
+            "flags": [
+              "trilinear-filtering"
+            ],
+            "width": 384,
+            "height": 384,
+            "x": 0,
+            "y": 2048,
+            "scale": 0.5,
+            "shift": [
+              0,
+              0
+            ],
+            "variation_count": 3,
+            "usage": "rail"
+          },
+          "backplates": {
+            "filename": "__base__/graphics/entity/rails/rail/rail-backplates.png",
+            "priority": "extra-high",
+            "flags": [
+              "trilinear-filtering"
+            ],
+            "width": 384,
+            "height": 384,
+            "x": 0,
+            "y": 2048,
+            "scale": 0.5,
+            "shift": [
+              0,
+              0
+            ],
+            "variation_count": 3,
+            "usage": "rail"
+          },
+          "ties": {
+            "filename": "__base__/graphics/entity/rails/rail/rail-ties.png",
+            "priority": "extra-high",
+            "flags": [
+              "low-object"
+            ],
+            "width": 384,
+            "height": 384,
+            "x": 0,
+            "y": 2048,
+            "scale": 0.5,
+            "shift": [
+              0,
+              0
+            ],
+            "variation_count": 3,
+            "usage": "rail"
+          },
+          "stone_path": {
+            "filename": "__base__/graphics/entity/rails/rail/rail-stone-path-inside.png",
+            "priority": "extra-high",
+            "flags": [
+              "low-object"
+            ],
+            "width": 384,
+            "height": 384,
+            "x": 0,
+            "y": 2048,
+            "scale": 0.5,
+            "shift": [
+              0,
+              0
+            ],
+            "variation_count": 3,
+            "usage": "rail"
+          },
+          "stone_path_background": {
+            "filename": "__base__/graphics/entity/rails/rail/rail-stone-path.png",
+            "priority": "extra-high",
+            "flags": [
+              "low-object"
+            ],
+            "width": 384,
+            "height": 384,
+            "x": 0,
+            "y": 2048,
+            "scale": 0.5,
+            "shift": [
+              0,
+              0
+            ],
+            "variation_count": 3,
+            "usage": "rail"
+          },
+          "segment_visualisation_middle": {
+            "filename": "__base__/graphics/entity/rails/rail/rail-segment-visualisations-middle.png",
+            "priority": "extra-high",
+            "flags": [
+              "low-object"
+            ],
+            "width": 384,
+            "height": 384,
+            "x": 0,
+            "y": 2048,
+            "scale": 0.5,
+            "shift": [
+              0,
+              0
+            ],
+            "usage": "rail"
+          }
+        },
+        "east": {
+          "metals": {
+            "filename": "__base__/graphics/entity/rails/rail/rail-metals.png",
+            "priority": "extra-high",
+            "flags": [
+              "trilinear-filtering"
+            ],
+            "width": 256,
+            "height": 256,
+            "x": 0,
+            "y": 0,
+            "scale": 0.5,
+            "shift": [
+              0,
+              0
+            ],
+            "variation_count": 8,
+            "usage": "rail"
+          },
+          "backplates": {
+            "filename": "__base__/graphics/entity/rails/rail/rail-backplates.png",
+            "priority": "extra-high",
+            "flags": [
+              "trilinear-filtering"
+            ],
+            "width": 256,
+            "height": 256,
+            "x": 0,
+            "y": 0,
+            "scale": 0.5,
+            "shift": [
+              0,
+              0
+            ],
+            "variation_count": 8,
+            "usage": "rail"
+          },
+          "ties": {
+            "filename": "__base__/graphics/entity/rails/rail/rail-ties.png",
+            "priority": "extra-high",
+            "flags": [
+              "low-object"
+            ],
+            "width": 256,
+            "height": 256,
+            "x": 0,
+            "y": 0,
+            "scale": 0.5,
+            "shift": [
+              0,
+              0
+            ],
+            "variation_count": 8,
+            "usage": "rail"
+          },
+          "stone_path": {
+            "filename": "__base__/graphics/entity/rails/rail/rail-stone-path-inside.png",
+            "priority": "extra-high",
+            "flags": [
+              "low-object"
+            ],
+            "width": 256,
+            "height": 256,
+            "x": 0,
+            "y": 0,
+            "scale": 0.5,
+            "shift": [
+              0,
+              0
+            ],
+            "variation_count": 8,
+            "usage": "rail"
+          },
+          "stone_path_background": {
+            "filename": "__base__/graphics/entity/rails/rail/rail-stone-path.png",
+            "priority": "extra-high",
+            "flags": [
+              "low-object"
+            ],
+            "width": 256,
+            "height": 256,
+            "x": 0,
+            "y": 0,
+            "scale": 0.5,
+            "shift": [
+              0,
+              0
+            ],
+            "variation_count": 8,
+            "usage": "rail"
+          },
+          "segment_visualisation_middle": {
+            "filename": "__base__/graphics/entity/rails/rail/rail-segment-visualisations-middle.png",
+            "priority": "extra-high",
+            "flags": [
+              "low-object"
+            ],
+            "width": 256,
+            "height": 256,
+            "x": 0,
+            "y": 0,
+            "scale": 0.5,
+            "shift": [
+              0,
+              0
+            ],
+            "usage": "rail"
+          }
+        },
+        "southeast": {
+          "metals": {
+            "filename": "__base__/graphics/entity/rails/rail/rail-metals.png",
+            "priority": "extra-high",
+            "flags": [
+              "trilinear-filtering"
+            ],
+            "width": 384,
+            "height": 384,
+            "x": 0,
+            "y": 896,
+            "scale": 0.5,
+            "shift": [
+              0,
+              0
+            ],
+            "variation_count": 3,
+            "usage": "rail"
+          },
+          "backplates": {
+            "filename": "__base__/graphics/entity/rails/rail/rail-backplates.png",
+            "priority": "extra-high",
+            "flags": [
+              "trilinear-filtering"
+            ],
+            "width": 384,
+            "height": 384,
+            "x": 0,
+            "y": 896,
+            "scale": 0.5,
+            "shift": [
+              0,
+              0
+            ],
+            "variation_count": 3,
+            "usage": "rail"
+          },
+          "ties": {
+            "filename": "__base__/graphics/entity/rails/rail/rail-ties.png",
+            "priority": "extra-high",
+            "flags": [
+              "low-object"
+            ],
+            "width": 384,
+            "height": 384,
+            "x": 0,
+            "y": 896,
+            "scale": 0.5,
+            "shift": [
+              0,
+              0
+            ],
+            "variation_count": 3,
+            "usage": "rail"
+          },
+          "stone_path": {
+            "filename": "__base__/graphics/entity/rails/rail/rail-stone-path-inside.png",
+            "priority": "extra-high",
+            "flags": [
+              "low-object"
+            ],
+            "width": 384,
+            "height": 384,
+            "x": 0,
+            "y": 896,
+            "scale": 0.5,
+            "shift": [
+              0,
+              0
+            ],
+            "variation_count": 3,
+            "usage": "rail"
+          },
+          "stone_path_background": {
+            "filename": "__base__/graphics/entity/rails/rail/rail-stone-path.png",
+            "priority": "extra-high",
+            "flags": [
+              "low-object"
+            ],
+            "width": 384,
+            "height": 384,
+            "x": 0,
+            "y": 896,
+            "scale": 0.5,
+            "shift": [
+              0,
+              0
+            ],
+            "variation_count": 3,
+            "usage": "rail"
+          },
+          "segment_visualisation_middle": {
+            "filename": "__base__/graphics/entity/rails/rail/rail-segment-visualisations-middle.png",
+            "priority": "extra-high",
+            "flags": [
+              "low-object"
+            ],
+            "width": 384,
+            "height": 384,
+            "x": 0,
+            "y": 896,
+            "scale": 0.5,
+            "shift": [
+              0,
+              0
+            ],
+            "usage": "rail"
+          }
+        },
+        "south": {},
+        "southwest": {},
+        "west": {},
+        "northwest": {},
+        "rail_endings": {
+          "sheets": [
+            {
+              "filename": "__base__/graphics/entity/rails/rail/rail-endings-background.png",
+              "priority": "high",
+              "flags": [
+                "low-object"
+              ],
+              "width": 256,
+              "height": 256,
+              "scale": 0.5,
+              "usage": "rail"
+            },
+            {
+              "filename": "__base__/graphics/entity/rails/rail/rail-endings-foreground.png",
+              "priority": "high",
+              "flags": [
+                "trilinear-filtering"
+              ],
+              "width": 256,
+              "height": 256,
+              "scale": 0.5,
+              "usage": "rail"
+            }
+          ]
+        },
+        "render_layers": {
+          "stone_path_lower": "rail-stone-path-lower",
+          "stone_path": "rail-stone-path",
+          "tie": "rail-tie",
+          "screw": "rail-screw",
+          "metal": "rail-metal"
+        },
+        "segment_visualisation_endings": {
+          "filename": "__base__/graphics/entity/rails/rail/rail-segment-visualisations-endings.png",
+          "priority": "extra-high",
+          "flags": [
+            "low-object"
+          ],
+          "width": 64,
+          "height": 64,
+          "scale": 0.5,
+          "direction_count": 16,
+          "frame_count": 6,
+          "usage": "rail"
+        }
+      },
+      "placeable_by": {
+        "item": "rail",
+        "count": 1
+      },
+      "walking_sound": {
+        "variations": [
+          {
+            "filename": "__base__/sound/walking/rails/rails-1.ogg",
+            "volume": 0.6
+          },
+          {
+            "filename": "__base__/sound/walking/rails/rails-2.ogg",
+            "volume": 0.6
+          },
+          {
+            "filename": "__base__/sound/walking/rails/rails-3.ogg",
+            "volume": 0.6
+          },
+          {
+            "filename": "__base__/sound/walking/rails/rails-4.ogg",
+            "volume": 0.6
+          },
+          {
+            "filename": "__base__/sound/walking/rails/rails-5.ogg",
+            "volume": 0.6
+          },
+          {
+            "filename": "__base__/sound/walking/rails/rails-6.ogg",
+            "volume": 0.6
+          },
+          {
+            "filename": "__base__/sound/walking/rails/rails-7.ogg",
+            "volume": 0.6
+          },
+          {
+            "filename": "__base__/sound/walking/rails/rails-8.ogg",
+            "volume": 0.6
+          },
+          {
+            "filename": "__base__/sound/walking/rails/rails-9.ogg",
+            "volume": 0.6
+          },
+          {
+            "filename": "__base__/sound/walking/rails/rails-10.ogg",
+            "volume": 0.6
+          },
+          {
+            "filename": "__base__/sound/walking/rails/rails-11.ogg",
+            "volume": 0.6
+          },
+          {
+            "filename": "__base__/sound/walking/rails/rails-12.ogg",
+            "volume": 0.6
+          }
+        ],
+        "advanced_volume_control": {
+          "fades": {
+            "fade_in": {
+              "curve_type": "cosine",
+              "from": {
+                "control": 0.3,
+                "volume_percentage": 0
+              },
+              "to": {
+                "control": 0.6,
+                "volume_percentage": 100
+              }
+            }
+          }
+        }
+      },
+      "extra_planner_goal_penalty": -4,
+      "factoriopedia_alternative": "straight-rail",
+      "surface_conditions": [
+        {
+          "property": "gravity",
+          "min": 1
+        }
+      ]
+    }
   }
 }

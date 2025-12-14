@@ -86,7 +86,7 @@ function createFromConfig(mining_prod: MiningProductivity, config: MiningDrillCo
         config.speed_bonus,
     )
 
-    const production_rate = ProductionRate.fromCraftingRate(resource.minable.result, crafting_rate, mining_prod.productivity.value)
+    const production_rate = ProductionRate.fromCraftingRate(resource.minable.result, crafting_rate, mining_prod.productivity)
 
     return create({
         productivity: mining_prod,

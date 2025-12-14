@@ -23,10 +23,8 @@ export class WorkingModeTransitionEvaluator implements ModeTransitionEvaluator<M
 
         const number_of_inputs = this.machine_state.machine.inputs.size;
 
-        if (number_of_inputs === 0) { // fluid only recipes
-            if (output_item.quantity >= output_block.max_stack_size) {
-                return ModeTransition.transition(this.output_full_mode, `machine has reached max stack size of ${output_block.max_stack_size} ${output_item.item_name}`);
-            }
+        if (output_item.quantity >= output_block.max_stack_size) {
+            return ModeTransition.transition(this.output_full_mode, `machine has reached max stack size of ${output_block.max_stack_size} ${output_item.item_name}`);
         }
 
         if (output_item.quantity >= output_block.quantity) {
