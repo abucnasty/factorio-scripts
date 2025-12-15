@@ -8,43 +8,20 @@ import { simulateFromContext, simulateUntilAllMachinesAreOutputBlocked, warmupSi
 import { cloneSimulationContextWithInterceptors, createSimulationContextFromConfig, SimulationContext } from './crafting/sequence/simulation-context';
 import { InserterTransfer } from './crafting/sequence/single-crafting-sequence';
 import { Duration, OpenRange } from './data-types';
-import { Entity, EntityId, Inserter, Machine, miningDrillMaxInsertion, ReadableEntityRegistry } from './entities';
+import { EntityId, Inserter, Machine, miningDrillMaxInsertion } from './entities';
 import { printInventoryTransfers } from './generator';
 import { AlwaysEnabledControl, ClockedEnableControl, EnableControl } from "./control-logic/enable-control";
 import { TargetProductionRate } from "./crafting/target-production-rate";
-import { assertIsMachineState, DrillStatus, EntityState, InserterState, MachineState, MachineStatus } from "./state";
-import Fraction, { fraction } from "fractionability";
+import { assertIsMachineState, DrillStatus, EntityState, MachineState, MachineStatus } from "./state";
+import { fraction } from "fractionability";
 import { createSignalPerInserterBlueprint } from "./crafting/blueprint";
 import { encodeBlueprintFile } from "./blueprints/serde";
-import { ItemName } from "./data/factorio-data-types";
-import * as math from "mathjs"
 import { InventoryTransfer } from "./crafting/sequence/inventory-transfer";
 import { TickProvider } from "./control-logic/current-tick-provider";
+import { computeLastSwingOffsetDuration, computeSimulationMode, SimulationMode } from "./crafting/sequence";
+import { SwingCountEntityMap } from "./crafting/sequence/cycle/swing-counts";
 
-
-const SimulationMode = {
-    LOW_INSERTION_LIMITS: "low_insertion_limits",
-    NORMAL: "normal",
-} as const;
-
-type SimulationMode = typeof SimulationMode[keyof typeof SimulationMode];
-
-
-function getSimulationMode(
-    source_machine: Machine,
-    inserter: Inserter
-): SimulationMode {
-    const inputs = Array.from(source_machine.inputs.values());
-    const low_insertion_limit = inputs.some(it => it.automated_insertion_limit.quantity < inserter.metadata.stack_size)
-
-    if (low_insertion_limit) {
-        return SimulationMode.LOW_INSERTION_LIMITS;
-    }
-    return SimulationMode.NORMAL;
-}
-
-
-const config: Config = EXAMPLES.LOGISTIC_SCIENCE_SHARED_INSERTER_CONFIG;
+const config: Config = EXAMPLES.PRODUCTION_SCIENCE_CONFIG;
 
 const debug = DebugSettingsProvider.mutable()
 
@@ -81,8 +58,6 @@ simulation_context.drills.forEach(it => {
 
 // inserter transfer tracking
 const inventory_transfers: Map<EntityId, InventoryTransfer[]> = new Map();
-
-
 
 simulation_context.inserters.forEach(it => {
     it.addPlugin(new InserterTransferTrackerPlugin(simulation_context.tick_provider, it.inserter_state, (snapshot) => {
@@ -160,30 +135,27 @@ simulation_context.machines.forEach(it => {
 
 const new_simulation_context = cloneSimulationContextWithInterceptors(simulation_context, {
     drill: (drill_state, sink_state) => {
-
-        const item = drill_state.drill.item
-        const machine_input = sink_state.machine.inputs.get(item.name)
-        assert(machine_input !== undefined, `Machine ${sink_state.machine.entity_id} does not have an input for item ${item.name}`)
+        const source_item = drill_state.drill.item
+        const source_item_name = source_item.name;
+        const sink_input = sink_state.machine.inputs.get(source_item_name);
+        assert(sink_input !== undefined, `Machine ${sink_state.machine.entity_id} does not have an input for item ${source_item_name}`);
+        const minimum_required = sink_input.consumption_rate.amount_per_craft
+        const sink_consumption_per_tick = sink_input.consumption_rate.rate_per_tick;
         const drill_output_per_tick = drill_state.drill.production_rate.amount_per_tick.toDecimal();
-        const sink_consumption_rate_per_tick = machine_input.consumption_rate.rate_per_tick;
-        const amount_per_craft = sink_state.machine.output.amount_per_craft.toDecimal();
+        const time_to_transfer_minimum_amount = Math.ceil(minimum_required / drill_output_per_tick)
+
         const max_insertion_amount = miningDrillMaxInsertion(drill_state.drill, sink_state.machine);
 
         return EnableControl.latched({
             base: EnableControl.lambda(() => {
-                const sink_current_quantity = sink_state.inventoryState.getItemOrThrow(item.name).quantity
-                return sink_current_quantity < machine_input.automated_insertion_limit.quantity;
-                // enable the drill right before the machine is going to run out of items
-                // it needs to start early enough to account for the time it takes to mine and insert items
-                const needed_quantity_next_tick = Math.max(0, sink_current_quantity - amount_per_craft)
-                const ticks_until_less_than_craft_amount = Math.floor((needed_quantity_next_tick) / sink_consumption_rate_per_tick);
-                const ticks_needed_to_reach_craft_amount = Math.max(2, Math.ceil(amount_per_craft / drill_output_per_tick))
-                return ticks_until_less_than_craft_amount <= ticks_needed_to_reach_craft_amount;
+                const sink_quantity = sink_state.inventoryState.getItemOrThrow(source_item_name).quantity;
+                const sink_quantity_after_transfer = sink_quantity - Math.ceil(sink_consumption_per_tick * time_to_transfer_minimum_amount);
+                return sink_quantity_after_transfer < minimum_required * 2
             }),
             release: EnableControl.lambda(() => {
-                const sink_current_quantity = sink_state.inventoryState.getItemOrThrow(item.name).quantity
-                return sink_current_quantity == max_insertion_amount;
-            }),
+                const sink_quantity = sink_state.inventoryState.getItemOrThrow(source_item_name).quantity;
+                return sink_quantity >= max_insertion_amount
+            })
         })
     },
     inserter: (inserter_state, source_state, sink_state) => {
@@ -207,21 +179,23 @@ const new_simulation_context = cloneSimulationContextWithInterceptors(simulation
                 tickProvider: simulation_context.tick_provider,
             })
 
+            const machine_is_output_full = EnableControl.lambda(() => {
+                return source_state.status === MachineStatus.OUTPUT_FULL
+            })
+
+            const output_quantity_is_above_stack_size = EnableControl.lambda(() => {
+                const item_name = source_state.machine.output.item_name;
+                const current_quantity = source_state.inventoryState.getItemOrThrow(item_name).quantity;
+                return current_quantity >= inserter_state.inserter.metadata.stack_size
+            })
+
             clocks.push(clocked_control);
 
             return EnableControl.all(
                 [
                     clocked_control,
-                    // EnableControl.any([
-                    //     EnableControl.lambda(() => {
-                    //         return source_state.status === MachineStatus.OUTPUT_FULL
-                    //     }),
-                    //     EnableControl.lambda(() => {
-                    //         const item_name = source_state.machine.output.item_name;
-                    //         const current_quantity = source_state.inventoryState.getItemOrThrow(item_name).quantity;
-                    //         return current_quantity >= inserter_state.inserter.metadata.stack_size
-                    //     })
-                    // ])
+                    // machine_is_output_full,
+                    // output_quantity_is_above_stack_size,
                 ],
             )
         }
@@ -230,7 +204,7 @@ const new_simulation_context = cloneSimulationContextWithInterceptors(simulation
 
         if (sink_state.entity_id.id === primary_output_machine.entity_id.id) {
             assertIsMachineState(sink_state);
-            const mode = getSimulationMode(sink_state.machine, inserter_state.inserter);
+            const mode = computeSimulationMode(sink_state.machine, inserter_state.inserter);
 
             if (mode === SimulationMode.LOW_INSERTION_LIMITS) {
                 const total_period = OpenRange.fromStartAndDuration(0, output_inserter_period.crafting_period.ticks)
@@ -257,7 +231,7 @@ const new_simulation_context = cloneSimulationContextWithInterceptors(simulation
 
             const time_to_transfer = inserter_animation.pickup_to_drop.ticks
 
-            const mode = getSimulationMode(sink_state.machine, inserter_state.inserter);
+            const mode = computeSimulationMode(sink_state.machine, inserter_state.inserter);
 
             if (mode === SimulationMode.LOW_INSERTION_LIMITS) {
                 return EnableControl.all(additional_enable_controls)
@@ -300,7 +274,7 @@ const new_simulation_context = cloneSimulationContextWithInterceptors(simulation
 
             const automated_insertion_limit = sink_input.automated_insertion_limit.quantity;
 
-            const mode = getSimulationMode(sink_state.machine, inserter_state.inserter);
+            const mode = computeSimulationMode(sink_state.machine, inserter_state.inserter);
 
             const source_is_greater_than_stack_size = EnableControl.lambda(() => {
                 const source_quantity = source_state.inventoryState.getItemOrThrow(source_item_name).quantity;
@@ -338,7 +312,19 @@ const new_simulation_context = cloneSimulationContextWithInterceptors(simulation
     }
 });
 
-const recipe_lcm = computeLCM(output_inserter_period, simulation_context);
+
+
+const swing_counts = SwingCountEntityMap.create(
+    output_machine_state_machine.machine_state.machine,
+    new_simulation_context.entity_registry,
+    fraction(output_inserter_period.swing_count),
+    output_inserter.inserter.metadata.stack_size
+)
+
+SwingCountEntityMap.print(swing_counts)
+
+const recipe_lcm = SwingCountEntityMap.lcm(swing_counts);
+
 
 console.log(`Simulation context ingredient LCM: ${recipe_lcm}`);
 
@@ -346,7 +332,7 @@ const amount_in_output_machine = output_machine_state_machine.machine_state.inve
 const swings_to_remove = Math.floor(amount_in_output_machine / output_inserter.inserter.metadata.stack_size);
 const ticks_to_remove = swings_to_remove * output_inserter.inserter.animation.total.ticks;
 
-const warmup_period: Duration = Duration.ofTicks(output_inserter_period.crafting_period.ticks * recipe_lcm * 10);
+const warmup_period: Duration = Duration.ofTicks(output_inserter_period.crafting_period.ticks * recipe_lcm);
 const duration: Duration = Duration.ofTicks(output_inserter_period.crafting_period.ticks * recipe_lcm);
 
 console.log(`Warm up period: ${warmup_period.ticks} ticks`);
@@ -367,7 +353,7 @@ debug.disable()
 inventory_transfers.clear();
 relative_tick = simulation_context.tick_provider.getCurrentTick();
 clocks.forEach(it => it.reset());
-debug.disable()
+debug.enable()
 simulateFromContext(new_simulation_context, duration);
 debug.disable()
 console.log(`Simulation complete`);
@@ -377,7 +363,12 @@ const buffer = computeInserterBufferForReality(
     output_inserter.inserter
 );
 
-const merged_ranges = mergeOverlappingInventoryTransferRanges(inventory_transfers, buffer.ticks)
+const last_swing_offset_duration: Duration = computeLastSwingOffsetDuration(
+    output_machine_state_machine.machine_state.machine,
+    output_inserter.inserter
+)
+
+const merged_ranges = mergeOverlappingInventoryTransferRanges(inventory_transfers)
 
 const offset_ranges = correctNegativeOffset(mergeOverlappingInventoryTransferRanges(inventory_transfers, buffer.ticks))
 
@@ -388,7 +379,7 @@ offset_ranges.set(output_inserter.entity_id, output_ranges.map(it => {
         item_name: it.item_name,
         tick_range: OpenRange.from(
             it.tick_range.start_inclusive,
-            it.tick_range.end_inclusive + buffer.ticks
+            it.tick_range.end_inclusive + buffer.ticks - last_swing_offset_duration.ticks
         )
     }
 }))
@@ -399,6 +390,10 @@ printInventoryTransfers(offset_ranges)
 
 const blueprint = createSignalPerInserterBlueprint(
     output_machine_state_machine.machine_state.machine.output.item_name,
+    {
+        cycle_duration: output_inserter_period.crafting_period,
+        swing_counts: swing_counts
+    },
     duration,
     InventoryTransfer.deduplicateEntityTransfers(offset_ranges),
     simulation_context.entity_registry
@@ -422,28 +417,36 @@ function computeInserterBufferForSimulation(
     source_machine: Machine,
     inserter: Inserter
 ): Duration {
-    const mode = getSimulationMode(source_machine, inserter);
+    const mode = computeSimulationMode(source_machine, inserter);
 
     if (mode === SimulationMode.LOW_INSERTION_LIMITS) {
-        return Duration.ofTicks(
-            Math.floor(source_machine.crafting_rate.ticks_per_craft / 2)
-        );
+        return Duration.ofTicks(1);
     }
-    return inserter.animation.pickup
+
+    if (mode === SimulationMode.PREVENT_DESYNCS) {
+        return inserter.animation.pickup
+    }
+
+    return Duration.zero
 }
 
 function computeInserterBufferForReality(
     source_machine: Machine,
     inserter: Inserter
 ): Duration {
-    const mode = getSimulationMode(source_machine, inserter);
+    const mode = computeSimulationMode(source_machine, inserter);
 
     if (mode === SimulationMode.LOW_INSERTION_LIMITS) {
         return Duration.ofTicks(
             Math.floor(source_machine.crafting_rate.ticks_per_craft)
         );
     }
-    return inserter.animation.pickup
+
+    if (mode === SimulationMode.PREVENT_DESYNCS) {
+        return inserter.animation.pickup
+    }
+
+    return Duration.zero
 }
 
 
@@ -499,6 +502,28 @@ function computeOutputInserterPeriod(
         }
     }
 
+    if (max_swings_possible.toDecimal() >= 2) {
+        const total_swings = Math.floor(max_swings_possible.toDecimal())
+
+        const total_swing_duration = (output_inserter.animation.total.ticks + 1) * total_swings
+
+        return {
+            crafting_period: Duration.ofTicks(
+                single_swing_period_duration.ticks * total_swings
+            ),
+            inserter: output_inserter,
+            swing_count: total_swings,
+            item_name: output_item_name,
+            enabled_ranges: [
+                OpenRange.from(
+                    0,
+                    total_swing_duration + buffer.ticks
+                )
+            ]
+        }
+
+    }
+
     // this is a total hack... need to figure out if we want to support fractions like 15/8 swings
     // right now the only supported fraction is 3/2 swings
     if (max_swings_possible.toDecimal() != 1.5) {
@@ -522,6 +547,7 @@ function computeOutputInserterPeriod(
         //     ]
         // }
     }
+    max_swings_possible = fraction(1)
 
     const enabled_ranges: OpenRange[] = []
 
@@ -608,91 +634,5 @@ function correctNegativeOffset(original: Map<EntityId, InserterTransfer[]>): Map
         })
         result.set(entityId, corrected_ranges)
     })
-    return result;
-}
-
-function computeLCM(crafting_period: OutputInserterCraftingPeriod, simulation_context: SimulationContext): number {
-    const output_item_name = crafting_period.item_name;
-
-    const entity_registry = simulation_context.entity_registry;
-
-    const machines: Map<EntityId, Machine> = new Map(entity_registry.getAll().filter(Entity.isMachine).map(it => [it.entity_id, it]))
-
-    // work backwards from the final output machine to the inputs to find the LCM of all ingredients
-
-    const output_machine = Array.from(machines.values()).find(it => it.output.item_name === output_item_name)
-    assert(output_machine !== undefined, `No machine found that produces item ${output_item_name}`)
-
-    const ratios = recursive_ratios(output_machine, entity_registry);
-
-    const input_ratios = Array.from(ratios.values())
-    const output_ratio = fraction(crafting_period.swing_count)
-
-    const denominators = input_ratios.map(it => it.getDenominator)
-
-    return denominators.reduce((lcm, denom) => math.lcm(lcm, denom), 1);
-}
-
-/**
- * 
- * for a given machine, take the ratio of inputs to production outputs including productivity
- * 
- * for example, if the machine produces 6 items with productivity and takes 3 of input A and 2 of input B
- * the ratio is:
- * 
- * A: 3/6 = 1/2
- * B: 2/6 = 1/3
- * 
- * then, for each input, if the input is produced by another machine, recursively get the ratios for that machine
- * and multiply them by the current machine's input ratio
- * 
- * finally, accumulate all ratios into a single map of item name to ratio
- */
-function recursive_ratios(
-    machine: Machine,
-    entity_registry: ReadableEntityRegistry,
-    existing: Map<ItemName, Fraction> = new Map()
-): Map<ItemName, Fraction> {
-    const result = new Map(existing);
-
-    // Get the total output per craft including productivity
-    const output_per_craft = machine.output.amount_per_craft;
-
-    // Process each input ingredient
-    for (const input of machine.inputs.values()) {
-        // Get the amount of input required per craft
-        const input_amount = fraction(input.ingredient.amount);
-
-        // Calculate the ratio of this input to the output
-        const ratio = input_amount.divide(output_per_craft);
-
-        // Add or accumulate this ratio in the result
-        const existing_ratio = result.get(input.item_name) ?? fraction(0);
-        result.set(input.item_name, existing_ratio.add(ratio));
-
-        // Check if this input is produced by another machine
-        const producer_machines = entity_registry.getAll()
-            .filter(Entity.isMachine)
-            .filter(m => m.output.item_name === input.item_name);
-
-        const number_of_machines = producer_machines.length;
-
-        const producer_machine = producer_machines[0]
-
-        if (producer_machine) {
-            // Divide the ratio by the number of producer machines to distribute the load
-            const ratio_per_machine = ratio.divide(number_of_machines);
-            // Recursively get the ratios for the producer machine
-            const producer_ratios = recursive_ratios(producer_machine, entity_registry, new Map());
-
-            // Multiply each producer ratio by the current input ratio and accumulate
-            for (const [item_name, producer_ratio] of producer_ratios) {
-                const combined_ratio = producer_ratio.multiply(ratio_per_machine);
-                const existing_combined = result.get(item_name) ?? fraction(0);
-                result.set(item_name, existing_combined.add(combined_ratio));
-            }
-        }
-    }
-
     return result;
 }

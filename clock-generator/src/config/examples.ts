@@ -531,3 +531,68 @@ export const PRODUCTION_SCIENCE_CONFIG: Config = {
         },
     ]
 }
+
+export const PRODUCTION_SCIENCE_CONFIG_SHARED: Config = {
+    ...PRODUCTION_SCIENCE_CONFIG,
+    inserters: PRODUCTION_SCIENCE_CONFIG.inserters
+        .filter(it => {
+            const filters = it.filters ?? [];
+            const from_belt = filters.includes("productivity-module") || filters.includes("electric-furnace");
+            return !from_belt;
+        })
+        .concat(
+            {
+                source: { type: "belt", id: 1 },
+                sink: { type: "machine", id: 1 },
+                filters: ["productivity-module", "electric-furnace"],
+                stack_size: 16,
+            },
+        )
+}
+
+export const STONE_BRICKS_DIRECT_INSERT_MINING: Config = {
+    target_output: {
+        recipe: "stone-brick",
+        items_per_second: 240,
+        machines: 6,
+    },
+    machines: [
+        {
+            id: 1,
+            recipe: "stone-brick",
+            productivity: 50,
+            crafting_speed: 91.899995803833,
+            type: "furnace"
+        },
+    ],
+    inserters: [
+        {
+            source: { type: "machine", id: 1 },
+            sink: { type: "belt", id: 1 },
+            filters: ["stone-brick"],
+            stack_size: 16,
+        }
+    ],
+    drills: {
+        mining_productivity_level: 8000,
+        configs: [
+            {
+                id: 1,
+                type: "electric-mining-drill",
+                mined_item_name: "stone",
+                speed_bonus: 15.310000419617,
+                target: { type: "machine", id: 1 }
+            },
+        ]
+    },
+    belts: [
+        {
+            id: 1,
+            type: "turbo-transport-belt",
+            lanes: [
+                { ingredient: "stone-brick", stack_size: 4 },
+                { ingredient: "stone-brick", stack_size: 4 }
+            ]
+        },
+    ]
+}

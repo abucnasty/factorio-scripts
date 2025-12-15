@@ -26,5 +26,6 @@ function ofSeconds(seconds: number): Duration {
 
 export const Duration = {
     ofTicks: ofTicks,
-    ofSeconds: ofSeconds
+    ofSeconds: ofSeconds,
+    zero: ofTicks(0),
 }

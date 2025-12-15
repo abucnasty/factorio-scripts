@@ -1,8 +1,10 @@
+import Fraction from "fractionability";
 import { FactorioBlueprint, BlueprintBuilder } from "../blueprints/blueprint";
 import { Position, SignalId } from "../blueprints/components";
 import { DeciderCombinatorEntity } from "../blueprints/entity/decider-combinator";
 import { Duration, OpenRange } from "../data-types";
 import { ReadableEntityRegistry, Inserter, EntityId, Entity } from "../entities";
+import { CycleSpec } from "./sequence/cycle/cycle-spec";
 import { InventoryTransfer } from "./sequence/inventory-transfer";
 import { CraftingSequence, InserterTransfer } from "./sequence/single-crafting-sequence";
 
@@ -22,6 +24,8 @@ function createDeciderCombinatorForTransfers(
     inventory_transfers: InventoryTransfer[],
     entity_id: EntityId,
     entity_registry: ReadableEntityRegistry,
+    cycle_spec: CycleSpec,
+    number_of_cycles: number,
     position: Position
 ): DeciderCombinatorEntity {
     const entity = entity_registry.getEntityByIdOrThrow(entity_id)
@@ -30,29 +34,26 @@ function createDeciderCombinatorForTransfers(
 
     let description_lines: string[] = []
 
-    description_lines.push(`Inserter ${entity_number} for: `)
+    const swing_counts = cycle_spec.swing_counts.get(entity_id);
 
     const items = new Set<string>();
 
-    if(Entity.isInserter(entity)) {
+    if (Entity.isInserter(entity)) {
         entity.filtered_items.forEach(item_name => items.add(item_name));
-    } else if(Entity.isDrill(entity)) {
+    } else if (Entity.isDrill(entity)) {
         items.add(entity.item.name);
     } else {
         throw new Error(`Entity ${entity_id} is not an inserter or drill`);
     }
 
-    items.forEach(item_name => {
-        const item_icon = SignalId.toDescriptionString(SignalId.item(item_name))
-        description_lines.push(`- ${item_icon}`)
-    })
-
-    const swing_count = inventory_transfers.length
-
-    description_lines.push("")
-    description_lines.push(`Total Swings: ${swing_count}`)
-
-    
+    if (swing_counts) {
+        description_lines = inserterSwingCountDescriptionLines(
+            entity_id,
+            items,
+            swing_counts.swing_count,
+            swing_counts.swing_count.multiply(number_of_cycles)
+        )
+    }
 
     if (items.size === 1) {
         outputSignalId = SignalId.item(Array.from(items)[0])
@@ -99,7 +100,7 @@ function createDeciderCombinatorForActiveRanges(
     description_lines.push("")
     description_lines.push(`Total Swings: ${swing_count}`)
 
-    
+
 
     if (items.size === 1) {
         outputSignalId = SignalId.item(Array.from(items)[0])
@@ -155,18 +156,72 @@ export function createInserterControlLogicFromActiveRanges(
         .build();
 }
 
+function inserterSwingCountDescriptionLines(
+    inserter_id: EntityId,
+    item_names: Set<string>,
+    swing_count_per_cycle: Fraction,
+    total_swings: Fraction
+): string[] {
+    const inserter_number = inserter_id.id.split(":")[1];
+    const item_icons = Array.from(item_names).map(item_name => SignalId.toDescriptionString(SignalId.item(item_name)));
+
+    const lines = []
+
+    if (item_icons.length === 1) {
+        lines.push(`Inserter ${inserter_number} for ${item_icons[0]}`)
+
+    } else {
+        lines.push(`Inserter ${inserter_number} for (${item_icons.join("|")})`)
+    }
+
+    lines.push("Swing Counts:")
+    lines.push(`- per cycle: ${swing_count_per_cycle}`)
+    lines.push(`- total: ${total_swings}`)
+
+    return lines
+}
+
+function generateClockDescriptionLines(
+    final_output_item_name: string,
+    cycle_spec: CycleSpec,
+    total_duration: Duration,
+): string[] {
+
+    const cycle_count = total_duration.ticks / cycle_spec.cycle_duration.ticks;
+
+    const output_item_icon = SignalId.toDescriptionString(SignalId.item(final_output_item_name))
+
+    return [
+        `Clock for ${output_item_icon}:`,
+        `- Cycle Duration: ${cycle_spec.cycle_duration.ticks} ticks`,
+        `- Cycle Count: ${cycle_count} cycles`,
+        `- Total Duration: ${total_duration.ticks} ticks`,
+    ]
+}
+
+
 export function createSignalPerInserterBlueprint(
     final_output_item_name: string,
+    cycle_spec: CycleSpec,
     total_duration: Duration,
     inventory_transfers: Map<EntityId, InventoryTransfer[]>,
     entityRegistry: ReadableEntityRegistry
 ): FactorioBlueprint {
-    
+
     const blueprint_label: string = final_output_item_name + " Inserter Clock Schedule"
     let x = 0.5;
+
+
     const clock = DeciderCombinatorEntity
         .clock(total_duration.ticks, 1)
         .setPosition(Position.fromXY(x, 0))
+        .setMultiLinePlayerDescription(
+            generateClockDescriptionLines(
+                final_output_item_name,
+                cycle_spec,
+                total_duration
+            )
+        )
         .build();
 
     const deciderCombinatorEntities: DeciderCombinatorEntity[] = []
@@ -181,6 +236,8 @@ export function createSignalPerInserterBlueprint(
                 transfers,
                 entityId,
                 entityRegistry,
+                cycle_spec,
+                total_duration.ticks / cycle_spec.cycle_duration.ticks,
                 Position.fromXY(x, 0)
             )
         )
@@ -196,44 +253,44 @@ export function createSignalPerInserterBlueprint(
         .build();
 }
 
-export function createSplitItemSignalBlueprint(
-    craftingSequence: CraftingSequence,
-    entityRegistry: ReadableEntityRegistry
-) {
-    const machine = craftingSequence.craft_events[0].machine_state.machine;
-    let x = 0.5;
-    const clock = createClockFromCraftingSequence(
-        craftingSequence,
-        Position.fromXY(x, 0)
-    );
+// export function createSplitItemSignalBlueprint(
+//     craftingSequence: CraftingSequence,
+//     entityRegistry: ReadableEntityRegistry
+// ) {
+//     const machine = craftingSequence.craft_events[0].machine_state.machine;
+//     let x = 0.5;
+//     const clock = createClockFromCraftingSequence(
+//         craftingSequence,
+//         Position.fromXY(x, 0)
+//     );
 
-    const deciderCombinatorEntities: DeciderCombinatorEntity[] = []
+//     const deciderCombinatorEntities: DeciderCombinatorEntity[] = []
 
-    for (const [inserter_id, transfers] of craftingSequence.inserter_transfers) {
-        const transfers_by_item: Map<string, InserterTransfer[]> = new Map();
+//     for (const [inserter_id, transfers] of craftingSequence.inserter_transfers) {
+//         const transfers_by_item: Map<string, InserterTransfer[]> = new Map();
 
-        for (const transfer of transfers) {
-            const item_name = transfer.item_name;
-            const transfers = transfers_by_item.get(item_name) ?? []
-            transfers_by_item.set(item_name, transfers.concat(transfer));
-        }
+//         for (const transfer of transfers) {
+//             const item_name = transfer.item_name;
+//             const transfers = transfers_by_item.get(item_name) ?? []
+//             transfers_by_item.set(item_name, transfers.concat(transfer));
+//         }
 
-        for (const [item_name, item_transfers] of transfers_by_item) {
-            x += 1;
-            deciderCombinatorEntities.push(createDeciderCombinatorForTransfers(
-                item_transfers,
-                inserter_id,
-                entityRegistry,
-                Position.fromXY(x, 0)
-            ))
-        }
-    }
-    return new BlueprintBuilder()
-        .setLabel(machine.output.item_name + " Inserter Clock Schedule")
-        .setEntities([
-            clock,
-            ...deciderCombinatorEntities
-        ])
-        .setWires([[1, 2, 1, 4]])
-        .build();
-}
+//         for (const [item_name, item_transfers] of transfers_by_item) {
+//             x += 1;
+//             deciderCombinatorEntities.push(createDeciderCombinatorForTransfers(
+//                 item_transfers,
+//                 inserter_id,
+//                 entityRegistry,
+//                 Position.fromXY(x, 0)
+//             ))
+//         }
+//     }
+//     return new BlueprintBuilder()
+//         .setLabel(machine.output.item_name + " Inserter Clock Schedule")
+//         .setEntities([
+//             clock,
+//             ...deciderCombinatorEntities
+//         ])
+//         .setWires([[1, 2, 1, 4]])
+//         .build();
+// }
