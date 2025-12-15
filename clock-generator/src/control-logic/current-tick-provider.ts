@@ -43,7 +43,8 @@ export class OffsetTickProvider implements TickProvider {
     ) {}
 
     public getCurrentTick(): number {
-        return this.base.getCurrentTick() + this.offset();
+        const offset = this.offset();
+        return this.base.getCurrentTick() + offset;
     }
 }
 

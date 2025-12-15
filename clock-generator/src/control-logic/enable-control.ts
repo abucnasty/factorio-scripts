@@ -1,5 +1,5 @@
 import { Duration, OpenRange } from "../data-types";
-import { TickProvider } from "./current-tick-provider";
+import { OffsetTickProvider, TickProvider } from "./current-tick-provider";
 
 export interface EnableControl {
     isEnabled(): boolean;
@@ -27,7 +27,49 @@ export class EnableControlLambda implements EnableControl {
     }
 }
 
-export class PeriodicEnableControl implements EnableControl {
+export class ClockedEnableControl implements EnableControl {
+
+    public static create(args: {
+        periodDuration: Duration,
+        enabledRanges: ReadonlyArray<OpenRange>,
+        tickProvider: TickProvider
+    }): ClockedEnableControl {
+        return new ClockedEnableControl(
+            args.periodDuration,
+            args.enabledRanges,
+            args.tickProvider
+        );
+    }
+    private offset = 0;
+    private readonly offset_tick_provider: OffsetTickProvider;
+
+    constructor(
+        public readonly periodDuration: Duration,
+        public readonly enabledRanges: ReadonlyArray<OpenRange>,
+        public readonly tickProvider: TickProvider
+    ) {
+        this.offset_tick_provider = TickProvider.offset({
+            base: tickProvider,
+            offset: this.getOffset.bind(this),
+        })
+    }
+
+    public isEnabled(): boolean {
+        const currentTick = this.offset_tick_provider.getCurrentTick()
+        const adjustedTick = currentTick % this.periodDuration.ticks;
+        return this.enabledRanges.some(range => range.contains(adjustedTick));
+    }
+
+    public getOffset(): number {
+        return this.offset
+    }
+
+    public reset(): void {
+        this.offset = this.tickProvider.getCurrentTick() * -1
+    }
+}
+
+class PeriodicEnableControl implements EnableControl {
     constructor(
         public readonly periodDuration: Duration,
         public readonly enabledRanges: ReadonlyArray<OpenRange>,
@@ -77,7 +119,7 @@ export class LatchedEnableControl implements EnableControl {
     }
 }
 
-export class AllEnableControl implements EnableControl { 
+export class AllEnableControl implements EnableControl {
 
     public static create(enable_controls: ReadonlyArray<EnableControl>): EnableControl {
         if (enable_controls.length === 0) {
@@ -98,7 +140,7 @@ export class AllEnableControl implements EnableControl {
     }
 }
 
-export class AnyEnableControl implements EnableControl { 
+export class AnyEnableControl implements EnableControl {
 
     public static create(enable_controls: ReadonlyArray<EnableControl>): EnableControl {
         if (enable_controls.length === 0) {
@@ -149,6 +191,7 @@ export function createLambdaEnableControl(enabledFn: () => boolean): EnableContr
 export const EnableControl = {
     lambda: createLambdaEnableControl,
     periodic: createPeriodicEnableControl,
+    clocked: ClockedEnableControl.create,
     all: AllEnableControl.create,
     any: AnyEnableControl.create,
     latched: LatchedEnableControl.create,
