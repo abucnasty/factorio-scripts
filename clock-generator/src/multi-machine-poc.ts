@@ -21,7 +21,7 @@ import { TickProvider } from "./control-logic/current-tick-provider";
 import { computeLastSwingOffsetDuration, computeSimulationMode, SimulationMode } from "./crafting/sequence";
 import { SwingCountEntityMap } from "./crafting/sequence/cycle/swing-counts";
 
-const config: Config = EXAMPLES.PRODUCTION_SCIENCE_CONFIG;
+const config: Config = EXAMPLES.UTILITY_SCIENCE_CONFIG;
 
 const debug = DebugSettingsProvider.mutable()
 
@@ -332,7 +332,7 @@ const amount_in_output_machine = output_machine_state_machine.machine_state.inve
 const swings_to_remove = Math.floor(amount_in_output_machine / output_inserter.inserter.metadata.stack_size);
 const ticks_to_remove = swings_to_remove * output_inserter.inserter.animation.total.ticks;
 
-const warmup_period: Duration = Duration.ofTicks(output_inserter_period.crafting_period.ticks * recipe_lcm);
+const warmup_period: Duration = Duration.ofTicks(output_inserter_period.crafting_period.ticks * recipe_lcm * 10);
 const duration: Duration = Duration.ofTicks(output_inserter_period.crafting_period.ticks * recipe_lcm);
 
 console.log(`Warm up period: ${warmup_period.ticks} ticks`);
