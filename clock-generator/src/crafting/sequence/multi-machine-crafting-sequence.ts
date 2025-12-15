@@ -32,6 +32,30 @@ export function simulateFromContext(context: SimulationContext, duration: Durati
     }
 }
 
+export function warmupSimulation(context: SimulationContext, duration: Duration): void {
+    const tick_control_logic = new TickControlLogic(context.tick_provider);
+
+    const control_logic = new CompositeControlLogic(
+        [
+            tick_control_logic,
+            ...context.machines,
+            ...context.drills,
+            ...context.inserters
+        ]
+    )
+
+    const start_tick = context.tick_provider.getCurrentTick();
+    const end_tick = start_tick + duration.ticks;
+
+    while (true) {
+        const current_tick = context.tick_provider.getCurrentTick();
+        if (current_tick >= end_tick) {
+            break;
+        }
+        control_logic.executeForTick();
+    }
+}
+
 export function simulateUntilAllMachinesAreOutputBlocked(
     context: SimulationContext
 ): void {

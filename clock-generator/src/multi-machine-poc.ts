@@ -4,13 +4,13 @@ import * as EXAMPLES from './config/examples';
 import { InserterTransferTrackerPlugin } from './control-logic/inserter/plugins/inserter-transfer-tracker-plugin';
 import { DebugPluginFactory } from './crafting/sequence/debug/debug-plugin-factory';
 import { DebugSettingsProvider } from './crafting/sequence/debug/debug-settings-provider';
-import { simulateFromContext, simulateUntilAllMachinesAreOutputBlocked } from './crafting/sequence/multi-machine-crafting-sequence';
+import { simulateFromContext, simulateUntilAllMachinesAreOutputBlocked, warmupSimulation } from './crafting/sequence/multi-machine-crafting-sequence';
 import { cloneSimulationContextWithInterceptors, createSimulationContextFromConfig, SimulationContext } from './crafting/sequence/simulation-context';
 import { InserterTransfer } from './crafting/sequence/single-crafting-sequence';
 import { Duration, OpenRange } from './data-types';
 import { Entity, EntityId, Inserter, Machine, miningDrillMaxInsertion, ReadableEntityRegistry } from './entities';
 import { printInventoryTransfers } from './generator';
-import { AlwaysEnabledControl, EnableControl } from "./control-logic/enable-control";
+import { AlwaysEnabledControl, ClockedEnableControl, EnableControl } from "./control-logic/enable-control";
 import { TargetProductionRate } from "./crafting/target-production-rate";
 import { assertIsMachineState, DrillStatus, EntityState, InserterState, MachineState, MachineStatus } from "./state";
 import Fraction, { fraction } from "fractionability";
@@ -22,13 +22,29 @@ import { InventoryTransfer } from "./crafting/sequence/inventory-transfer";
 import { TickProvider } from "./control-logic/current-tick-provider";
 
 
-// TODOS:
-// furnaces are broken since they do not have an output blocked condition and will continue
-// to craft until they reach their full stack size
-// they need their own output block condition
-// they should not be treated like a machine for output blocked purposes
+const SimulationMode = {
+    LOW_INSERTION_LIMITS: "low_insertion_limits",
+    NORMAL: "normal",
+} as const;
 
-const config: Config = EXAMPLES.PRODUCTION_SCIENCE_CONFIG;
+type SimulationMode = typeof SimulationMode[keyof typeof SimulationMode];
+
+
+function getSimulationMode(
+    source_machine: Machine,
+    inserter: Inserter
+): SimulationMode {
+    const inputs = Array.from(source_machine.inputs.values());
+    const low_insertion_limit = inputs.some(it => it.automated_insertion_limit.quantity < inserter.metadata.stack_size)
+
+    if (low_insertion_limit) {
+        return SimulationMode.LOW_INSERTION_LIMITS;
+    }
+    return SimulationMode.NORMAL;
+}
+
+
+const config: Config = EXAMPLES.LOGISTIC_SCIENCE_SHARED_INSERTER_CONFIG;
 
 const debug = DebugSettingsProvider.mutable()
 
@@ -38,16 +54,16 @@ simulation_context.machines.forEach(it => {
     Machine.printMachineFacts(it.machine_state.machine);
 })
 
-let offset_tick = 0;
+let relative_tick = 0;
 
-const offset_tick_provider = TickProvider.offset({
+const relative_tick_provider = TickProvider.offset({
     base: simulation_context.tick_provider,
-    offset: () => -1 * offset_tick
+    offset: () => -1 * relative_tick
 });
 
 // debug plugins
 const debug_plugin_factory = new DebugPluginFactory(
-    offset_tick_provider,
+    relative_tick_provider,
     debug
 );
 simulation_context.machines.forEach(it => {
@@ -74,8 +90,8 @@ simulation_context.inserters.forEach(it => {
         ranges.push({
             item_name: snapshot.item_name,
             tick_range: OpenRange.from(
-                snapshot.tick_range.start_inclusive - offset_tick,
-                snapshot.tick_range.end_inclusive - offset_tick
+                snapshot.tick_range.start_inclusive - relative_tick,
+                snapshot.tick_range.end_inclusive - relative_tick
             ),
         })
         inventory_transfers.set(it.entity_id, ranges);
@@ -96,8 +112,8 @@ simulation_context.drills.forEach(it => {
                     {
                         item_name: it.drill_state.drill.item.name,
                         tick_range: OpenRange.from(
-                            last_enabled_tick - offset_tick,
-                            simulation_context.tick_provider.getCurrentTick() - offset_tick
+                            last_enabled_tick - relative_tick,
+                            simulation_context.tick_provider.getCurrentTick() - relative_tick
                         )
                     }
                 )
@@ -116,9 +132,8 @@ console.log("Pre loading all machines until output blocked...");
 
 debug.disable()
 simulateUntilAllMachinesAreOutputBlocked(simulation_context);
-simulation_context.tick_provider.setCurrentTick(0)
 inventory_transfers.clear();
-offset_tick = simulation_context.tick_provider.getCurrentTick();
+relative_tick = simulation_context.tick_provider.getCurrentTick();
 debug.disable()
 
 const target_production_rate = TargetProductionRate.fromConfig(config.target_output);
@@ -136,6 +151,8 @@ const output_inserter_period = computeOutputInserterPeriod(
 )
 
 console.log("All machines are output blocked.");
+
+const clocks: ClockedEnableControl[] = []
 
 simulation_context.machines.forEach(it => {
     MachineState.print(it.machine_state);
@@ -171,8 +188,10 @@ const new_simulation_context = cloneSimulationContextWithInterceptors(simulation
     },
     inserter: (inserter_state, source_state, sink_state) => {
 
+        const primary_output_machine = output_machine_state_machine.machine_state.machine
+
         // output inserter control
-        if (source_state.entity_id.id === output_machine_state_machine.machine_state.entity_id.id) {
+        if (source_state.entity_id.id === primary_output_machine.entity_id.id) {
 
             console.log(`Configuring output inserter ${inserter_state.inserter.entity_id} control logic...`)
             console.log(`Output Inserter control ranges over ${output_inserter_period.crafting_period.ticks} ticks:`)
@@ -181,13 +200,18 @@ const new_simulation_context = cloneSimulationContextWithInterceptors(simulation
             })
 
             assertIsMachineState(source_state);
+
+            const clocked_control = EnableControl.clocked({
+                periodDuration: output_inserter_period.crafting_period,
+                enabledRanges: output_inserter_period.enabled_ranges,
+                tickProvider: simulation_context.tick_provider,
+            })
+
+            clocks.push(clocked_control);
+
             return EnableControl.all(
                 [
-                    EnableControl.periodic({
-                        periodDuration: output_inserter_period.crafting_period,
-                        enabledRanges: output_inserter_period.enabled_ranges,
-                        tickProvider: simulation_context.tick_provider,
-                    }),
+                    clocked_control,
                     // EnableControl.any([
                     //     EnableControl.lambda(() => {
                     //         return source_state.status === MachineStatus.OUTPUT_FULL
@@ -202,6 +226,29 @@ const new_simulation_context = cloneSimulationContextWithInterceptors(simulation
             )
         }
 
+        const additional_enable_controls: EnableControl[] = []
+
+        if (sink_state.entity_id.id === primary_output_machine.entity_id.id) {
+            assertIsMachineState(sink_state);
+            const mode = getSimulationMode(sink_state.machine, inserter_state.inserter);
+
+            if (mode === SimulationMode.LOW_INSERTION_LIMITS) {
+                const total_period = OpenRange.fromStartAndDuration(0, output_inserter_period.crafting_period.ticks)
+                const enabled_ranges = OpenRange.inverse(output_inserter_period.enabled_ranges, total_period)
+                const clocked_control = EnableControl.clocked({
+                    periodDuration: output_inserter_period.crafting_period,
+                    enabledRanges: enabled_ranges,
+                    tickProvider: simulation_context.tick_provider,
+                })
+                clocks.push(clocked_control);
+                additional_enable_controls.push(
+                    clocked_control
+                );
+            }
+        }
+
+
+
         if (EntityState.isBelt(source_state) && EntityState.isMachine(sink_state)) {
             const inserter_filtered_items = inserter_state.inserter.filtered_items;
             const belt_item_names = source_state.belt.lanes.map(it => it.ingredient_name)
@@ -210,7 +257,13 @@ const new_simulation_context = cloneSimulationContextWithInterceptors(simulation
 
             const time_to_transfer = inserter_animation.pickup_to_drop.ticks
 
-            return EnableControl.any(
+            const mode = getSimulationMode(sink_state.machine, inserter_state.inserter);
+
+            if (mode === SimulationMode.LOW_INSERTION_LIMITS) {
+                return EnableControl.all(additional_enable_controls)
+            }
+
+            const enable_control = EnableControl.any(
                 transferred_items.map(source_item_name => {
                     const sink_input = sink_state.machine.inputs.get(source_item_name);
                     assert(sink_input !== undefined, `Machine ${sink_state.machine.entity_id} does not have an input for item ${source_item_name}`);
@@ -231,6 +284,10 @@ const new_simulation_context = cloneSimulationContextWithInterceptors(simulation
                     })
                 })
             )
+
+            return EnableControl.all(
+                additional_enable_controls.concat(enable_control)
+            )
         }
 
         if (EntityState.isMachine(source_state) && EntityState.isMachine(sink_state)) {
@@ -243,23 +300,37 @@ const new_simulation_context = cloneSimulationContextWithInterceptors(simulation
 
             const automated_insertion_limit = sink_input.automated_insertion_limit.quantity;
 
+            const mode = getSimulationMode(sink_state.machine, inserter_state.inserter);
+
+            const source_is_greater_than_stack_size = EnableControl.lambda(() => {
+                const source_quantity = source_state.inventoryState.getItemOrThrow(source_item_name).quantity;
+                return source_quantity >= inserter_state.inserter.metadata.stack_size
+            })
+
+            const latched_until_less_than_minimimum = EnableControl.latched({
+                base: EnableControl.lambda(() => {
+                    const sink_quantity = sink_state.inventoryState.getItemOrThrow(source_item_name).quantity;
+                    return sink_quantity <= minimum_required * 2
+                }),
+                release: EnableControl.lambda(() => {
+                    const sink_quantity = sink_state.inventoryState.getItemOrThrow(source_item_name).quantity;
+                    return sink_quantity >= automated_insertion_limit
+                })
+            })
+
+            if (mode === SimulationMode.LOW_INSERTION_LIMITS) {
+                return EnableControl.all(
+                    additional_enable_controls.concat(
+                        source_is_greater_than_stack_size
+                    )
+                )
+            }
+
             return EnableControl.all(
-                [
-                    EnableControl.lambda(() => {
-                        const source_quantity = source_state.inventoryState.getItemOrThrow(source_item_name).quantity;
-                        return source_quantity >= inserter_state.inserter.metadata.stack_size
-                    }),
-                    EnableControl.latched({
-                        base: EnableControl.lambda(() => {
-                            const sink_quantity = sink_state.inventoryState.getItemOrThrow(source_item_name).quantity;
-                            return sink_quantity <= minimum_required * 2
-                        }),
-                        release: EnableControl.lambda(() => {
-                            const sink_quantity = sink_state.inventoryState.getItemOrThrow(source_item_name).quantity;
-                            return sink_quantity >= automated_insertion_limit
-                        })
-                    })
-                ]
+                additional_enable_controls.concat(
+                    source_is_greater_than_stack_size,
+                    latched_until_less_than_minimimum
+                )
             )
         }
 
@@ -273,17 +344,19 @@ console.log(`Simulation context ingredient LCM: ${recipe_lcm}`);
 
 const amount_in_output_machine = output_machine_state_machine.machine_state.inventoryState.getQuantity(output_machine_state_machine.machine_state.machine.output.item_name);
 const swings_to_remove = Math.floor(amount_in_output_machine / output_inserter.inserter.metadata.stack_size);
+const ticks_to_remove = swings_to_remove * output_inserter.inserter.animation.total.ticks;
 
-const warmup_period: Duration = Duration.ofTicks(output_inserter_period.crafting_period.ticks * recipe_lcm);
+const warmup_period: Duration = Duration.ofTicks(output_inserter_period.crafting_period.ticks * recipe_lcm * 10);
 const duration: Duration = Duration.ofTicks(output_inserter_period.crafting_period.ticks * recipe_lcm);
 
 console.log(`Warm up period: ${warmup_period.ticks} ticks`);
 console.log(`Simulation period: ${duration.ticks} ticks`);
 
 console.log("Warming up simulation...");
+clocks.forEach(it => it.reset());
 debug.disable()
 const warm_up_start = new Date();
-simulateFromContext(new_simulation_context, warmup_period);
+warmupSimulation(new_simulation_context, warmup_period);
 const warm_up_end = new Date();
 const warm_up_simulation_time = warm_up_end.getTime() - warm_up_start.getTime();
 console.log(`Warm up simulation executed ${warmup_period.ticks} ticks in ${warm_up_simulation_time} ms (${(warmup_period.ticks / (warm_up_simulation_time / 1000)).toFixed(2)} UPS)`);
@@ -292,9 +365,9 @@ debug.disable()
 // logging
 
 inventory_transfers.clear();
-offset_tick = simulation_context.tick_provider.getCurrentTick();
-
-debug.enable()
+relative_tick = simulation_context.tick_provider.getCurrentTick();
+clocks.forEach(it => it.reset());
+debug.disable()
 simulateFromContext(new_simulation_context, duration);
 debug.disable()
 console.log(`Simulation complete`);
@@ -304,11 +377,13 @@ const buffer = computeInserterBufferForReality(
     output_inserter.inserter
 );
 
-const merged_ranges = correctNegativeOffset(mergeOverlappingInventoryTransferRanges(inventory_transfers, buffer.ticks))
+const merged_ranges = mergeOverlappingInventoryTransferRanges(inventory_transfers, buffer.ticks)
+
+const offset_ranges = correctNegativeOffset(mergeOverlappingInventoryTransferRanges(inventory_transfers, buffer.ticks))
 
 const output_ranges = merged_ranges.get(output_inserter.entity_id)!
 
-merged_ranges.set(output_inserter.entity_id, output_ranges.map(it => {
+offset_ranges.set(output_inserter.entity_id, output_ranges.map(it => {
     return {
         item_name: it.item_name,
         tick_range: OpenRange.from(
@@ -320,12 +395,12 @@ merged_ranges.set(output_inserter.entity_id, output_ranges.map(it => {
 
 
 
-printInventoryTransfers(merged_ranges)
+printInventoryTransfers(offset_ranges)
 
 const blueprint = createSignalPerInserterBlueprint(
     output_machine_state_machine.machine_state.machine.output.item_name,
     duration,
-    InventoryTransfer.deduplicateEntityTransfers(merged_ranges),
+    InventoryTransfer.deduplicateEntityTransfers(offset_ranges),
     simulation_context.entity_registry
 )
 
@@ -347,10 +422,9 @@ function computeInserterBufferForSimulation(
     source_machine: Machine,
     inserter: Inserter
 ): Duration {
-    const inputs = Array.from(source_machine.inputs.values());
-    const low_insertion_limit = inputs.some(it => it.automated_insertion_limit.quantity < inserter.metadata.stack_size)
+    const mode = getSimulationMode(source_machine, inserter);
 
-    if (low_insertion_limit) {
+    if (mode === SimulationMode.LOW_INSERTION_LIMITS) {
         return Duration.ofTicks(
             Math.floor(source_machine.crafting_rate.ticks_per_craft / 2)
         );
@@ -362,10 +436,9 @@ function computeInserterBufferForReality(
     source_machine: Machine,
     inserter: Inserter
 ): Duration {
-    const inputs = Array.from(source_machine.inputs.values());
-    const low_insertion_limit = inputs.some(it => it.automated_insertion_limit.quantity < inserter.metadata.stack_size)
+    const mode = getSimulationMode(source_machine, inserter);
 
-    if (low_insertion_limit) {
+    if (mode === SimulationMode.LOW_INSERTION_LIMITS) {
         return Duration.ofTicks(
             Math.floor(source_machine.crafting_rate.ticks_per_craft)
         );

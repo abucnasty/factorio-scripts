@@ -37,6 +37,25 @@ export class OpenRange {
         return reduced_ranges;
     }
 
+    public static inverse(ranges: OpenRange[], total_range: OpenRange): OpenRange[] {
+        const reduced_ranges = OpenRange.reduceRanges(ranges);
+        const inverse_ranges: OpenRange[] = [];
+        let current_start = total_range.start_inclusive;
+
+        for (const range of reduced_ranges) {
+            if (current_start < range.start_inclusive) {
+                inverse_ranges.push(new OpenRange(current_start, range.start_inclusive - 1));
+            }
+            current_start = range.end_inclusive + 1;
+        }
+
+        if (current_start <= total_range.end_inclusive) {
+            inverse_ranges.push(new OpenRange(current_start, total_range.end_inclusive));
+        }
+
+        return inverse_ranges;
+    }
+
     public static merge(ranges: OpenRange[]): OpenRange {
         if (ranges.length === 0) {
             throw new Error("Cannot merge empty range list");

@@ -4,8 +4,12 @@ import { InserterState, EntityState, MachineStatus } from "../../../state";
 
 export type InserterInterceptor = (inserter_state: InserterState, source_state: EntityState, sink_state: EntityState) => EnableControl
 
-const NoopInserterInterceptor: InserterInterceptor = (): EnableControl => {
+const AlwaysEnabledInterceptor: InserterInterceptor = (): EnableControl => {
     return AlwaysEnabledControl
+}
+
+const AlwaysDisabledInterceptor: InserterInterceptor = (): EnableControl => {
+    return EnableControl.never
 }
 
 const WaitUntilSourceIsOutputBlockedInterceptor: InserterInterceptor = (inserter_state, source_state, sink_state): EnableControl => {
@@ -26,6 +30,7 @@ const WaitUntilSourceIsOutputBlockedInterceptor: InserterInterceptor = (inserter
 }
 
 export const InserterInterceptor = {
-    noop: NoopInserterInterceptor,
+    always_enabled: AlwaysEnabledInterceptor,
+    always_disabled: AlwaysDisabledInterceptor,
     wait_until_source_is_output_blocked: WaitUntilSourceIsOutputBlockedInterceptor
 }
