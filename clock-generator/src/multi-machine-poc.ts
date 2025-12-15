@@ -21,7 +21,7 @@ import { TickProvider } from "./control-logic/current-tick-provider";
 import { computeLastSwingOffsetDuration, computeSimulationMode, SimulationMode } from "./crafting/sequence";
 import { SwingCountEntityMap } from "./crafting/sequence/cycle/swing-counts";
 
-const config: Config = EXAMPLES.UTILITY_SCIENCE_CONFIG;
+const config: Config = EXAMPLES.PRODUCTION_SCIENCE_CONFIG_SHARED;
 
 const debug = DebugSettingsProvider.mutable()
 
@@ -150,7 +150,7 @@ const new_simulation_context = cloneSimulationContextWithInterceptors(simulation
             base: EnableControl.lambda(() => {
                 const sink_quantity = sink_state.inventoryState.getItemOrThrow(source_item_name).quantity;
                 const sink_quantity_after_transfer = sink_quantity - Math.ceil(sink_consumption_per_tick * time_to_transfer_minimum_amount);
-                return sink_quantity_after_transfer < minimum_required * 2
+                return sink_quantity_after_transfer < minimum_required * 3
             }),
             release: EnableControl.lambda(() => {
                 const sink_quantity = sink_state.inventoryState.getItemOrThrow(source_item_name).quantity;
