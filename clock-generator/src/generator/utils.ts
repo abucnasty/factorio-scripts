@@ -49,7 +49,9 @@ export function printInventoryTransfers(
 ): void {
     inventory_transfers.forEach((transfers, entityId) => {
         console.log(`Transfer Ranges for ${entityId}`);
-        transfers.forEach((transfer) => {
+        transfers
+        .sort((a, b) => a.tick_range.start_inclusive - b.tick_range.start_inclusive)
+        .forEach((transfer) => {
             const start_inclusive = transfer.tick_range.start_inclusive;
             const end_inclusive = transfer.tick_range.end_inclusive;
             if (relative_tick_mod > 0) {
