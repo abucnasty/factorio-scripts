@@ -19,13 +19,16 @@ export class PickupModeTransitionEvaluator implements ModeTransitionEvaluator<In
     public onExit(toMode: InserterMode): void {}
 
     public evaluateTransition(): ModeTransition<InserterMode> {
-        if(!this.enable_control.isEnabled()) {
-            return ModeTransition.transition(this.disabled_mode, `Inserter disabled while picking up ${this.heldItemName()}`);
-        }
 
         if (this.heldItemQuantity() === this.inserterState.inserter.metadata.stack_size) {
             return ModeTransition.transition(this.swing_mode, `Picked up full stack of ${this.heldItemName()}`);
         }
+
+        if(!this.enable_control.isEnabled()) {
+            return ModeTransition.transition(this.disabled_mode, `Inserter disabled while picking up ${this.heldItemName()}`);
+        }
+
+        
 
         return ModeTransition.NONE;
     }
