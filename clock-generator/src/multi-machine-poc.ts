@@ -146,17 +146,30 @@ const new_simulation_context = cloneSimulationContextWithInterceptors(simulation
 
         const max_insertion_amount = miningDrillMaxInsertion(drill_state.drill, sink_state.machine);
 
-        return EnableControl.latched({
-            base: EnableControl.lambda(() => {
-                const sink_quantity = sink_state.inventoryState.getItemOrThrow(source_item_name).quantity;
-                const sink_quantity_after_transfer = sink_quantity - Math.ceil(sink_consumption_per_tick * time_to_transfer_minimum_amount);
-                return sink_quantity_after_transfer < minimum_required * 3
-            }),
-            release: EnableControl.lambda(() => {
-                const sink_quantity = sink_state.inventoryState.getItemOrThrow(source_item_name).quantity;
-                return sink_quantity >= max_insertion_amount
-            })
+        const ensure_at_least_once_per_cycle = EnableControl.clocked({
+            enabledRanges: [OpenRange.from(0, 1)],
+            periodDuration: output_inserter_period.crafting_period,
+            tickProvider: simulation_context.tick_provider,
         })
+
+        clocks.push(ensure_at_least_once_per_cycle)
+
+        return EnableControl.any([
+            EnableControl.latched({
+                base: EnableControl.any([
+                    ensure_at_least_once_per_cycle,
+                    EnableControl.lambda(() => {
+                        const sink_quantity = sink_state.inventoryState.getItemOrThrow(source_item_name).quantity;
+                        const sink_quantity_after_transfer = sink_quantity - Math.ceil(sink_consumption_per_tick * time_to_transfer_minimum_amount);
+                        return sink_quantity_after_transfer < minimum_required * 3
+                    })
+                ]),
+                release: EnableControl.lambda(() => {
+                    const sink_quantity = sink_state.inventoryState.getItemOrThrow(source_item_name).quantity;
+                    return sink_quantity >= max_insertion_amount
+                })
+            })
+        ])
     },
     inserter: (inserter_state, source_state, sink_state) => {
 
@@ -353,7 +366,7 @@ debug.disable()
 inventory_transfers.clear();
 relative_tick = simulation_context.tick_provider.getCurrentTick();
 clocks.forEach(it => it.reset());
-debug.enable()
+debug.disable()
 simulateFromContext(new_simulation_context, duration);
 debug.disable()
 console.log(`Simulation complete`);
@@ -479,10 +492,6 @@ function computeOutputInserterPeriod(
         output_inserter
     )
 
-
-    // if the value is a fraction, we should round up to the nearest whole number of swings and then create a secondary condition
-    // to only enable when the machine has 16 items or is output blocked
-
     if (max_swings_possible.getDenominator === 1) {
         // simple case
         const total_swing_duration = (output_inserter.animation.total.ticks + 1) * max_swings_possible.getNumerator
@@ -521,33 +530,13 @@ function computeOutputInserterPeriod(
                 )
             ]
         }
-
     }
 
     // this is a total hack... need to figure out if we want to support fractions like 15/8 swings
     // right now the only supported fraction is 3/2 swings
-    if (max_swings_possible.toDecimal() != 1.5) {
-
+    if (max_swings_possible.getDenominator != 2) {
         max_swings_possible = fraction(1)
-        // // simple case, just enable for the whole duration
-        // const swings_possible = 1
-        // const total_swing_duration = output_inserter.animation.total.ticks * swings_possible
-        // return {
-        //     crafting_period: Duration.ofTicks(
-        //         single_swing_period_duration.ticks * swings_possible
-        //     ),
-        //     inserter: output_inserter,
-        //     swing_count: swings_possible,
-        //     item_name: output_item_name,
-        //     enabled_ranges: [
-        //         OpenRange.from(
-        //             0,
-        //             total_swing_duration + buffer.ticks
-        //         )
-        //     ]
-        // }
     }
-    max_swings_possible = fraction(1)
 
     const enabled_ranges: OpenRange[] = []
 
