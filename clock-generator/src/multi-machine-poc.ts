@@ -4,7 +4,7 @@ import * as EXAMPLES from './config/examples';
 import { DebugPluginFactory } from './crafting/sequence/debug/debug-plugin-factory';
 import { DebugSettingsProvider } from './crafting/sequence/debug/debug-settings-provider';
 import { simulateFromContext, simulateUntilAllMachinesAreOutputBlocked, warmupSimulation } from './crafting/sequence/multi-machine-crafting-sequence';
-import { cloneSimulationContextWithInterceptors, createSimulationContextFromConfig, SimulationContext } from './crafting/sequence/simulation-context';
+import { cloneSimulationContextWithInterceptors, SimulationContext } from './crafting/sequence/simulation-context';
 import { Duration, OpenRange } from './data-types';
 import { Entity, Inserter, Machine, miningDrillMaxInsertion } from './entities';
 import { AlwaysEnabledControl, ClockedEnableControl, EnableControl } from "./control-logic/enable-control";
@@ -25,11 +25,11 @@ const config: Config = EXAMPLES.LOGISTIC_SCIENCE_SHARED_INSERTER_CONFIG;
 
 const debug = DebugSettingsProvider.mutable()
 
-const simulation_context = createSimulationContextFromConfig(config);
+const simulation_context = SimulationContext.fromConfig(config);
 
-simulation_context.machines.forEach(it => {
-    Machine.printMachineFacts(it.machine_state.machine);
-})
+simulation_context.machines
+    .map(it => it.machine_state.machine)
+    .forEach(Machine.printMachineFacts)
 
 let relative_tick = 0;
 
@@ -43,22 +43,11 @@ const debug_plugin_factory = new DebugPluginFactory(
     relative_tick_provider,
     debug
 );
-simulation_context.machines.forEach(it => {
-    it.addPlugin(debug_plugin_factory.machineModeChangePlugin(it.machine_state));
-    it.addPlugin(debug_plugin_factory.machineCraftEventPlugin(it.machine_state));
-});
-simulation_context.inserters.forEach(it => {
-    it.addPlugin(debug_plugin_factory.inserterModeChangePlugin(it));
-    it.addPlugin(debug_plugin_factory.inserterHandContentsChangePlugin(it));
-});
 
-simulation_context.drills.forEach(it => {
-    it.addPlugin(debug_plugin_factory.drillModeChangePlugin(it.drill_state))
-})
+simulation_context.addDebuggerPlugins(debug_plugin_factory);
 
-// inventory transfer tracking
+// inventory transfer tracking plugins
 const inventory_transfer_history = new InventoryTransferHistory();
-
 simulation_context.inserters.forEach(it => {
     it.addPlugin(new InserterInventoryHistoryPlugin(
         relative_tick_provider,
@@ -66,7 +55,6 @@ simulation_context.inserters.forEach(it => {
         inventory_transfer_history
     ))
 });
-
 simulation_context.drills.forEach(it => {
     it.addPlugin(new DrillInventoryTransferPlugin(
         it.drill_state.drill,
@@ -75,7 +63,7 @@ simulation_context.drills.forEach(it => {
     ))
 })
 
-// simulation
+// simulation until all machines are output blocked
 console.log(`Created simulation context with ${simulation_context.machines.length} machines and ${simulation_context.inserters.length} inserters.`);
 
 console.log("Pre loading all machines until output blocked...");
@@ -85,6 +73,9 @@ simulateUntilAllMachinesAreOutputBlocked(simulation_context);
 inventory_transfer_history.clear();
 relative_tick = simulation_context.tick_provider.getCurrentTick();
 debug.disable()
+
+
+// compute target production rate from initial warmup simulation
 
 const target_production_rate = TargetProductionRate.fromConfig(config.target_output);
 

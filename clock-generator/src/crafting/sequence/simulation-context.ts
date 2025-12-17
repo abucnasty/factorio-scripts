@@ -4,27 +4,61 @@ import { DrillStateMachine } from "../../control-logic/drill/drill-state-machine
 import { AlwaysEnabledControl, EnableControl } from "../../control-logic/enable-control";
 import { InserterStateMachine } from "../../control-logic/inserter/inserter-state-machine";
 import { MachineStateMachine } from "../../control-logic/machine/machine-state-machine";
-import { Belt, EntityId, EntityRegistry, InserterFactory, Machine, WritableEntityRegistry } from "../../entities";
+import { Belt, EntityRegistry, InserterFactory, Machine, WritableEntityRegistry } from "../../entities";
 import { MiningDrill } from "../../entities/drill/mining-drill";
 import { MiningProductivity } from "../../entities/drill/mining-productivity";
 import { assertIsMachineState, DrillState, DrillStatus, EntityState, EntityStateFactory, EntityStateRegistry, InserterState, MachineState, WritableEntityStateRegistry } from "../../state";
 import { TargetProductionRate } from "../target-production-rate";
+import { DebugPluginFactory } from "./debug";
 import { InserterInterceptor } from "./interceptors/inserter-interceptor";
 
-export interface SimulationContext {
-    tick_provider: MutableTickProvider;
-    entity_registry: WritableEntityRegistry
-    state_registry: WritableEntityStateRegistry;
-    machines: MachineStateMachine[];
-    inserters: InserterStateMachine[];
-    drills: DrillStateMachine[]
-    target_production_rate: TargetProductionRate;
+export class SimulationContext {
+
+    static fromConfig = createSimulationContextFromConfig;
+
+    constructor(
+        public readonly tick_provider: MutableTickProvider,
+        public readonly entity_registry: WritableEntityRegistry,
+        public readonly state_registry: WritableEntityStateRegistry,
+        public readonly machines: MachineStateMachine[],
+        public readonly inserters: InserterStateMachine[],
+        public readonly drills: DrillStateMachine[],
+        public readonly target_production_rate: TargetProductionRate,
+    ) {}
+
+    public clone(args: Partial<SimulationContext> = {}): SimulationContext {
+        return new SimulationContext(
+            args.tick_provider ?? this.tick_provider,
+            args.entity_registry ?? this.entity_registry,
+            args.state_registry ?? this.state_registry,
+            args.machines ?? [...this.machines],
+            args.inserters ?? [...this.inserters],
+            args.drills ?? [...this.drills],
+            args.target_production_rate ?? this.target_production_rate
+        );
+    }
+
+    public addDebuggerPlugins(debug_plugin_factory: DebugPluginFactory): void {
+        this.machines.forEach(it => {
+            it.addPlugin(debug_plugin_factory.machineModeChangePlugin(it.machine_state));
+            it.addPlugin(debug_plugin_factory.machineCraftEventPlugin(it.machine_state));
+        });
+
+        this.inserters.forEach(it => {
+            it.addPlugin(debug_plugin_factory.inserterModeChangePlugin(it));
+            it.addPlugin(debug_plugin_factory.inserterHandContentsChangePlugin(it));
+        });
+
+        this.drills.forEach(it => {
+            it.addPlugin(debug_plugin_factory.drillModeChangePlugin(it.drill_state))
+        })
+    }
 }
 
 export type MachineStateMachineInterceptor = (entity_state: EntityState) => MachineStateMachine | null
 export type InserterStateMachineInterceptor = (entity_state: EntityState) => InserterStateMachine | null
 
-export function createSimulationContextFromConfig(
+function createSimulationContextFromConfig(
     config: Config,
     interceptors: {
         machine_interceptor?: MachineStateMachineInterceptor,
@@ -109,15 +143,15 @@ export function createSimulationContextFromConfig(
 
     const target_production_rate = TargetProductionRate.fromConfig(config.target_output);
 
-    return {
-        tick_provider: tick_provider,
-        state_registry: entity_state_registry,
-        entity_registry: entity_registry,
-        machines: machine_state_machines,
-        inserters: inserter_state_machines,
-        drills: drill_state_machines,
-        target_production_rate: target_production_rate
-    }
+    return new SimulationContext(
+        tick_provider,
+        entity_registry,
+        entity_state_registry,
+        machine_state_machines,
+        inserter_state_machines,
+        drill_state_machines,
+        target_production_rate
+    )
 }
 
 export function cloneSimulationContextWithInterceptors(
@@ -130,12 +164,11 @@ export function cloneSimulationContextWithInterceptors(
 
     const entity_state_registry = context.state_registry;
 
-    const new_context: SimulationContext = {
-        ...context
-    }
+    let new_inserters: InserterStateMachine[] | null = null
+    let new_drills: DrillStateMachine[] | null = null
 
     if (interceptors.inserter) {
-        new_context.inserters = context.inserters.map(inserter_state_machine => {
+        new_inserters = context.inserters.map(inserter_state_machine => {
             const inserter_state = inserter_state_machine.inserter_state;
             const source_state = entity_state_registry.getStateByEntityIdOrThrow(inserter_state.inserter.source.entity_id)
             const sink_state = entity_state_registry.getStateByEntityIdOrThrow(inserter_state.inserter.sink.entity_id)
@@ -153,7 +186,7 @@ export function cloneSimulationContextWithInterceptors(
     }
 
     if (interceptors.drill) {
-        new_context.drills = context.drills.map(drill_state_machine => {
+        new_drills = context.drills.map(drill_state_machine => {
             const sink_state = entity_state_registry.getStateByEntityIdOrThrow(drill_state_machine.drill_state.drill.sink_id);
             assertIsMachineState(sink_state);
             const enable_control = interceptors.drill!(drill_state_machine.drill_state, sink_state);
@@ -167,5 +200,8 @@ export function cloneSimulationContextWithInterceptors(
         })
     }
 
-    return new_context;
+    return context.clone({
+        inserters: new_inserters ?? context.inserters,
+        drills: new_drills ?? context.drills,
+    });
 }

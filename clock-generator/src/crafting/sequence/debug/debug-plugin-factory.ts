@@ -10,6 +10,7 @@ import { DrillState, MachineState } from "../../../state";
 import { DebugLoggerFactory } from "./debug-logger-factory";
 import { DebugSettingsProvider } from "./debug-settings-provider";
 import { DrillMode } from "../../../control-logic/drill/modes/drill-mode";
+import { SimulationContext } from "../simulation-context";
 
 export class DebugPluginFactory {
     constructor(
