@@ -1,4 +1,4 @@
-import { InserterTransfer } from "../../../crafting/sequence/single-crafting-sequence";
+import { InventoryTransfer } from "../../../crafting/sequence/inventory-transfer";
 import { OpenRange } from "../../../data-types/open-range";
 import { SignalId } from "../signal";
 import { ComparatorString, CompareType, CircuitNetworkSelection } from "./constants";
@@ -105,13 +105,13 @@ function fromOpenRange(openRange: OpenRange, signalId: SignalId): DeciderCombina
 }
 
 function fromInserterTransfer(
-    inserter_transfer: InserterTransfer,
+    inventory_transfer: InventoryTransfer,
     clock_signal_id: SignalId
 ): DeciderCombinatorCondition[] {
 
-    const item_signal_id = SignalId.item(inserter_transfer.item_name);
+    const item_signal_id = SignalId.item(inventory_transfer.item_name);
 
-    const [start, end] = fromOpenRange(inserter_transfer.tick_range, clock_signal_id);
+    const [start, end] = fromOpenRange(inventory_transfer.tick_range, clock_signal_id);
 
     const item_condition = new DeciderCombinatorConditionBuilder(SignalId.each)
         .setComparator(ComparatorString.EQUAL_TO)

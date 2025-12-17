@@ -1,0 +1,67 @@
+import { CompositeControlLogic } from "../../../control-logic/composite-control-logic";
+import { ControlLogic } from "../../../control-logic/control-logic";
+import { TickControlLogic } from "../../../control-logic/tick-control-logic";
+import { Duration } from "../../../data-types";
+import { SimulationContext } from "../../sequence";
+import { RunnerStep, RunnerStepType } from "./runner-step";
+
+export class WarmupStep implements RunnerStep {
+    public readonly type: RunnerStepType = RunnerStepType.WARM_UP
+    
+    private readonly control_logic: ControlLogic;
+    private warmup_start: Date | null = null;
+    private warmup_end: Date | null = null;
+
+    constructor(
+        private readonly simulation_context: SimulationContext,
+        private readonly duration: Duration
+    ) {
+        this.control_logic = this.build()
+    }
+
+    public execute(): void {
+        console.log("Executing Warmup Step");
+        const context = this.simulation_context
+        const control_logic = this.control_logic;
+
+        const start_tick = context.tick_provider.getCurrentTick();
+        const end_tick = start_tick + this.duration.ticks;
+
+        this.warmup_start = new Date();
+
+        while (true) {
+            const current_tick = context.tick_provider.getCurrentTick();
+            if (current_tick >= end_tick) {
+                this.warmup_end = new Date();
+                this.printWarmupDuration()
+                break;
+            }
+            control_logic.executeForTick();
+        }
+    }
+
+    private printWarmupDuration(): void {
+        if (this.warmup_start && this.warmup_end) {
+            const elapsed_ms = this.warmup_end.getTime() - this.warmup_start.getTime();
+            const updates_per_second = (this.duration.ticks / elapsed_ms) * 1000;
+            const total_ticks = this.duration.ticks;
+            console.log(`Warm up simulation executed ${total_ticks} ticks in ${elapsed_ms} ms (${(updates_per_second).toFixed(2)} UPS)`);
+        }
+    }
+
+    private build(): ControlLogic {
+        const context = this.simulation_context
+        const tick_control_logic = new TickControlLogic(context.tick_provider);
+
+        const control_logic = new CompositeControlLogic(
+            [
+                tick_control_logic,
+                ...context.machines,
+                ...context.drills,
+                ...context.inserters
+            ]
+        )
+
+        return control_logic;
+    }
+}

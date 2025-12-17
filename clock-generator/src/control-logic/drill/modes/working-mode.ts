@@ -1,4 +1,3 @@
-import assert from "assert";
 import { assertIsMachineState, DrillState, DrillStatus, EntityState, MachineState } from "../../../state";
 import { DrillMode } from "./drill-mode";
 import { Item } from "../../../data/factorio-data-types";

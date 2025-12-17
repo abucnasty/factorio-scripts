@@ -1,18 +1,16 @@
 import assert from "assert";
 import { Config } from './config/config';
 import * as EXAMPLES from './config/examples';
-import { InserterTransferTrackerPlugin } from './control-logic/inserter/plugins/inserter-transfer-tracker-plugin';
 import { DebugPluginFactory } from './crafting/sequence/debug/debug-plugin-factory';
 import { DebugSettingsProvider } from './crafting/sequence/debug/debug-settings-provider';
 import { simulateFromContext, simulateUntilAllMachinesAreOutputBlocked, warmupSimulation } from './crafting/sequence/multi-machine-crafting-sequence';
 import { cloneSimulationContextWithInterceptors, createSimulationContextFromConfig, SimulationContext } from './crafting/sequence/simulation-context';
-import { InserterTransfer } from './crafting/sequence/single-crafting-sequence';
 import { Duration, OpenRange } from './data-types';
 import { Entity, EntityId, Inserter, Machine, miningDrillMaxInsertion } from './entities';
 import { printInventoryTransfers } from './generator';
 import { AlwaysEnabledControl, ClockedEnableControl, EnableControl } from "./control-logic/enable-control";
 import { TargetProductionRate } from "./crafting/target-production-rate";
-import { assertIsMachineState, DrillStatus, EntityState, MachineState, MachineStatus } from "./state";
+import { assertIsMachineState, EntityState, MachineState, MachineStatus } from "./state";
 import { fraction } from "fractionability";
 import { createSignalPerInserterBlueprint } from "./crafting/blueprint";
 import { encodeBlueprintFile } from "./blueprints/serde";
@@ -21,6 +19,9 @@ import { TickProvider } from "./control-logic/current-tick-provider";
 import { computeLastSwingOffsetDuration, computeSimulationMode, SimulationMode } from "./crafting/sequence";
 import { EntityTransferCountMap } from "./crafting/sequence/cycle/swing-counts";
 import { MaxSwingCount } from "./crafting/sequence/cycle/inserter-crafting-period";
+import { InventoryTransferHistory } from "./control-logic/inventory/inventory-transfer-history";
+import { InserterInventoryHistoryPlugin } from "./control-logic/inserter/plugins/inserter-inventory-transfer-plugin";
+import { DrillInventoryTransferPlugin } from "./control-logic/drill/plugins/drill-inventory-transfer-plugin";
 
 const config: Config = EXAMPLES.LOGISTIC_SCIENCE_SHARED_INSERTER_CONFIG;
 
@@ -57,58 +58,33 @@ simulation_context.drills.forEach(it => {
     it.addPlugin(debug_plugin_factory.drillModeChangePlugin(it.drill_state))
 })
 
-// inserter transfer tracking
-const inventory_transfers: Map<EntityId, InventoryTransfer[]> = new Map();
+// inventory transfer tracking
+const inventory_transfer_history = new InventoryTransferHistory();
 
 simulation_context.inserters.forEach(it => {
-    it.addPlugin(new InserterTransferTrackerPlugin(simulation_context.tick_provider, it.inserter_state, (snapshot) => {
-        const ranges = inventory_transfers.get(it.entity_id) ?? []
-        ranges.push({
-            item_name: snapshot.item_name,
-            tick_range: OpenRange.from(
-                snapshot.tick_range.start_inclusive - relative_tick,
-                snapshot.tick_range.end_inclusive - relative_tick
-            ),
-        })
-        inventory_transfers.set(it.entity_id, ranges);
-    }))
+    it.addPlugin(new InserterInventoryHistoryPlugin(
+        relative_tick_provider,
+        it.inserter_state,
+        inventory_transfer_history
+    ))
 });
 
 simulation_context.drills.forEach(it => {
-    let last_enabled_tick: number | null = null;
-    const drill_id = it.drill_state.drill.entity_id;
-    it.addPlugin({
-        onTransition: (fromMode, transition) => {
-            if (fromMode.status === DrillStatus.DISABLED) {
-                last_enabled_tick = simulation_context.tick_provider.getCurrentTick();
-            }
-            if (transition.toMode.status === DrillStatus.DISABLED && last_enabled_tick !== null) {
-                const ranges = inventory_transfers.get(drill_id) ?? []
-                ranges.push(
-                    {
-                        item_name: it.drill_state.drill.item.name,
-                        tick_range: OpenRange.from(
-                            last_enabled_tick - relative_tick,
-                            simulation_context.tick_provider.getCurrentTick() - relative_tick
-                        )
-                    }
-                )
-                inventory_transfers.set(drill_id, ranges);
-                last_enabled_tick = null;
-            }
-        }
-    })
+    it.addPlugin(new DrillInventoryTransferPlugin(
+        it.drill_state.drill,
+        relative_tick_provider,
+        inventory_transfer_history
+    ))
 })
 
 // simulation
-
 console.log(`Created simulation context with ${simulation_context.machines.length} machines and ${simulation_context.inserters.length} inserters.`);
 
 console.log("Pre loading all machines until output blocked...");
 
 debug.disable()
 simulateUntilAllMachinesAreOutputBlocked(simulation_context);
-inventory_transfers.clear();
+inventory_transfer_history.clear();
 relative_tick = simulation_context.tick_provider.getCurrentTick();
 debug.disable()
 
@@ -145,9 +121,9 @@ EntityTransferCountMap.print(swing_counts)
 
 const recipe_lcm = EntityTransferCountMap.lcm(swing_counts);
 
-
 console.log(`Simulation context ingredient LCM: ${recipe_lcm}`);
 
+// TODO: this really should be cleaned up, this is way too large of a function and encapsulates core logic that should be elsewhere
 const new_simulation_context = cloneSimulationContextWithInterceptors(simulation_context, {
     drill: (drill_state, sink_state) => {
         const source_item = drill_state.drill.item
@@ -413,7 +389,6 @@ const new_simulation_context = cloneSimulationContextWithInterceptors(simulation
 
 const amount_in_output_machine = output_machine_state_machine.machine_state.inventoryState.getQuantity(output_machine_state_machine.machine_state.machine.output.item_name);
 const swings_to_remove = Math.floor(amount_in_output_machine / output_inserter.inserter.metadata.stack_size);
-const ticks_to_remove = swings_to_remove * output_inserter.inserter.animation.total.ticks;
 
 const warmup_period: Duration = Duration.ofTicks(output_inserter_period.crafting_period.ticks * recipe_lcm * 10);
 const duration: Duration = Duration.ofTicks(output_inserter_period.crafting_period.ticks * recipe_lcm);
@@ -433,7 +408,7 @@ console.log(`Starting simulation for ${duration.ticks} ticks`);
 debug.disable()
 // logging
 
-inventory_transfers.clear();
+inventory_transfer_history.clear();
 relative_tick = simulation_context.tick_provider.getCurrentTick();
 clocks.forEach(it => it.reset());
 debug.disable()
@@ -451,9 +426,9 @@ const last_swing_offset_duration: Duration = computeLastSwingOffsetDuration(
     output_inserter.inserter
 )
 
-const merged_ranges = mergeOverlappingInventoryTransferRanges(inventory_transfers)
+const merged_ranges = mergeOverlappingInventoryTransferRanges(inventory_transfer_history.getAllTransfers())
 
-const offset_ranges = correctNegativeOffset(mergeOverlappingInventoryTransferRanges(inventory_transfers))
+const offset_ranges = correctNegativeOffset(mergeOverlappingInventoryTransferRanges(inventory_transfer_history.getAllTransfers()))
 
 const output_ranges = merged_ranges.get(output_inserter.entity_id)!
 
@@ -645,7 +620,7 @@ function computeOutputInserterPeriod(
     }
 }
 
-function mergeOverlappingInventoryTransferRanges(original: Map<EntityId, InventoryTransfer[]>, overlap_threshold: number = 1): Map<EntityId, InventoryTransfer[]> {
+function mergeOverlappingInventoryTransferRanges(original: ReadonlyMap<EntityId, InventoryTransfer[]>, overlap_threshold: number = 1): Map<EntityId, InventoryTransfer[]> {
     const result: Map<EntityId, InventoryTransfer[]> = new Map();
 
     original.forEach((ranges, entityId) => {
@@ -672,8 +647,8 @@ function mergeOverlappingInventoryTransferRanges(original: Map<EntityId, Invento
     return result
 }
 
-function correctNegativeOffset(original: Map<EntityId, InserterTransfer[]>): Map<EntityId, InserterTransfer[]> {
-    const result: Map<EntityId, InserterTransfer[]> = new Map();
+function correctNegativeOffset(original: Map<EntityId, InventoryTransfer[]>): Map<EntityId, InventoryTransfer[]> {
+    const result: Map<EntityId, InventoryTransfer[]> = new Map();
 
     let minimum_tick = Infinity;
     Array.from(original.values()).flat().forEach(transfer => {
@@ -683,7 +658,7 @@ function correctNegativeOffset(original: Map<EntityId, InserterTransfer[]>): Map
     const offset = minimum_tick - 1
 
     original.forEach((ranges, entityId) => {
-        const corrected_ranges: InserterTransfer[] = ranges.map(it => {
+        const corrected_ranges: InventoryTransfer[] = ranges.map(it => {
             return {
                 item_name: it.item_name,
                 tick_range: OpenRange.from(

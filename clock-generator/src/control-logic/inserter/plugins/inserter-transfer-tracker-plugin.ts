@@ -1,5 +1,5 @@
-import { InserterTransfer } from "../../../crafting/sequence/single-crafting-sequence";
 import { OpenRange } from "../../../data-types";
+import { EntityId } from "../../../entities";
 import { InserterHandContents, InserterState, InserterStatus } from "../../../state";
 import { TickProvider } from "../../current-tick-provider";
 import { ModePlugin, Transition } from "../../mode";

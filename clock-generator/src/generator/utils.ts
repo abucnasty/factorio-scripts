@@ -1,47 +1,6 @@
-import { fraction } from "fractionability";
-import { CraftingSequence, InserterTransfer } from "../crafting/sequence/single-crafting-sequence";
 import { OpenRange } from "../data-types";
 import { EntityId, EntityRegistry, Inserter } from "../entities";
 import { InventoryTransfer } from "../crafting/sequence/inventory-transfer";
-
-export function printCraftSnapshots(craftingSequence: CraftingSequence) {
-    console.log("------------------------------")
-    console.log("craft snapshots:")
-    craftingSequence.craft_events.forEach((craft) => {
-        console.log(`Craft ${craft.craft_index}:`);
-        console.log(`- Craft Progress: ${craft.machine_state.craftingProgress.progress.toFixed(3)}`);
-        console.log(`- Bonus Progress: ${craft.machine_state.bonusProgress.progress.toFixed(3)}`);
-        console.log(`- Tick Range: [${craft.tick_range.start_inclusive}, ${craft.tick_range.end_inclusive}]`);
-        console.log(`- Machine Status: ${craft.machine_state.status}`);
-        craft.machine_state.inventoryState.getAllItems().forEach((item) => {
-            console.log(`  - Inventory: ${item.item_name} = ${item.quantity}`);
-        })
-    })
-    console.log("------------------------------")
-}
-
-export function printCraftingStatistics(
-    craftingSequence: CraftingSequence,
-): void {
-    const machine = craftingSequence.craft_events[craftingSequence.craft_events.length - 1].machine_state.machine;
-    const crafts_completed = craftingSequence.craft_events.length;
-    const total_crafted = machine.output.amount_per_craft.toDecimal() * crafts_completed;
-
-    const first_craft = craftingSequence.craft_events[0];
-    const final_craft = craftingSequence.craft_events[craftingSequence.craft_events.length - 1];
-    const total_crafting_duration = OpenRange.from(first_craft.tick_range.start_inclusive, final_craft.tick_range.end_inclusive).duration()
-    const simulation_time_ms = craftingSequence.statistics?.simulation_time_ms ?? 0;
-    const simulated_ticks = craftingSequence.statistics?.simulated_ticks ?? 0;
-    const average_ups = simulation_time_ms > 0 ? (simulated_ticks / (simulation_time_ms / 1000)) : 0;
-    const average_items_per_second = fraction(total_crafted).divide(total_crafting_duration.seconds);
-    console.log("------------------------------")
-    console.log(`Crafted ${total_crafted} ${machine.output.item_name} using machine ${machine.entity_id}`);
-    console.log(`Simulated ${crafts_completed} crafts over ${craftingSequence.total_duration.ticks} ticks`);
-    console.log(`Average items per second: ${average_items_per_second.toDecimal()}`);
-    console.log(`Simulation Time: ${simulation_time_ms} ms`);
-    console.log(`Simulation UPS : ${average_ups.toFixed(2)} UPS`);
-    console.log("------------------------------")
-}
 
 export function printInventoryTransfers(
     inventory_transfers: Map<EntityId, InventoryTransfer[]>,

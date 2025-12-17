@@ -1,4 +1,4 @@
-import { InserterTransfer } from "../../crafting/sequence/single-crafting-sequence";
+import { InventoryTransfer } from "../../crafting/sequence/inventory-transfer";
 import { OpenRange } from "../../data-types/open-range";
 import {
     CircuitNetworkSelection,
@@ -115,11 +115,11 @@ function fromRanges(
         .setControlBehavior(controlBehavior)
 }
 
-function fromInserterTransfers(
+function fromInventoryTransfers(
     clock_signal_id: SignalId,
-    inserterTransfers: InserterTransfer[]
+    inventory_transfers: InventoryTransfer[]
 ): DeciderCombinatorEntityBuilder {
-    const inputRanges = inserterTransfers.flatMap(transfer => DeciderCombinatorCondition.fromInserterTransfer(transfer, clock_signal_id));
+    const inputRanges = inventory_transfers.flatMap(transfer => DeciderCombinatorCondition.fromInserterTransfer(transfer, clock_signal_id));
 
     const output = new DeciderCombinatorOutputBuilder(SignalId.each)
         .setCopyCountFromInput(false)
@@ -141,5 +141,5 @@ function fromInserterTransfers(
 export const DeciderCombinatorEntity = {
     clock: clock,
     fromRanges: fromRanges,
-    fromInserterTransfers: fromInserterTransfers,
+    fromInventoryTransfers: fromInventoryTransfers,
 }
