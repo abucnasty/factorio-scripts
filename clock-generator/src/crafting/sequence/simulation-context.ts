@@ -8,6 +8,7 @@ import { Belt, EntityId, EntityRegistry, InserterFactory, Machine, WritableEntit
 import { MiningDrill } from "../../entities/drill/mining-drill";
 import { MiningProductivity } from "../../entities/drill/mining-productivity";
 import { assertIsMachineState, DrillState, DrillStatus, EntityState, EntityStateFactory, EntityStateRegistry, InserterState, MachineState, WritableEntityStateRegistry } from "../../state";
+import { TargetProductionRate } from "../target-production-rate";
 import { InserterInterceptor } from "./interceptors/inserter-interceptor";
 
 export interface SimulationContext {
@@ -17,6 +18,7 @@ export interface SimulationContext {
     machines: MachineStateMachine[];
     inserters: InserterStateMachine[];
     drills: DrillStateMachine[]
+    target_production_rate: TargetProductionRate;
 }
 
 export type MachineStateMachineInterceptor = (entity_state: EntityState) => MachineStateMachine | null
@@ -105,6 +107,8 @@ export function createSimulationContextFromConfig(
             })
         })
 
+    const target_production_rate = TargetProductionRate.fromConfig(config.target_output);
+
     return {
         tick_provider: tick_provider,
         state_registry: entity_state_registry,
@@ -112,6 +116,7 @@ export function createSimulationContextFromConfig(
         machines: machine_state_machines,
         inserters: inserter_state_machines,
         drills: drill_state_machines,
+        target_production_rate: target_production_rate
     }
 }
 
