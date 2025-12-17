@@ -1,5 +1,6 @@
 import { Duration, OpenRange } from "../data-types";
 import { OffsetTickProvider, TickProvider } from "./current-tick-provider";
+import { Resettable } from "./resettable";
 
 export interface EnableControl {
     isEnabled(): boolean;
@@ -27,7 +28,7 @@ export class EnableControlLambda implements EnableControl {
     }
 }
 
-export class ClockedEnableControl implements EnableControl {
+export class ClockedEnableControl implements EnableControl, Resettable {
 
     public static create(args: {
         periodDuration: Duration,
