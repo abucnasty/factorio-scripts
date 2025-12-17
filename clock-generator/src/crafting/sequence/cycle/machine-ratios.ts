@@ -1,7 +1,7 @@
 import Fraction, { fraction } from "fractionability";
 import { Entity, Machine, ReadableEntityRegistry } from "../../../entities";
 
-export type MachineIngredientRatios  = Partial<Record<string, Fraction>>
+export type MachineIngredientRatios = Partial<Record<string, Fraction>>
 
 export const MachineIngredientRatios = {
     forMachine: calculateForMachine

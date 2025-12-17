@@ -1,22 +1,23 @@
 import Fraction from "fractionability";
-import { Entity, EntityId, Inserter, Machine, ReadableEntityRegistry } from "../../../entities";
+import { Entity, EntityId, Inserter, InserterStackSize, Machine, MiningDrill, ReadableEntityRegistry } from "../../../entities";
 import assert from "assert";
 import { MachineIngredientRatios } from "./machine-ratios";
 import * as math from "mathjs"
 
-export interface InserterSwingCount {
-    inserter: Inserter;
+export interface EntityTransferCount {
+    entity: Inserter | MiningDrill;
     item_name: string;
-    swing_count: Fraction;
+    transfer_count: Fraction;
     stack_size: number;
 }
 
-export type SwingCountEntityMap = Map<EntityId, InserterSwingCount>;
+export type EntityTransferCountMap = Map<EntityId, EntityTransferCount>;
 
-export const SwingCountEntityMap = {
+export const EntityTransferCountMap = {
     create: computeInserterSwingCounts,
     lcm: computeLCM,
     print: printInserterSwingCounts,
+    divide: divideTransfers
 }
 
 /**
@@ -44,9 +45,9 @@ function computeInserterSwingCounts(
     entity_registry: ReadableEntityRegistry,
     output_swing_count: Fraction,
     output_stack_size: number,
-    existing_results: SwingCountEntityMap = new Map()
-): SwingCountEntityMap {
-    const result: SwingCountEntityMap = existing_results;
+    existing_results: EntityTransferCountMap = new Map()
+): EntityTransferCountMap {
+    const result: EntityTransferCountMap = existing_results;
 
     const base_production_amount: Fraction = output_swing_count.multiply(output_stack_size);
 
@@ -57,9 +58,9 @@ function computeInserterSwingCounts(
     assert(output_inserter !== undefined, `No inserter found that takes output from machine ${machine.entity_id}`);
 
     result.set(output_inserter.entity_id, {
-        inserter: output_inserter,
+        entity: output_inserter,
         item_name: machine.output.item_name,
-        swing_count: output_swing_count,
+        transfer_count: output_swing_count,
         stack_size: output_inserter.metadata.stack_size
     })
 
@@ -67,13 +68,21 @@ function computeInserterSwingCounts(
     const ratios = MachineIngredientRatios.forMachine(machine, entity_registry);
 
     // Find all inserters that feed into this machine
-    const inserters = entity_registry.getAll()
-        .filter(Entity.isInserter)
-        .filter(inserter => inserter.sink.entity_id.id === machine.entity_id.id);
+    const loader_entities = entity_registry.getAll()
+        .filter(e => Entity.isInserter(e) || Entity.isDrill(e))
+        .filter(e => {
+            if (Entity.isInserter(e)) {
+                return e.sink.entity_id.id === machine.entity_id.id;
+            }
+            if (Entity.isDrill(e)) {
+                return e.sink_id.id === machine.entity_id.id;
+            }
+            return false;
+        });
 
     // Count how many inserters feed each item type
     const inserters_per_item: Map<string, Inserter[]> = new Map();
-    for (const inserter of inserters) {
+    for (const inserter of loader_entities.filter(Entity.isInserter)) {
         for (const item_name of inserter.filtered_items) {
             const inserter_list = inserters_per_item.get(item_name) ?? [];
             inserter_list.push(inserter);
@@ -81,8 +90,16 @@ function computeInserterSwingCounts(
         }
     }
 
+    const drill_per_item: Map<string, MiningDrill[]> = new Map();
+    for (const drill of loader_entities.filter(Entity.isDrill)) {
+        const item_name = drill.item.name;
+        const drill_list = drill_per_item.get(item_name) ?? [];
+        drill_list.push(drill);
+        drill_per_item.set(item_name, drill_list);
+    }
+
     // For each inserter, calculate the swing count based on the item ratios and stack size
-    for (const inserter of inserters) {
+    for (const inserter of loader_entities.filter(Entity.isInserter)) {
         // Determine which items this inserter transfers
         for (const item_name of inserter.filtered_items) {
             const ratio = ratios[item_name];
@@ -100,9 +117,9 @@ function computeInserterSwingCounts(
                 const swing_count = amount_per_inserter.divide(inserter.metadata.stack_size);
 
                 result.set(inserter.entity_id, {
-                    inserter,
+                    entity: inserter,
                     item_name,
-                    swing_count,
+                    transfer_count: swing_count,
                     stack_size: inserter.metadata.stack_size
                 });
 
@@ -124,22 +141,73 @@ function computeInserterSwingCounts(
         }
     }
 
+    // For each drill, calculate the swing count based on the item ratios and stack size
+    for (const drill of loader_entities.filter(Entity.isDrill)) {
+        const item_name = drill.item.name;
+        const ratio = ratios[item_name];
+
+        if (ratio) {
+            // Calculate the amount of this item needed per production cycle
+            const amount_needed = ratio.multiply(base_production_amount);
+
+            // Divide by the number of drills mining this item type
+            const num_drills = drill_per_item.get(item_name)?.length ?? 1;
+            const amount_per_drill = amount_needed.divide(num_drills);
+            // Calculate the number of swings needed to deliver this amount
+            // swing_count = amount_per_drill / stack_size
+            const drill_stack_size = InserterStackSize.SIZE_16
+            const swing_count = amount_per_drill.divide(drill_stack_size);
+
+            result.set(drill.entity_id, {
+                entity: drill,
+                item_name,
+                transfer_count: swing_count,
+                stack_size: drill_stack_size
+            });
+        }
+    }
+
     return result;
 }
 
-function computeLCM(swing_counts: SwingCountEntityMap): number {
-    const ratios = Array.from(swing_counts.values()).map(it => it.swing_count);
+function divideTransfers(
+    map: EntityTransferCountMap,
+    crafting_cycles: Fraction
+): EntityTransferCountMap {
+    assert(crafting_cycles.getDenominator === 1, "Crafting cycles must be an integer");
+    const result: EntityTransferCountMap = new Map();
+
+    map.forEach((value, key) => {
+        result.set(key, {
+            entity: value.entity,
+            item_name: value.item_name,
+            transfer_count: value.transfer_count.divide(crafting_cycles),
+            stack_size: value.stack_size
+        });
+    })
+
+    return result;
+}
+
+function computeLCM(swing_counts: EntityTransferCountMap): number {
+    const ratios = Array.from(swing_counts.values()).map(it => it.transfer_count);
 
     const denominators = ratios.map(it => it.getDenominator)
 
     return denominators.reduce((lcm, denominator) => math.lcm(lcm, denominator), 1);
 }
 
-function printInserterSwingCounts(swings: SwingCountEntityMap) {
+function printInserterSwingCounts(transfers: EntityTransferCountMap) {
     console.log("----------------------");
-    console.log("Inserter Swing Counts:");
-    swings.forEach(it => {
-        console.log(`- Inserter ${it.inserter.entity_id.id} for item ${it.item_name}: ${it.swing_count} swings (stack size: ${it.stack_size})`);
+    console.log("Transfer Counts:");
+    transfers.forEach(it => {
+        if (Entity.isInserter(it.entity)) {
+            console.log(`- Inserter ${it.entity.entity_id.id} for item ${it.item_name}: ${it.transfer_count} transfers (stack size: ${it.stack_size})`);
+        }
+
+        if (Entity.isDrill(it.entity)) {
+            console.log(`- Drill ${it.entity.entity_id.id} for item ${it.item_name}: ${it.transfer_count} transfers`);
+        }
     });
     console.log("----------------------");
 };
