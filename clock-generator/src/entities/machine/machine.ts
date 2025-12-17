@@ -11,14 +11,26 @@ import { EntityId } from "../entity-id";
 import { Percentage } from "../../data-types/percent";
 
 
-export interface Machine extends Entity {
-    readonly metadata: MachineMetadata,
-    readonly overload_multiplier: OverloadMultiplier,
-    readonly inputs: Map<ItemName, MachineInput>,
-    readonly output: MachineOutput,
-    readonly crafting_rate: CraftingRate,
-    readonly bonus_productivity_rate: BonusProductivityRate,
-    readonly insertion_duration: InsertionDuration,
+export class Machine implements Entity {
+
+    public static fromConfig = fromConfig
+    public static createMachine = createMachine
+    public static printMachineFacts = printMachineFacts
+
+    constructor(
+        public readonly entity_id: EntityId,
+        public readonly metadata: MachineMetadata,
+        public readonly overload_multiplier: OverloadMultiplier,
+        public readonly inputs: Map<ItemName, MachineInput>,
+        public readonly output: MachineOutput,
+        public readonly crafting_rate: CraftingRate,
+        public readonly bonus_productivity_rate: BonusProductivityRate,
+        public readonly insertion_duration: InsertionDuration,
+    ) {}
+
+    public toString(): string {
+        return `Machine(${this.entity_id.id}, recipe=${this.metadata.recipe.name})`;
+    }
 }
 
 function fromConfig(config: MachineConfiguration): Machine {
@@ -76,16 +88,16 @@ function createMachine(
     const insertionDurationPeriod = InsertionDuration.create(machineOutput.production_rate, overload_multiplier)
 
     const bonusProductivityRate = BonusProductivityRate.fromCraftingRate(craftingRate, new Percentage(metadata.productivity));
-    return {
-        entity_id: EntityId.forMachine(id),
+    return new Machine(
+        EntityId.forMachine(id),
         metadata,
         overload_multiplier,
-        inputs: machineInputs,
-        output: machineOutput,
-        crafting_rate: craftingRate,
-        bonus_productivity_rate: bonusProductivityRate,
-        insertion_duration: insertionDurationPeriod
-    };
+        machineInputs,
+        machineOutput,
+        craftingRate,
+        bonusProductivityRate,
+        insertionDurationPeriod
+    );
 }
 
 function printMachineFacts(machine: Machine): void {
@@ -111,10 +123,4 @@ function printMachineFacts(machine: Machine): void {
     for (const input of machine.inputs.values()) {
         console.log(`  - ${input.item_name}: ${input.automated_insertion_limit.quantity}`);
     }
-}
-
-export const Machine = {
-    fromConfig: fromConfig,
-    createMachine: createMachine,
-    printMachineFacts: printMachineFacts,
 }

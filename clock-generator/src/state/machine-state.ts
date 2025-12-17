@@ -1,6 +1,6 @@
 import { InventoryState, WritableInventoryState } from "./inventory-state";
 import { ProgressState } from "./progress-state";
-import { Machine } from "../entities";
+import { EntityId, Machine } from "../entities";
 import { EntityState } from "./entity-state";
 import assert from "assert";
 
@@ -12,41 +12,56 @@ export const MachineStatus = {
 
 export type MachineStatus = typeof MachineStatus[keyof typeof MachineStatus];
 
-export interface MachineState extends EntityState {
-    readonly machine: Machine;
-    readonly craftingProgress: ProgressState;
-    readonly bonusProgress: ProgressState;
-    readonly inventoryState: WritableInventoryState;
-    status: MachineStatus
-    craftCount: number;
-    totalCrafted: number;
+export class MachineState implements EntityState {
+
+    public static forMachine = forMachine
+    public static clone = clone
+    public static machineInputIsBlocked = machineInputIsBlocked
+    public static machineIsOutputBlocked = machineIsOutputBlocked
+    public static machineAcceptsItem = machineAcceptsItem
+    public static print = printMachineState
+
+    constructor(
+        public readonly entity_id: EntityId,
+        public readonly machine: Machine,
+        public readonly craftingProgress: ProgressState,
+        public readonly bonusProgress: ProgressState,
+        public readonly inventoryState: WritableInventoryState,
+        public craftCount: number,
+        public status: MachineStatus,
+        public totalCrafted: number,
+    ) { }
+
+    public toString(): string {
+        return `MachineState(${this.entity_id},recipe=${this.machine.metadata.recipe.name},status=${this.status})`;
+    }
 }
 
 function forMachine(machine: Machine): MachineState {
     const inventoryState = InventoryState.createFromMachineInputs(machine.inputs);
-    return {
-        entity_id: machine.entity_id,
-        machine: machine,
-        craftingProgress: ProgressState.empty(),
-        bonusProgress: ProgressState.empty(),
-        inventoryState: inventoryState,
-        craftCount: 0,
-        status: MachineStatus.INGREDIENT_SHORTAGE,
-        totalCrafted: 0,
-    };
+    return new MachineState(
+        machine.entity_id,
+        machine,
+        ProgressState.empty(),
+        ProgressState.empty(),
+        inventoryState,
+        0,
+        MachineStatus.INGREDIENT_SHORTAGE,
+        0,
+    );
 }
 
 function clone(machineState: MachineState): MachineState {
-    return {
-        entity_id: machineState.entity_id,
-        machine: machineState.machine,
-        craftingProgress: ProgressState.clone(machineState.craftingProgress),
-        bonusProgress: ProgressState.clone(machineState.bonusProgress),
-        inventoryState: machineState.inventoryState.clone(),
-        craftCount: machineState.craftCount,
-        totalCrafted: machineState.totalCrafted,
-        status: machineState.status,
-    }
+    return new MachineState(
+        machineState.entity_id,
+        machineState.machine,
+        ProgressState.clone(machineState.craftingProgress),
+        ProgressState.clone(machineState.bonusProgress),
+        machineState.inventoryState.clone(),
+        machineState.craftCount,
+        machineState.status,
+        machineState.totalCrafted,
+    )
 }
 
 function machineAcceptsItem(machineState: MachineState, itemName: string): boolean {
@@ -94,13 +109,4 @@ function printMachineState(machineState: MachineState): void {
     for (const inventory_item of machineState.inventoryState.getAllItems()) {
         console.log(`    ${inventory_item.item_name}: ${inventory_item.quantity}`);
     }
-}
-
-export const MachineState = {
-    forMachine: forMachine,
-    clone: clone,
-    machineInputIsBlocked: machineInputIsBlocked,
-    machineIsOutputBlocked: machineIsOutputBlocked,
-    machineAcceptsItem: machineAcceptsItem,
-    print: printMachineState
 }
