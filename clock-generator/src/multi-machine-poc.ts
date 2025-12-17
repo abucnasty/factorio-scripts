@@ -8,7 +8,7 @@ import { simulateFromContext, simulateUntilAllMachinesAreOutputBlocked, warmupSi
 import { cloneSimulationContextWithInterceptors, createSimulationContextFromConfig, SimulationContext } from './crafting/sequence/simulation-context';
 import { InserterTransfer } from './crafting/sequence/single-crafting-sequence';
 import { Duration, OpenRange } from './data-types';
-import { EntityId, Inserter, Machine, miningDrillMaxInsertion } from './entities';
+import { Entity, EntityId, Inserter, Machine, miningDrillMaxInsertion } from './entities';
 import { printInventoryTransfers } from './generator';
 import { AlwaysEnabledControl, ClockedEnableControl, EnableControl } from "./control-logic/enable-control";
 import { TargetProductionRate } from "./crafting/target-production-rate";
@@ -19,9 +19,10 @@ import { encodeBlueprintFile } from "./blueprints/serde";
 import { InventoryTransfer } from "./crafting/sequence/inventory-transfer";
 import { TickProvider } from "./control-logic/current-tick-provider";
 import { computeLastSwingOffsetDuration, computeSimulationMode, SimulationMode } from "./crafting/sequence";
-import { SwingCountEntityMap } from "./crafting/sequence/cycle/swing-counts";
+import { EntityTransferCountMap } from "./crafting/sequence/cycle/swing-counts";
+import { MaxSwingCount } from "./crafting/sequence/cycle/inserter-crafting-period";
 
-const config: Config = EXAMPLES.PRODUCTION_SCIENCE_CONFIG_SHARED;
+const config: Config = EXAMPLES.LOGISTIC_SCIENCE_SHARED_INSERTER_CONFIG;
 
 const debug = DebugSettingsProvider.mutable()
 
@@ -133,6 +134,20 @@ simulation_context.machines.forEach(it => {
     MachineState.print(it.machine_state);
 })
 
+const swing_counts = EntityTransferCountMap.create(
+    output_machine_state_machine.machine_state.machine,
+    simulation_context.entity_registry,
+    fraction(output_inserter_period.swing_count),
+    output_inserter.inserter.metadata.stack_size
+)
+
+EntityTransferCountMap.print(swing_counts)
+
+const recipe_lcm = EntityTransferCountMap.lcm(swing_counts);
+
+
+console.log(`Simulation context ingredient LCM: ${recipe_lcm}`);
+
 const new_simulation_context = cloneSimulationContextWithInterceptors(simulation_context, {
     drill: (drill_state, sink_state) => {
         const source_item = drill_state.drill.item
@@ -173,7 +188,35 @@ const new_simulation_context = cloneSimulationContextWithInterceptors(simulation
     },
     inserter: (inserter_state, source_state, sink_state) => {
 
-        const primary_output_machine = output_machine_state_machine.machine_state.machine
+        const target_output_item_name = simulation_context.target_production_rate.total_production_rate.item
+
+        const primary_output_machine = simulation_context.entity_registry
+            .getAll()
+            .filter(Entity.isMachine)
+            .find(m => m.output.item_name === target_output_item_name);
+
+        assert(primary_output_machine !== undefined, `No machine found producing target output item ${target_output_item_name}`)
+
+        const primary_output_inserter = simulation_context.entity_registry
+            .getAll()
+            .filter(Entity.isInserter)
+            .find(i => i.source.entity_id.id === primary_output_machine.entity_id.id);
+
+        assert(primary_output_inserter !== undefined, `No inserter found taking output from machine ${primary_output_machine.entity_id}`)
+
+        const max_output_inserter_swing_count = output_inserter_period.swing_count
+
+        const cycle_count = output_inserter_period.swing_count
+        const total_cycle = output_inserter_period.crafting_period.ticks
+        const cycle_duration = Math.ceil(total_cycle / cycle_count)
+        const cycle_period = OpenRange.fromStartAndDuration(0, cycle_duration + 1)
+        const cycle_period_duration = cycle_period.duration()
+
+        const max_swing_count_for_inserter = MaxSwingCount.forInserter(
+            inserter_state.entity_id,
+            EntityTransferCountMap.divide(swing_counts, fraction(output_inserter_period.swing_count)),
+            simulation_context.entity_registry
+        ).max_swing_count
 
         // output inserter control
         if (source_state.entity_id.id === primary_output_machine.entity_id.id) {
@@ -231,6 +274,49 @@ const new_simulation_context = cloneSimulationContextWithInterceptors(simulation
                 additional_enable_controls.push(
                     clocked_control
                 );
+            }
+
+            if (mode === SimulationMode.NORMAL) {
+                // const clocked_max_swing = MaxSwingCountEnableControl.create_clocked({
+                //     max_swing_count: max_swing_count_for_inserter,
+                //     periodDuration: cycle_period_duration,
+                //     tick_provider: simulation_context.tick_provider,
+                //     inserter_status_provider: () => inserter_state.status,
+                //     reset_ranges: [OpenRange.from(0, 0)],
+                // })
+                // clocks.push(clocked_max_swing)
+
+                const inserter_transfer_duration = Duration.ofTicks(
+                    Math.ceil(max_swing_count_for_inserter * inserter_state.inserter.animation.total.ticks)
+                )
+
+                const output_inserter_duration = Duration.ofTicks(
+                    max_output_inserter_swing_count * primary_output_inserter.animation.total.ticks
+                )
+
+                let start_tick = output_inserter_duration.ticks;
+                let end_tick = start_tick + inserter_transfer_duration.ticks;
+
+                if (end_tick > cycle_period_duration.ticks) {
+                    start_tick = cycle_period_duration.ticks - inserter_transfer_duration.ticks;
+                    end_tick = cycle_period_duration.ticks;
+                }
+
+                const enabled_ranges: OpenRange[] = [
+                    OpenRange.from(
+                        start_tick,
+                        end_tick
+                    )
+                ]
+
+                const clocked_control = EnableControl.clocked({
+                    periodDuration: cycle_period_duration,
+                    enabledRanges: enabled_ranges,
+                    tickProvider: simulation_context.tick_provider,
+                })
+
+                clocks.push(clocked_control);
+                additional_enable_controls.push(clocked_control)
             }
         }
 
@@ -325,22 +411,6 @@ const new_simulation_context = cloneSimulationContextWithInterceptors(simulation
     }
 });
 
-
-
-const swing_counts = SwingCountEntityMap.create(
-    output_machine_state_machine.machine_state.machine,
-    new_simulation_context.entity_registry,
-    fraction(output_inserter_period.swing_count),
-    output_inserter.inserter.metadata.stack_size
-)
-
-SwingCountEntityMap.print(swing_counts)
-
-const recipe_lcm = SwingCountEntityMap.lcm(swing_counts);
-
-
-console.log(`Simulation context ingredient LCM: ${recipe_lcm}`);
-
 const amount_in_output_machine = output_machine_state_machine.machine_state.inventoryState.getQuantity(output_machine_state_machine.machine_state.machine.output.item_name);
 const swings_to_remove = Math.floor(amount_in_output_machine / output_inserter.inserter.metadata.stack_size);
 const ticks_to_remove = swings_to_remove * output_inserter.inserter.animation.total.ticks;
@@ -383,7 +453,7 @@ const last_swing_offset_duration: Duration = computeLastSwingOffsetDuration(
 
 const merged_ranges = mergeOverlappingInventoryTransferRanges(inventory_transfers)
 
-const offset_ranges = correctNegativeOffset(mergeOverlappingInventoryTransferRanges(inventory_transfers, buffer.ticks))
+const offset_ranges = correctNegativeOffset(mergeOverlappingInventoryTransferRanges(inventory_transfers))
 
 const output_ranges = merged_ranges.get(output_inserter.entity_id)!
 
@@ -534,9 +604,10 @@ function computeOutputInserterPeriod(
 
     // this is a total hack... need to figure out if we want to support fractions like 15/8 swings
     // right now the only supported fraction is 3/2 swings
-    if (max_swings_possible.getDenominator != 2) {
-        max_swings_possible = fraction(1)
-    }
+    // if (max_swings_possible.getDenominator != 2) {
+    //     max_swings_possible = fraction(1)
+    // }
+    max_swings_possible = fraction(1)
 
     const enabled_ranges: OpenRange[] = []
 
