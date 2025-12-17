@@ -6,6 +6,7 @@ import { Duration, OpenRange } from "../data-types";
 import { ReadableEntityRegistry, Inserter, EntityId, Entity } from "../entities";
 import { CycleSpec } from "./sequence/cycle/cycle-spec";
 import { InventoryTransfer } from "./sequence/inventory-transfer";
+import { InventoryTransferHistory } from "../control-logic/inventory/inventory-transfer-history";
 
 function createDeciderCombinatorForTransfers(
     inventory_transfers: InventoryTransfer[],
@@ -156,9 +157,11 @@ export function createSignalPerInserterBlueprint(
     final_output_item_name: string,
     cycle_spec: CycleSpec,
     total_duration: Duration,
-    inventory_transfers: Map<EntityId, InventoryTransfer[]>,
+    history: InventoryTransferHistory,
     entityRegistry: ReadableEntityRegistry
 ): FactorioBlueprint {
+
+    const inventory_transfers = history.getAllTransfers()
 
     const blueprint_label: string = final_output_item_name + " Inserter Clock Schedule"
     let x = 0.5;

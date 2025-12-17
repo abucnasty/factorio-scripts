@@ -1,10 +1,32 @@
 import { InventoryTransfer } from "../../crafting/sequence/inventory-transfer";
+import { OpenRange } from "../../data-types";
 import { EntityId } from "../../entities";
 
 export class InventoryTransferHistory {
-    private readonly transfers: Map<EntityId, InventoryTransfer[]> = new Map();
 
-    constructor() {}
+    public static mergeOverlappingRanges(history: InventoryTransferHistory, overlap_threshold: number = 1): InventoryTransferHistory {
+        const merged = mergeOverlappingRanges(history.getAllTransfers(), overlap_threshold);
+        return new InventoryTransferHistory(merged);
+    }
+
+    public static correctNegativeOffsets(history: InventoryTransferHistory): InventoryTransferHistory {
+        const offset = correctNegativeOffsets(history.getAllTransfers());
+        return new InventoryTransferHistory(offset);
+    }
+
+    public static removeDuplicateEntities(history: InventoryTransferHistory): InventoryTransferHistory {
+        const deduplicated = deduplicateEntityTransfers(history.getAllTransfers());
+        return new InventoryTransferHistory(deduplicated);
+    }
+
+    public static print(history: InventoryTransferHistory, relative_tick_mod: number = 0): void {
+        printInventoryTransfers(history, relative_tick_mod);
+    }
+    
+
+    constructor(
+        private readonly transfers: Map<EntityId, InventoryTransfer[]> = new Map()
+    ) {}
 
     public clear(): void {
         this.transfers.clear();
@@ -14,6 +36,10 @@ export class InventoryTransferHistory {
         const transfer_list = this.transfers.get(entity_id) ?? [];
         transfer_list.push(transfer);
         this.transfers.set(entity_id, transfer_list);
+    }
+
+    public setRecords(entity_id: EntityId, transfers: InventoryTransfer[]): void {
+        this.transfers.set(entity_id, transfers);
     }
 
     public getTransfers(entity_id: EntityId): InventoryTransfer[] {
@@ -27,4 +53,104 @@ export class InventoryTransferHistory {
         });
         return copy;
     }
+}
+
+function mergeOverlappingRanges(original: ReadonlyMap<EntityId, InventoryTransfer[]>, overlap_threshold: number = 1): Map<EntityId, InventoryTransfer[]> {
+    const result: Map<EntityId, InventoryTransfer[]> = new Map();
+
+    original.forEach((ranges, entityId) => {
+
+        const by_item: Map<string, InventoryTransfer[]> = new Map()
+
+        ranges.forEach(it => {
+            const transfers = by_item.get(it.item_name) ?? []
+            by_item.set(it.item_name, transfers.concat(it))
+        })
+
+        by_item.forEach((ranges, itemName) => {
+            const merged_ranges: InventoryTransfer[] = OpenRange.reduceRanges(ranges.map(it => it.tick_range), overlap_threshold).map(it => {
+                return {
+                    item_name: itemName,
+                    tick_range: it,
+                }
+            })
+            const existing_ranges = result.get(entityId) ?? []
+            result.set(entityId, existing_ranges.concat(merged_ranges))
+        })
+    })
+
+    return result
+}
+
+function correctNegativeOffsets(original: ReadonlyMap<EntityId, InventoryTransfer[]>): Map<EntityId, InventoryTransfer[]> {
+    const result: Map<EntityId, InventoryTransfer[]> = new Map();
+
+    let minimum_tick = Infinity;
+    Array.from(original.values()).flat().forEach(transfer => {
+        minimum_tick = Math.min(minimum_tick, transfer.tick_range.start_inclusive);
+    })
+
+    const offset = minimum_tick - 1
+
+    original.forEach((ranges, entityId) => {
+        const corrected_ranges: InventoryTransfer[] = ranges.map(it => {
+            return {
+                item_name: it.item_name,
+                tick_range: OpenRange.from(
+                    it.tick_range.start_inclusive - offset,
+                    it.tick_range.end_inclusive - offset
+                )
+            }
+        })
+        result.set(entityId, corrected_ranges)
+    })
+    return result;
+}
+
+function printInventoryTransfers(
+    history: InventoryTransferHistory,
+    relative_tick_mod: number = 0
+): void {
+    history.getAllTransfers().forEach((transfers, entityId) => {
+        console.log(`Transfer Ranges for ${entityId}`);
+        transfers
+        .sort((a, b) => a.tick_range.start_inclusive - b.tick_range.start_inclusive)
+        .forEach((transfer) => {
+            const start_inclusive = transfer.tick_range.start_inclusive;
+            const end_inclusive = transfer.tick_range.end_inclusive;
+            if (relative_tick_mod > 0) {
+                const start_mod = start_inclusive % relative_tick_mod;
+                const end_mod = end_inclusive % relative_tick_mod;
+                console.log(`- [${start_inclusive} - ${end_inclusive}](${start_mod} - ${end_mod}) (${transfer.tick_range.duration().ticks} ticks) ${transfer.item_name}`);
+                return;
+            }
+            console.log(`- [${start_inclusive} - ${end_inclusive}] (${transfer.tick_range.duration().ticks} ticks) ${transfer.item_name}`);
+        })
+    })
+}
+
+/**
+ * if two entities have the exact same transfer ranges and items, we can reduce them to one entity
+ */
+function deduplicateEntityTransfers(transfers: ReadonlyMap<EntityId, InventoryTransfer[]>): Map<EntityId, InventoryTransfer[]>{
+    const result: Map<EntityId, InventoryTransfer[]> = new Map();
+    
+    const seenTransferSignatures: Map<string, EntityId> = new Map();
+
+    transfers.forEach((transferList, entityId) => {
+        // create a signature for the transfer list
+        const signature = transferList
+            .map(transfer => `${transfer.item_name}:${transfer.tick_range.start_inclusive}-${transfer.tick_range.end_inclusive}`)
+            .sort() // sort to ensure order doesn't matter
+            .join("|");
+
+        if (!seenTransferSignatures.has(signature)) {
+            seenTransferSignatures.set(signature, entityId);
+            result.set(entityId, transferList);
+        } else {
+            // duplicate found, skip adding this entity
+        }
+    });
+
+    return result;
 }

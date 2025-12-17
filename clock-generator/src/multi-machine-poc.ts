@@ -6,15 +6,13 @@ import { DebugSettingsProvider } from './crafting/sequence/debug/debug-settings-
 import { simulateFromContext, simulateUntilAllMachinesAreOutputBlocked, warmupSimulation } from './crafting/sequence/multi-machine-crafting-sequence';
 import { cloneSimulationContextWithInterceptors, createSimulationContextFromConfig, SimulationContext } from './crafting/sequence/simulation-context';
 import { Duration, OpenRange } from './data-types';
-import { Entity, EntityId, Inserter, Machine, miningDrillMaxInsertion } from './entities';
-import { printInventoryTransfers } from './generator';
+import { Entity, Inserter, Machine, miningDrillMaxInsertion } from './entities';
 import { AlwaysEnabledControl, ClockedEnableControl, EnableControl } from "./control-logic/enable-control";
 import { TargetProductionRate } from "./crafting/target-production-rate";
 import { assertIsMachineState, EntityState, MachineState, MachineStatus } from "./state";
 import { fraction } from "fractionability";
 import { createSignalPerInserterBlueprint } from "./crafting/blueprint";
 import { encodeBlueprintFile } from "./blueprints/serde";
-import { InventoryTransfer } from "./crafting/sequence/inventory-transfer";
 import { TickProvider } from "./control-logic/current-tick-provider";
 import { computeLastSwingOffsetDuration, computeSimulationMode, SimulationMode } from "./crafting/sequence";
 import { EntityTransferCountMap } from "./crafting/sequence/cycle/swing-counts";
@@ -426,13 +424,13 @@ const last_swing_offset_duration: Duration = computeLastSwingOffsetDuration(
     output_inserter.inserter
 )
 
-const merged_ranges = mergeOverlappingInventoryTransferRanges(inventory_transfer_history.getAllTransfers())
+const merged_ranges = InventoryTransferHistory.mergeOverlappingRanges(inventory_transfer_history)
 
-const offset_ranges = correctNegativeOffset(mergeOverlappingInventoryTransferRanges(inventory_transfer_history.getAllTransfers()))
+const offset_history = InventoryTransferHistory.correctNegativeOffsets(InventoryTransferHistory.mergeOverlappingRanges(inventory_transfer_history))
 
-const output_ranges = merged_ranges.get(output_inserter.entity_id)!
+const output_transfers = merged_ranges.getTransfers(output_inserter.entity_id)
 
-offset_ranges.set(output_inserter.entity_id, output_ranges.map(it => {
+offset_history.setRecords(output_inserter.entity_id, output_transfers.map(it => {
     return {
         item_name: it.item_name,
         tick_range: OpenRange.from(
@@ -442,9 +440,7 @@ offset_ranges.set(output_inserter.entity_id, output_ranges.map(it => {
     }
 }))
 
-
-
-printInventoryTransfers(offset_ranges)
+InventoryTransferHistory.print(offset_history)
 
 const blueprint = createSignalPerInserterBlueprint(
     output_machine_state_machine.machine_state.machine.output.item_name,
@@ -453,7 +449,7 @@ const blueprint = createSignalPerInserterBlueprint(
         swing_counts: swing_counts
     },
     duration,
-    InventoryTransfer.deduplicateEntityTransfers(offset_ranges),
+    InventoryTransferHistory.removeDuplicateEntities(offset_history),
     simulation_context.entity_registry
 )
 
@@ -577,11 +573,9 @@ function computeOutputInserterPeriod(
         }
     }
 
-    // this is a total hack... need to figure out if we want to support fractions like 15/8 swings
-    // right now the only supported fraction is 3/2 swings
-    // if (max_swings_possible.getDenominator != 2) {
-    //     max_swings_possible = fraction(1)
-    // }
+    // for only single swing outputs are supported when max swings are less than 2
+    // in order to support fractional swings, the timing is going to have to be scheduled based on the crafting
+    // speed of the machine in order for it to be fully stable
     max_swings_possible = fraction(1)
 
     const enabled_ranges: OpenRange[] = []
@@ -618,56 +612,4 @@ function computeOutputInserterPeriod(
         item_name: output_item_name,
         enabled_ranges: enabled_ranges
     }
-}
-
-function mergeOverlappingInventoryTransferRanges(original: ReadonlyMap<EntityId, InventoryTransfer[]>, overlap_threshold: number = 1): Map<EntityId, InventoryTransfer[]> {
-    const result: Map<EntityId, InventoryTransfer[]> = new Map();
-
-    original.forEach((ranges, entityId) => {
-
-        const by_item: Map<string, InventoryTransfer[]> = new Map()
-
-        ranges.forEach(it => {
-            const transfers = by_item.get(it.item_name) ?? []
-            by_item.set(it.item_name, transfers.concat(it))
-        })
-
-        by_item.forEach((ranges, itemName) => {
-            const merged_ranges: InventoryTransfer[] = OpenRange.reduceRanges(ranges.map(it => it.tick_range), overlap_threshold).map(it => {
-                return {
-                    item_name: itemName,
-                    tick_range: it,
-                }
-            })
-            const existing_ranges = result.get(entityId) ?? []
-            result.set(entityId, existing_ranges.concat(merged_ranges))
-        })
-    })
-
-    return result
-}
-
-function correctNegativeOffset(original: Map<EntityId, InventoryTransfer[]>): Map<EntityId, InventoryTransfer[]> {
-    const result: Map<EntityId, InventoryTransfer[]> = new Map();
-
-    let minimum_tick = Infinity;
-    Array.from(original.values()).flat().forEach(transfer => {
-        minimum_tick = Math.min(minimum_tick, transfer.tick_range.start_inclusive);
-    })
-
-    const offset = minimum_tick - 1
-
-    original.forEach((ranges, entityId) => {
-        const corrected_ranges: InventoryTransfer[] = ranges.map(it => {
-            return {
-                item_name: it.item_name,
-                tick_range: OpenRange.from(
-                    it.tick_range.start_inclusive - offset,
-                    it.tick_range.end_inclusive - offset
-                )
-            }
-        })
-        result.set(entityId, corrected_ranges)
-    })
-    return result;
 }
