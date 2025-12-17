@@ -50,8 +50,8 @@ function createDeciderCombinatorForTransfers(
         description_lines = inserterSwingCountDescriptionLines(
             entity_id,
             items,
-            swing_counts.swing_count,
-            swing_counts.swing_count.multiply(number_of_cycles)
+            swing_counts.transfer_count,
+            swing_counts.transfer_count.multiply(number_of_cycles)
         )
     }
 
