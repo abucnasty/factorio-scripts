@@ -25,10 +25,8 @@ export class PickupModeTransitionEvaluator implements ModeTransitionEvaluator<In
         }
 
         if(!this.enable_control.isEnabled()) {
-            return ModeTransition.transition(this.disabled_mode, `Inserter disabled while picking up ${this.heldItemName()}`);
-        }
-
-        
+            return ModeTransition.transition(this.disabled_mode, `Inserter disabled while picking up ${this.heldItemName()} (${this.heldItemQuantity()})`);
+        }        
 
         return ModeTransition.NONE;
     }
