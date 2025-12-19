@@ -81,8 +81,7 @@ function machineInputIsBlocked(machineState: MachineState, ingredientName: strin
     }
 
     const machine = machineState.machine;
-    const input = machine.inputs.get(ingredientName);
-    assert(input != undefined, `Machine does not have input for ingredient ${ingredientName}`);
+    const input = machine.inputs.getOrThrow(ingredientName);
     const currentQuantity = machineState.inventoryState.getQuantity(input.ingredient.name);
 
     return currentQuantity >= input.automated_insertion_limit.quantity;

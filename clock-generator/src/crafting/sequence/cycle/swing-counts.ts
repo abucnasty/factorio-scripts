@@ -3,6 +3,7 @@ import { Entity, EntityId, Inserter, InserterStackSize, Machine, MiningDrill, Re
 import assert from "assert";
 import { MachineIngredientRatios } from "./machine-ratios";
 import * as math from "mathjs"
+import { MapExtended } from "../../../data-types";
 
 export interface EntityTransferCount {
     entity: Inserter | MiningDrill;
@@ -11,13 +12,20 @@ export interface EntityTransferCount {
     stack_size: number;
 }
 
-export type EntityTransferCountMap = Map<EntityId, EntityTransferCount>;
+export class EntityTransferCountMap extends MapExtended<EntityId, EntityTransferCount> {
 
-export const EntityTransferCountMap = {
-    create: computeInserterSwingCounts,
-    lcm: computeLCM,
-    print: printInserterSwingCounts,
-    divide: divideTransfers
+    public static create = computeInserterSwingCounts
+    public static lcm = computeLCM
+    public static print = printInserterSwingCounts
+    public static divide = divideTransfers
+
+    public static fromEntries(entries: [EntityId, EntityTransferCount][]): EntityTransferCountMap {
+        return new EntityTransferCountMap(entries);
+    }
+
+    constructor(entries?: readonly (readonly [EntityId, EntityTransferCount])[] | null) { 
+        super(entries);
+    }
 }
 
 /**
@@ -45,7 +53,7 @@ function computeInserterSwingCounts(
     entity_registry: ReadableEntityRegistry,
     output_swing_count: Fraction,
     output_stack_size: number,
-    existing_results: EntityTransferCountMap = new Map()
+    existing_results: EntityTransferCountMap = new EntityTransferCountMap()
 ): EntityTransferCountMap {
     const result: EntityTransferCountMap = existing_results;
 
@@ -171,26 +179,24 @@ function computeInserterSwingCounts(
 }
 
 function divideTransfers(
-    map: EntityTransferCountMap,
+    original: EntityTransferCountMap,
     crafting_cycles: Fraction
 ): EntityTransferCountMap {
     assert(crafting_cycles.getDenominator === 1, "Crafting cycles must be an integer");
-    const result: EntityTransferCountMap = new Map();
-
-    map.forEach((value, key) => {
-        result.set(key, {
-            entity: value.entity,
-            item_name: value.item_name,
-            transfer_count: value.transfer_count.divide(crafting_cycles),
-            stack_size: value.stack_size
-        });
-    })
-
-    return result;
+    return EntityTransferCountMap.fromEntries(
+        original.map((value) => {
+            return {
+                entity: value.entity,
+                item_name: value.item_name,
+                transfer_count: value.transfer_count.divide(crafting_cycles),
+                stack_size: value.stack_size
+            }
+        })
+    );
 }
 
 function computeLCM(swing_counts: EntityTransferCountMap): number {
-    const ratios = Array.from(swing_counts.values()).map(it => it.transfer_count);
+    const ratios = swing_counts.mapValues(it => it.transfer_count);
 
     const denominators = ratios.map(it => it.getDenominator)
 

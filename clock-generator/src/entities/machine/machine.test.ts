@@ -14,6 +14,7 @@ const createMachine = (recipeName: string, metadata: Partial<MachineMetadata> = 
         productivity: 0,
         recipe: RecipeMetadata.fromRecipeName(recipeName),
         ...metadata,
+        type: metadata.type ?? "machine",
     })
 }
 
@@ -22,7 +23,7 @@ describe("Machine Entity", () => {
         const machine = createMachine("iron-gear-wheel")
         expect(machine.metadata.recipe.name).toBe("iron-gear-wheel")
         
-        const ingredients = Array.from(machine.inputs.values()).map(input => input.ingredient)
+        const ingredients = machine.inputs.mapValues(input => input.ingredient)
 
         const expectedIngredients: Ingredient[] = [
             { type: "item", name: "iron-plate", amount: 2 }

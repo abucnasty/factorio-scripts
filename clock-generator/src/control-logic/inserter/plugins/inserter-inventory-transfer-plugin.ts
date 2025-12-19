@@ -1,5 +1,4 @@
 import { OpenRange } from "../../../data-types";
-import { EntityId } from "../../../entities";
 import { InserterState } from "../../../state";
 import { TickProvider } from "../../current-tick-provider";
 import { InventoryTransferHistory } from "../../inventory/inventory-transfer-history";

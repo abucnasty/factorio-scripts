@@ -34,6 +34,12 @@ export function assertIsMachineState(state: EntityState): asserts state is Machi
     }
 }
 
+export function assertIsInserterState(state: EntityState): asserts state is InserterState {
+    if (!isInserter(state)) {
+        throw new Error(`Expected inserter state, got ${state.entity_id.type}`);
+    }
+}
+
 export const EntityState = {
     isBelt: isBelt,
     isMachine: isMachine,

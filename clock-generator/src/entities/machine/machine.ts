@@ -1,7 +1,6 @@
 import { fraction } from "fractionability"
 import { MachineConfiguration } from "../../config/config";
-import { ItemName } from "../../data/factorio-data-types";
-import { AutomatedInsertionLimit, ConsumptionRate, MachineInput } from "./input";
+import { AutomatedInsertionLimit, ConsumptionRate } from "./input";
 import { MachineMetadata } from "./machine-metadata";
 import { MachineOutput, OutputBlock, OverloadMultiplier, ProductionRate } from "./output";
 import { RecipeMetadata } from "./recipe";
@@ -9,6 +8,7 @@ import { BonusProductivityRate, CraftingRate, InsertionDuration } from "./traits
 import { Entity } from "../entity";
 import { EntityId } from "../entity-id";
 import { Percentage } from "../../data-types/percent";
+import { MachineInputs } from "./input/machine-inputs";
 
 
 export class Machine implements Entity {
@@ -21,7 +21,7 @@ export class Machine implements Entity {
         public readonly entity_id: EntityId,
         public readonly metadata: MachineMetadata,
         public readonly overload_multiplier: OverloadMultiplier,
-        public readonly inputs: Map<ItemName, MachineInput>,
+        public readonly inputs: MachineInputs,
         public readonly output: MachineOutput,
         public readonly crafting_rate: CraftingRate,
         public readonly bonus_productivity_rate: BonusProductivityRate,
@@ -49,7 +49,7 @@ function createMachine(
     const recipe = metadata.recipe;
     const overload_multiplier = OverloadMultiplier.fromCraftingSpeed(metadata.crafting_speed, recipe.energy_required)
 
-    const machineInputs = new Map<ItemName, MachineInput>(
+    const machineInputs = new MachineInputs(
         recipe.raw.ingredients.map(ingredient => {
             return [ingredient.name, {
                 item_name: ingredient.name,

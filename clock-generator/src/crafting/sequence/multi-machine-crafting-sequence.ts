@@ -3,7 +3,7 @@ import { EnableControl } from "../../control-logic/enable-control";
 import { TickControlLogic } from "../../control-logic/tick-control-logic";
 import { Duration } from "../../data-types";
 import { EntityId } from "../../entities";
-import { MachineStatus } from "../../state";
+import { DrillStatus, MachineStatus } from "../../state";
 import { InserterInterceptor } from "./interceptors/inserter-interceptor";
 import { cloneSimulationContextWithInterceptors, SimulationContext } from "./simulation-context";
 
@@ -50,6 +50,12 @@ export function warmupSimulation(context: SimulationContext, duration: Duration)
     while (true) {
         const current_tick = context.tick_provider.getCurrentTick();
         if (current_tick >= end_tick) {
+            // FIXME: this is a hack to deal with a situation in which the drill was running at the end of the previous crafting cycle
+            // and when the final simulation runs, it would record the entered tick as being the last tick of the warmup
+            // instead of the first tick of the actual simulation
+            context.drills.forEach(it => it.forceTransitionTo(
+                Array.from(it.modes).find(it => it.status === DrillStatus.DISABLED)!
+            ));
             break;
         }
         control_logic.executeForTick();
@@ -94,7 +100,7 @@ export function simulateUntilAllMachinesAreOutputBlocked(
             const machines_not_output_full = context.machines.filter(it => it.machine_state.status !== MachineStatus.OUTPUT_FULL)
             machines_not_output_full.forEach(it => {
                 console.error(`Machine ${it.machine_state.machine.entity_id} status: ${it.machine_state.status}`);
-                Array.from(it.machine_state.machine.inputs.values()).forEach(input => {
+                it.machine_state.machine.inputs.forEach(input => {
                     if(it.machine_state.inventoryState.getItemOrThrow(input.item_name).quantity < 1) {
                         console.error(`  Missing input: ${input.item_name}`);
                     }

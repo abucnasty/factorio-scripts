@@ -20,8 +20,9 @@ import { MaxSwingCount } from "./crafting/sequence/cycle/inserter-crafting-perio
 import { InventoryTransferHistory } from "./control-logic/inventory/inventory-transfer-history";
 import { InserterInventoryHistoryPlugin } from "./control-logic/inserter/plugins/inserter-inventory-transfer-plugin";
 import { DrillInventoryTransferPlugin } from "./control-logic/drill/plugins/drill-inventory-transfer-plugin";
+import { InserterEnableControlFactory } from "./crafting/sequence/interceptors/inserter-enable-control-factory";
 
-const config: Config = EXAMPLES.LOGISTIC_SCIENCE_SHARED_INSERTER_CONFIG;
+const config: Config = EXAMPLES.ELECTRIC_FURNACE_CONFIG;
 
 const debug = DebugSettingsProvider.mutable()
 
@@ -112,13 +113,19 @@ const recipe_lcm = EntityTransferCountMap.lcm(swing_counts);
 
 console.log(`Simulation context ingredient LCM: ${recipe_lcm}`);
 
+const inserter_enable_control_factory = new InserterEnableControlFactory(
+    simulation_context.entity_registry,
+    simulation_context.state_registry,
+    target_production_rate,
+    swing_counts
+)
+
 // TODO: this really should be cleaned up, this is way too large of a function and encapsulates core logic that should be elsewhere
 const new_simulation_context = cloneSimulationContextWithInterceptors(simulation_context, {
     drill: (drill_state, sink_state) => {
         const source_item = drill_state.drill.item
         const source_item_name = source_item.name;
-        const sink_input = sink_state.machine.inputs.get(source_item_name);
-        assert(sink_input !== undefined, `Machine ${sink_state.machine.entity_id} does not have an input for item ${source_item_name}`);
+        const sink_input = sink_state.machine.inputs.getOrThrow(source_item_name);
         const minimum_required = sink_input.consumption_rate.amount_per_craft
         const sink_consumption_per_tick = sink_input.consumption_rate.rate_per_tick;
         const drill_output_per_tick = drill_state.drill.production_rate.amount_per_tick.toDecimal();
@@ -152,6 +159,7 @@ const new_simulation_context = cloneSimulationContextWithInterceptors(simulation
         ])
     },
     inserter: (inserter_state, source_state, sink_state) => {
+        // inserter_enable_control_factory.createForEntityId(inserter_state.entity_id)
 
         const target_output_item_name = simulation_context.target_production_rate.total_production_rate.item
 
@@ -242,14 +250,6 @@ const new_simulation_context = cloneSimulationContextWithInterceptors(simulation
             }
 
             if (mode === SimulationMode.NORMAL) {
-                // const clocked_max_swing = MaxSwingCountEnableControl.create_clocked({
-                //     max_swing_count: max_swing_count_for_inserter,
-                //     periodDuration: cycle_period_duration,
-                //     tick_provider: simulation_context.tick_provider,
-                //     inserter_status_provider: () => inserter_state.status,
-                //     reset_ranges: [OpenRange.from(0, 0)],
-                // })
-                // clocks.push(clocked_max_swing)
 
                 const inserter_transfer_duration = Duration.ofTicks(
                     Math.ceil(max_swing_count_for_inserter * inserter_state.inserter.animation.total.ticks)
@@ -285,42 +285,11 @@ const new_simulation_context = cloneSimulationContextWithInterceptors(simulation
             }
         }
 
-
-
         if (EntityState.isBelt(source_state) && EntityState.isMachine(sink_state)) {
-            const inserter_filtered_items = inserter_state.inserter.filtered_items;
-            const belt_item_names = source_state.belt.lanes.map(it => it.ingredient_name)
-            const transferred_items = belt_item_names.filter(it => inserter_filtered_items.has(it))
-            const inserter_animation = inserter_state.inserter.animation;
-
-            const time_to_transfer = inserter_animation.pickup_to_drop.ticks
-
-            const mode = computeSimulationMode(sink_state.machine, inserter_state.inserter);
-
-            if (mode === SimulationMode.LOW_INSERTION_LIMITS) {
-                return EnableControl.all(additional_enable_controls)
-            }
-
-            const enable_control = EnableControl.any(
-                transferred_items.map(source_item_name => {
-                    const sink_input = sink_state.machine.inputs.get(source_item_name);
-                    assert(sink_input !== undefined, `Machine ${sink_state.machine.entity_id} does not have an input for item ${source_item_name}`);
-                    const minimum_required = sink_input.consumption_rate.amount_per_craft
-                    const automated_insertion_limit = sink_input.automated_insertion_limit.quantity;
-                    const sink_consumption_per_tick = sink_input.consumption_rate.rate_per_tick;
-
-                    return EnableControl.latched({
-                        base: EnableControl.lambda(() => {
-                            const sink_quantity = sink_state.inventoryState.getItemOrThrow(source_item_name).quantity;
-                            const sink_quantity_after_transfer = sink_quantity - Math.ceil(sink_consumption_per_tick * time_to_transfer);
-                            return sink_quantity_after_transfer < minimum_required * 2
-                        }),
-                        release: EnableControl.lambda(() => {
-                            const sink_quantity = sink_state.inventoryState.getItemOrThrow(source_item_name).quantity;
-                            return sink_quantity >= automated_insertion_limit
-                        })
-                    })
-                })
+            const enable_control = inserter_enable_control_factory.fromBeltToMachine(
+                inserter_state.inserter,
+                source_state,
+                sink_state
             )
 
             return EnableControl.all(
@@ -329,46 +298,13 @@ const new_simulation_context = cloneSimulationContextWithInterceptors(simulation
         }
 
         if (EntityState.isMachine(source_state) && EntityState.isMachine(sink_state)) {
-
-            const source_item_name = source_state.machine.output.item_name;
-            const sink_input = sink_state.machine.inputs.get(source_item_name);
-            assert(sink_input !== undefined, `Machine ${sink_state.machine.entity_id} does not have an input for item ${source_item_name}`);
-
-            const minimum_required = sink_input.consumption_rate.amount_per_craft
-
-            const automated_insertion_limit = sink_input.automated_insertion_limit.quantity;
-
-            const mode = computeSimulationMode(sink_state.machine, inserter_state.inserter);
-
-            const source_is_greater_than_stack_size = EnableControl.lambda(() => {
-                const source_quantity = source_state.inventoryState.getItemOrThrow(source_item_name).quantity;
-                return source_quantity >= inserter_state.inserter.metadata.stack_size
-            })
-
-            const latched_until_less_than_minimimum = EnableControl.latched({
-                base: EnableControl.lambda(() => {
-                    const sink_quantity = sink_state.inventoryState.getItemOrThrow(source_item_name).quantity;
-                    return sink_quantity <= minimum_required * 2
-                }),
-                release: EnableControl.lambda(() => {
-                    const sink_quantity = sink_state.inventoryState.getItemOrThrow(source_item_name).quantity;
-                    return sink_quantity >= automated_insertion_limit
-                })
-            })
-
-            if (mode === SimulationMode.LOW_INSERTION_LIMITS) {
-                return EnableControl.all(
-                    additional_enable_controls.concat(
-                        source_is_greater_than_stack_size
-                    )
-                )
-            }
-
+            const enable_control = inserter_enable_control_factory.fromMachinetoMachine(
+                inserter_state.inserter,
+                source_state,
+                sink_state
+            )
             return EnableControl.all(
-                additional_enable_controls.concat(
-                    source_is_greater_than_stack_size,
-                    latched_until_less_than_minimimum
-                )
+                additional_enable_controls.concat(enable_control)
             )
         }
 

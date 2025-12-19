@@ -6,6 +6,12 @@ export interface ReadableEntityStateRegistry {
     hasStateForEntity(entityId: EntityId): boolean;
     getStateByEntityId<T extends EntityState>(entityId: EntityId): T | null;
     getStateByEntityIdOrThrow<T extends EntityState>(entityId: EntityId): T;
+
+    getSourceState(entityId: EntityId): EntityState | null;
+    getSourceStateOrThrow(entityId: EntityId): EntityState;
+    getSinkState(entityId: EntityId): EntityState | null;
+    getSinkStateOrThrow(entityId: EntityId): EntityState;
+
     getAllStates<T extends EntityState>(): T[];
 }
 
@@ -49,5 +55,27 @@ export class EntityStateRegistry implements WritableEntityStateRegistry {
     public addStates(states: EntityState[]): this {
         states.forEach(state => this.addState(state));
         return this;
+    }
+
+    public getSourceState(entityId: EntityId): EntityState | null {
+        const entity = this.entityRegistry.getSourceEntityOrThrow(entityId);
+        return this.getStateByEntityId(entity.entity_id);
+    }
+
+    public getSourceStateOrThrow(entityId: EntityId): EntityState {
+        const state = this.getSourceState(entityId);
+        assert(state != null, `Source state for entity with ID ${entityId.id} does not exist`);
+        return state;
+    }
+
+    public getSinkState(entityId: EntityId): EntityState | null {
+        const entity = this.entityRegistry.getSinkEntityOrThrow(entityId);
+        return this.getStateByEntityId(entity.entity_id);
+    }
+
+    public getSinkStateOrThrow(entityId: EntityId): EntityState {
+        const state = this.getSinkState(entityId);
+        assert(state != null, `Sink state for entity with ID ${entityId.id} does not exist`);
+        return state;
     }
 }

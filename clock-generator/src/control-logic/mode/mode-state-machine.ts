@@ -30,6 +30,14 @@ export class ModeStateMachine<M extends Mode> implements ModeProvider<M> {
         this.executePlugins();
     }
 
+    public forceTransitionTo(mode: M): void {
+        const transition: Transition<M> = {
+            toMode: mode,
+            reason: "forced transition",
+        };
+        this.current = this.executeTransition(this.current, transition);
+    }
+
     private evaluateTransition(): M {
         const modeEvaluator = this.modeEvaluatorForMode(this.current);
         const mode_transition = modeEvaluator.evaluateTransition()

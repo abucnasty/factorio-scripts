@@ -12,8 +12,7 @@ export function miningDrillMaxInsertion(
     sink_machine: Machine
 ): number {
     const mined_item = drill.item
-    const machine_input = sink_machine.inputs.get(mined_item.name);
-    assert(machine_input !== undefined, `Machine ${sink_machine.entity_id} does not have an input for ${mined_item.name}`);
+    const machine_input = sink_machine.inputs.getOrThrow(mined_item.name);
     const automated_insertion_limit = machine_input.automated_insertion_limit.quantity;
     const mined_item_stack_size = mined_item.stack_size;
     const max_insertion_per_tick = Math.max(mined_item_stack_size, automated_insertion_limit);

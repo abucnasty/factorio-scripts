@@ -15,8 +15,7 @@ const AlwaysDisabledInterceptor: InserterInterceptor = (): EnableControl => {
 const WaitUntilSourceIsOutputBlockedInterceptor: InserterInterceptor = (inserter_state, source_state, sink_state): EnableControl => {
     if (EntityState.isMachine(source_state) && EntityState.isMachine(sink_state)) {
         const source_item_name = source_state.machine.output.item_name;
-        const sink_input = sink_state.machine.inputs.get(source_item_name);
-        assert(sink_input !== undefined, `Machine ${sink_state.machine.entity_id} does not have an input for item ${source_item_name}`);
+        const sink_input = sink_state.machine.inputs.getOrThrow(source_item_name);
 
         return EnableControl.latched({
             base: EnableControl.lambda(() => {

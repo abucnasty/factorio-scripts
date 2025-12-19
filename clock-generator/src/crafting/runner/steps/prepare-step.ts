@@ -32,7 +32,7 @@ export class PrepareStep implements RunnerStep {
                 const machines_not_output_full = context.machines.filter(it => it.machine_state.status !== MachineStatus.OUTPUT_FULL)
                 machines_not_output_full.forEach(it => {
                     console.error(`Machine ${it.machine_state.machine.entity_id} status: ${it.machine_state.status}`);
-                    Array.from(it.machine_state.machine.inputs.values()).forEach(input => {
+                    it.machine_state.machine.inputs.forEach(input => {
                         if (it.machine_state.inventoryState.getItemOrThrow(input.item_name).quantity < 1) {
                             console.error(`  Missing input: ${input.item_name}`);
                         }
