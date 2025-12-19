@@ -23,7 +23,7 @@ export class EntityTransferCountMap extends MapExtended<EntityId, EntityTransfer
         return new EntityTransferCountMap(entries);
     }
 
-    constructor(entries?: readonly (readonly [EntityId, EntityTransferCount])[] | null) { 
+    constructor(entries?: readonly (readonly [EntityId, EntityTransferCount])[] | null) {
         super(entries);
     }
 }

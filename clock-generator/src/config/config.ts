@@ -88,10 +88,17 @@ export type DrillsConfig = {
 }
 
 
+export interface ConfigOverrides {
+    lcm?: number,
+    terminal_swing_count?: number,
+}
+
+
 export interface Config {
     target_output: TargetProductionRateConfig;
     machines: MachineConfiguration[];
     drills?: DrillsConfig;
     inserters: InserterConfig[];
     belts: BeltConfig[];
+    overrides?: ConfigOverrides
 }

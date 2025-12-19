@@ -22,7 +22,7 @@ import { InserterInventoryHistoryPlugin } from "./control-logic/inserter/plugins
 import { DrillInventoryTransferPlugin } from "./control-logic/drill/plugins/drill-inventory-transfer-plugin";
 import { InserterEnableControlFactory } from "./crafting/sequence/interceptors/inserter-enable-control-factory";
 
-const config: Config = EXAMPLES.ELECTRIC_FURNACE_CONFIG;
+const config: Config = EXAMPLES.CHEMICAL_SCIENCE_CONFIG;
 
 const debug = DebugSettingsProvider.mutable()
 
@@ -109,7 +109,7 @@ const swing_counts = EntityTransferCountMap.create(
 
 EntityTransferCountMap.print(swing_counts)
 
-const recipe_lcm = EntityTransferCountMap.lcm(swing_counts);
+const recipe_lcm = config.overrides?.lcm ?? EntityTransferCountMap.lcm(swing_counts);
 
 console.log(`Simulation context ingredient LCM: ${recipe_lcm}`);
 
@@ -418,9 +418,7 @@ function computeInserterBufferForReality(
     const mode = computeSimulationMode(source_machine, inserter);
 
     if (mode === SimulationMode.LOW_INSERTION_LIMITS) {
-        return Duration.ofTicks(
-            Math.floor(source_machine.crafting_rate.ticks_per_craft)
-        );
+        return Duration.ofTicks(4);
     }
 
     if (mode === SimulationMode.PREVENT_DESYNCS) {
@@ -444,6 +442,11 @@ function computeOutputInserterPeriod(
     const output_crafted = output_machine_state.craftCount * output_machine.output.amount_per_craft.toDecimal()
     console.log(`Output machine ${output_machine.entity_id} crafted ${output_crafted} ${output_item_name}`);
     let max_swings_possible = fraction(output_crafted).divide(output_inserter.metadata.stack_size)
+
+    if(config.overrides?.terminal_swing_count !== undefined) {
+        max_swings_possible = fraction(config.overrides.terminal_swing_count)
+        console.log(`Overriding max swings possible to ${max_swings_possible} due to config override`);
+    }
 
     const crafting_sequence_duration = Duration.ofTicks(
         output_machine.crafting_rate.ticks_per_craft * output_machine_state.craftCount
