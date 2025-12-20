@@ -10,7 +10,7 @@ import { DrillState, MachineState } from "../../../state";
 import { DebugLoggerFactory } from "./debug-logger-factory";
 import { DebugSettingsProvider } from "./debug-settings-provider";
 import { DrillMode } from "../../../control-logic/drill/modes/drill-mode";
-import { SimulationContext } from "../simulation-context";
+import { MachineStateMachine } from "../../../control-logic/machine/machine-state-machine";
 
 export class DebugPluginFactory {
     constructor(
@@ -57,15 +57,30 @@ export class DebugPluginFactory {
         }
     }
 
-    public machineCraftEventPlugin(machine_state: MachineState) {
+    public machineCraftEventPlugin(
+        machine_state: MachineState, 
+        options: Partial<CraftEventPluginSettings> = {}
+    ) {
         const debugLog = this.log_factory.forEntity(machine_state.machine);
         return new CraftEventListenerPlugin(machine_state, this.tick_provider, ({ craft_ticks, state }) => {
             let message = `craft event #${machine_state.craftCount}:`;
+
+            if (options.print_bonus_progress) {
+                // print 14 decimal places for debugging since Lua console commands
+                // only print 14 decimal places
+                debugLog(message + ` \t bonus_progress=${state.bonusProgress.progress.toFixed(14)}`)
+            }
+            if (options.print_craft_progress) {
+                // print 14 decimal places for debugging since Lua console commands
+                // only print 14 decimal places
+                debugLog(message + ` \t craft_progress=${state.craftingProgress.progress.toFixed(14)}`);
+            }
+
             state.machine.inputs.forEach((input) => {
                 const input_quantity = state.inventoryState.getQuantity(input.ingredient.name);
                 message += ` \t "${input.ingredient.name}"=${input_quantity}`;
             });
-
+            
             const output_quantity = state.inventoryState.getQuantity(state.machine.output.ingredient.name);
             const output_name = state.machine.output.ingredient.name;
             message += ` \t "${output_name}"=${output_quantity}`;
@@ -82,4 +97,14 @@ export class DebugPluginFactory {
             }
         }
     }
+
+    public forMachine(state_machine: MachineStateMachine, options: Partial<CraftEventPluginSettings> = {}): void {
+        state_machine.addPlugin(this.machineModeChangePlugin(state_machine.machine_state));
+        state_machine.addPlugin(this.machineCraftEventPlugin(state_machine.machine_state, options));
+    }
+}
+
+export interface CraftEventPluginSettings {
+    print_bonus_progress: boolean;
+    print_craft_progress: boolean;
 }
