@@ -4,7 +4,7 @@ import { EntityTransferCountMap } from "../cycle/swing-counts";
 import { AlwaysEnabledControl, EnableControl } from "../../../control-logic/enable-control";
 import { assertIsInserterState, assertIsMachineState, BeltState, EntityState, InserterState, MachineState, ReadableEntityStateRegistry } from "../../../state";
 import { ItemName } from "../../../data/factorio-data-types";
-import { computeSimulationMode, SimulationMode } from "../simulation-mode";
+import { computeSimulationMode, SimulationMode, simulationModeForInput } from "../simulation-mode";
 import { CraftingCyclePlan } from "../cycle/crafting-cycle";
 import { Duration, OpenRange } from "../../../data-types";
 import { Resettable } from "../../../control-logic/resettable";
@@ -183,7 +183,7 @@ export class EnableControlFactory {
         return EnableControl.any([
             EnableControl.latched({
                 base: EnableControl.any([
-                    // ensure_at_least_once_per_cycle,
+                    ensure_at_least_once_per_cycle,
                     EnableControl.lambda(() => {
                         const sink_quantity = sink_state.inventoryState.getItemOrThrow(source_item_name).quantity;
                         const sink_quantity_after_transfer = sink_quantity - Math.ceil(sink_consumption_per_tick * time_to_transfer_minimum_amount);
@@ -198,17 +198,37 @@ export class EnableControlFactory {
         ])
     }
 
+    /**
+     * Determines if a machine requires clocked control for input inserters due to fast crafting.
+     * Fast-crafting machines can complete multiple crafts during one insertion window
+     * 
+     * This is a beta feature and is a guess on how to decide if we should clock or keep always enabled
+     */
+    private shouldUseClockedControlForInputs(inserter: Inserter, machine: Machine): boolean {
+        const insertion_duration = machine.insertion_duration.tick_duration.toDecimal();
+        const transfer_count = this.entity_transfer_map.getOrThrow(inserter.entity_id);
+        const total_transfer_duration = inserter.animation.total.ticks * Math.ceil(transfer_count.total_transfer_count.toDecimal());
+
+        const ratios_are_all_equal = new Set(transfer_count.item_transfers.map(it => it.transfer_count.toDecimal())).size === 1;
+        if (!ratios_are_all_equal) {
+            return false;
+        }
+
+        return total_transfer_duration > insertion_duration
+    }
+
     private transferCountToMachine(
         inserter_state: InserterState,
         sink_state: MachineState,
     ): EnableControl {
-        const mode = computeSimulationMode(sink_state.machine, inserter_state.inserter);
+        const mode = simulationModeForInput(inserter_state.inserter, sink_state.machine);
 
         if (mode === SimulationMode.LOW_INSERTION_LIMITS) {
-            return AlwaysEnabledControl
-        }
-
-        if (mode === SimulationMode.PREVENT_DESYNCS) {
+            if (this.shouldUseClockedControlForInputs(inserter_state.inserter, sink_state.machine)) {
+                return this.clockedForCycle(
+                    this.computeEnableRangesToMachine(inserter_state, sink_state)
+                )
+            }
             return AlwaysEnabledControl
         }
 
@@ -229,6 +249,8 @@ export class EnableControlFactory {
             inserter_state,
             source_state,
         )
+
+        console.log(`Inserter ${inserter_state.inserter.entity_id} enable range: [${enabled_range.start_inclusive} - ${enabled_range.end_inclusive}]`);
 
         const clocked_control = this.clockedForCycle(
             [
@@ -282,13 +304,30 @@ export class EnableControlFactory {
             OpenRange.fromStartAndDuration(0, this.crafting_cycle_plan.total_duration.ticks)
         );
 
-        const mode = computeSimulationMode(sink_state.machine, inserter_state.inserter);
+        const primitive_enable_control = true
 
-        if (mode === SimulationMode.LOW_INSERTION_LIMITS) {
-            return available_enable_ranges;
+        if (primitive_enable_control) {
+            const enabled_ranges: OpenRange[] = output_inserter_enable_ranges.map(range => {
+                const output_inserter_end = range.end_inclusive - 1;
+                const end_of_cycle = this.crafting_cycle_plan.total_duration.ticks;
+
+                let start_tick = output_inserter_end
+                let end_tick = start_tick + total_transfer_duration.ticks
+
+                if (end_tick > end_of_cycle) {
+                    start_tick = end_of_cycle - total_transfer_duration.ticks;
+                    end_tick = end_of_cycle;
+                }
+                return OpenRange.from(start_tick, end_tick);
+            })
+            const merged_ranges = OpenRange.reduceRanges(enabled_ranges);
+            const sorted_ranges = merged_ranges.sort((a, b) => a.start_inclusive - b.start_inclusive);
+
+            console.log(`Inserter ${inserter_state.inserter.entity_id} enable ranges: ${sorted_ranges.map(r => `[${r.start_inclusive} - ${r.end_inclusive}]`).join(", ")}`);
+            return sorted_ranges;
         }
 
-        if (mode === SimulationMode.NORMAL) {
+        if (!primitive_enable_control) {
             // we want to distribute the inserter swings in the available enable ranges
             // ideally we start from the last enable range and work backwards
             const enabled_ranges: OpenRange[] = [];
@@ -315,6 +354,7 @@ export class EnableControlFactory {
 
             const merged_ranges = OpenRange.reduceRanges(enabled_ranges);
             const sorted_ranges = merged_ranges.sort((a, b) => a.start_inclusive - b.start_inclusive);
+            console.log(`Inserter ${inserter_state.inserter.entity_id} enable ranges: ${sorted_ranges.map(r => `[${r.start_inclusive} - ${r.end_inclusive}]`).join(", ")}`);
             return sorted_ranges;
         }
 

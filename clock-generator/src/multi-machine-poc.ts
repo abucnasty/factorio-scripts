@@ -20,7 +20,7 @@ import { DrillInventoryTransferPlugin } from "./control-logic/drill/plugins/dril
 import { EnableControlFactory } from "./crafting/sequence/interceptors/inserter-enable-control-factory";
 import { CraftingCyclePlan } from "./crafting/sequence/cycle/crafting-cycle";
 
-const config: Config = EXAMPLES.CHEMICAL_SCIENCE_DI_ENGINE_CONFIG;
+const config: Config = EXAMPLES.STONE_BRICKS_DIRECT_INSERT_MINING;
 
 const debug = DebugSettingsProvider.mutable()
 
@@ -114,16 +114,13 @@ const enable_control_factory = new EnableControlFactory(
 
 // TODO: this really should be cleaned up, this is way too large of a function and encapsulates core logic that should be elsewhere
 const new_simulation_context = cloneSimulationContextWithInterceptors(simulation_context, {
-    drill: (drill_state, sink_state) => {
+    drill: (drill_state) => {
         return enable_control_factory.createForEntityId(drill_state.entity_id);
     },
-    inserter: (inserter_state, source_state, sink_state) => {
+    inserter: (inserter_state) => {
         return enable_control_factory.createForEntityId(inserter_state.entity_id);
     }
 });
-
-const amount_in_output_machine = output_machine_state_machine.machine_state.inventoryState.getQuantity(output_machine_state_machine.machine_state.machine.output.item_name);
-const swings_to_remove = Math.floor(amount_in_output_machine / output_inserter.inserter.metadata.stack_size);
 
 const warmup_period: Duration = Duration.ofTicks(crafting_cycle_plan.total_duration.ticks * recipe_lcm * 10);
 const duration: Duration = Duration.ofTicks(crafting_cycle_plan.total_duration.ticks * recipe_lcm);
@@ -133,7 +130,7 @@ console.log(`Simulation period: ${duration.ticks} ticks`);
 
 console.log("Warming up simulation...");
 enable_control_factory.getResettableLogic().forEach(it => it.reset());
-debug.disable()
+debug.enable()
 const warm_up_start = new Date();
 warmupSimulation(new_simulation_context, warmup_period);
 const warm_up_end = new Date();

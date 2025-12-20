@@ -946,9 +946,6 @@ export const CHEMICAL_SCIENCE_CONFIG: Config = {
 }
 
 export const CHEMICAL_SCIENCE_DI_ENGINE_CONFIG: Config = {
-    overrides: {
-        lcm: 2,
-    },
     target_output: {
         recipe: "chemical-science-pack",
         items_per_second: 120,
