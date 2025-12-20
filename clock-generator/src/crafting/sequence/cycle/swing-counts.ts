@@ -224,7 +224,7 @@ function divideTransfers(
 }
 
 function computeLCM(swing_counts: EntityTransferCountMap): number {
-    const ratios = swing_counts.mapValues(it => it.total_transfer_count);
+    const ratios = swing_counts.mapValues(it => it.item_transfers).flat().map(it => it.transfer_count)
 
     const denominators = ratios.map(it => it.getDenominator)
 
