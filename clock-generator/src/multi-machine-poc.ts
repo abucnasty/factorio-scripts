@@ -159,18 +159,6 @@ const trimmed_history = InventoryTransferHistory.trimEndsToAvoidBackSwingWakeLis
 
 const final_history = trimmed_history
 
-// const output_transfers = final_history.getTransfers(output_inserter.entity_id)
-
-// final_history.setRecords(output_inserter.entity_id, output_transfers.map(it => {
-//     return {
-//         item_name: it.item_name,
-//         tick_range: OpenRange.from(
-//             it.tick_range.start_inclusive,
-//             it.tick_range.end_inclusive
-//         )
-//     }
-// }))
-
 InventoryTransferHistory.print(final_history)
 
 const blueprint = createSignalPerInserterBlueprint(

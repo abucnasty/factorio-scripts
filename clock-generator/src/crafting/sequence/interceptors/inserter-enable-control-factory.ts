@@ -372,14 +372,12 @@ export class EnableControlFactory {
         const total_transfer_count = Math.ceil(transfer_count.total_transfer_count.toDecimal());
         const animation = inserter_state.inserter.animation;
 
-        const total_swing_duration = Duration.ofTicks(
-            (animation.total.ticks + 1) * total_transfer_count
-        );
-
-
         const mode = computeSimulationMode(source_state.machine, inserter_state.inserter);
 
         if (mode === SimulationMode.LOW_INSERTION_LIMITS) {
+            const total_swing_duration = Duration.ofTicks(
+                (animation.total.ticks + 1) * total_transfer_count
+            );
             return OpenRange.fromStartAndDuration(
                 0,
                 total_swing_duration.ticks + 4
@@ -387,6 +385,9 @@ export class EnableControlFactory {
         }
 
         if (mode === SimulationMode.PREVENT_DESYNCS) {
+            const total_swing_duration = Duration.ofTicks(
+                (animation.total.ticks + 1) * total_transfer_count
+            );
             return OpenRange.fromStartAndDuration(
                 0,
                 total_swing_duration.ticks + 4
@@ -394,9 +395,12 @@ export class EnableControlFactory {
         }
 
         if (mode === SimulationMode.NORMAL) {
+            const total_swing_duration = Duration.ofTicks(
+                (animation.total.ticks + 1) * total_transfer_count
+            );
             return OpenRange.fromStartAndDuration(
                 0,
-                total_swing_duration.ticks
+                total_swing_duration.ticks - animation.rotation.ticks - animation.drop.ticks
             )
         }
 
@@ -477,22 +481,4 @@ export class EnableControlFactory {
         )
         return final_inserter
     }
-}
-
-
-function computeInserterBufferForSimulation(
-    source_machine: Machine,
-    inserter: Inserter
-): Duration {
-    const mode = computeSimulationMode(source_machine, inserter);
-
-    if (mode === SimulationMode.LOW_INSERTION_LIMITS) {
-        return Duration.ofTicks(1);
-    }
-
-    if (mode === SimulationMode.PREVENT_DESYNCS) {
-        return inserter.animation.pickup
-    }
-
-    return Duration.zero
 }

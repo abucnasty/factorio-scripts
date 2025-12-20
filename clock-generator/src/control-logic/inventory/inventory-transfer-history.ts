@@ -204,10 +204,8 @@ function computeLastSwingOffsetDuration(
     const mode = computeSimulationMode(source_machine, inserter);
     if (mode === SimulationMode.NORMAL) {
         const animation = inserter.animation
-        const offset = animation.rotation.ticks + animation.drop.ticks
-        return Duration.ofTicks(
-            -1 * offset
-        );
+        const offset = animation.rotation.ticks
+        return Duration.ofTicks(-1 * offset);
     }
 
     if (mode === SimulationMode.LOW_INSERTION_LIMITS) {
