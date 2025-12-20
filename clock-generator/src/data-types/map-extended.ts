@@ -35,4 +35,8 @@ export class MapExtended<K, V> extends Map<K, V> {
     public values_array(): V[] {
         return Array.from(this.values());
     }
+
+    public entries_array(): [K, V][] {
+        return Array.from(this.entries());
+    }
 }

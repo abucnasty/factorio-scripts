@@ -50,12 +50,6 @@ export function warmupSimulation(context: SimulationContext, duration: Duration)
     while (true) {
         const current_tick = context.tick_provider.getCurrentTick();
         if (current_tick >= end_tick) {
-            // FIXME: this is a hack to deal with a situation in which the drill was running at the end of the previous crafting cycle
-            // and when the final simulation runs, it would record the entered tick as being the last tick of the warmup
-            // instead of the first tick of the actual simulation
-            context.drills.forEach(it => it.forceTransitionTo(
-                Array.from(it.modes).find(it => it.status === DrillStatus.DISABLED)!
-            ));
             break;
         }
         control_logic.executeForTick();

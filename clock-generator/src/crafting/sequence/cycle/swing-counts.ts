@@ -5,10 +5,15 @@ import { MachineIngredientRatios } from "./machine-ratios";
 import * as math from "mathjs"
 import { MapExtended } from "../../../data-types";
 
-export interface EntityTransferCount {
-    entity: Inserter | MiningDrill;
+export interface ItemTransfer {
     item_name: string;
     transfer_count: Fraction;
+}
+
+export interface EntityTransferCount {
+    entity: Inserter | MiningDrill;
+    item_transfers: ItemTransfer[];
+    total_transfer_count: Fraction;
     stack_size: number;
 }
 
@@ -67,8 +72,11 @@ function computeInserterSwingCounts(
 
     result.set(output_inserter.entity_id, {
         entity: output_inserter,
-        item_name: machine.output.item_name,
-        transfer_count: output_swing_count,
+        item_transfers: [{
+            item_name: machine.output.item_name,
+            transfer_count: output_swing_count
+        }],
+        total_transfer_count: output_swing_count,
         stack_size: output_inserter.metadata.stack_size
     })
 
@@ -108,6 +116,9 @@ function computeInserterSwingCounts(
 
     // For each inserter, calculate the swing count based on the item ratios and stack size
     for (const inserter of loader_entities.filter(Entity.isInserter)) {
+        const item_transfers: ItemTransfer[] = [];
+        let total_transfer_count = new Fraction(0);
+
         // Determine which items this inserter transfers
         for (const item_name of inserter.filtered_items) {
             const ratio = ratios[item_name];
@@ -124,27 +135,38 @@ function computeInserterSwingCounts(
                 // swing_count = amount_per_inserter / stack_size
                 const swing_count = amount_per_inserter.divide(inserter.metadata.stack_size);
 
-                result.set(inserter.entity_id, {
-                    entity: inserter,
+                item_transfers.push({
                     item_name,
-                    transfer_count: swing_count,
-                    stack_size: inserter.metadata.stack_size
+                    transfer_count: swing_count
                 });
 
-                // Check if the source is a machine - if so, recursively compute its swing counts
-                const source_entity = entity_registry.getAll()
-                    .find(e => e.entity_id.id === inserter.source.entity_id.id);
+                total_transfer_count = total_transfer_count.add(swing_count);
+            }
+        }
 
-                if (source_entity && Entity.isMachine(source_entity)) {
-                    // Recursively compute swing counts for the source machine
-                    computeInserterSwingCounts(
-                        source_entity,
-                        entity_registry,
-                        swing_count,
-                        inserter.metadata.stack_size,
-                        result
-                    );
-                }
+        // Only add to result if this inserter has item transfers
+        if (item_transfers.length > 0) {
+            result.set(inserter.entity_id, {
+                entity: inserter,
+                item_transfers,
+                total_transfer_count,
+                stack_size: inserter.metadata.stack_size
+            });
+
+            // Check if the source is a machine - if so, recursively compute its swing counts
+            const source_entity = entity_registry.getAll()
+                .find(e => e.entity_id.id === inserter.source.entity_id.id);
+
+            if (source_entity && Entity.isMachine(source_entity)) {
+                // Recursively compute swing counts for the source machine
+                // Use total transfer count for upstream calculation
+                computeInserterSwingCounts(
+                    source_entity,
+                    entity_registry,
+                    total_transfer_count,
+                    inserter.metadata.stack_size,
+                    result
+                );
             }
         }
     }
@@ -168,8 +190,11 @@ function computeInserterSwingCounts(
 
             result.set(drill.entity_id, {
                 entity: drill,
-                item_name,
-                transfer_count: swing_count,
+                item_transfers: [{
+                    item_name,
+                    transfer_count: swing_count
+                }],
+                total_transfer_count: swing_count,
                 stack_size: drill_stack_size
             });
         }
@@ -187,8 +212,11 @@ function divideTransfers(
         original.map((value) => {
             return {
                 entity: value.entity,
-                item_name: value.item_name,
-                transfer_count: value.transfer_count.divide(crafting_cycles),
+                item_transfers: value.item_transfers.map(it => ({
+                    item_name: it.item_name,
+                    transfer_count: it.transfer_count.divide(crafting_cycles)
+                })),
+                total_transfer_count: value.total_transfer_count.divide(crafting_cycles),
                 stack_size: value.stack_size
             }
         })
@@ -196,7 +224,7 @@ function divideTransfers(
 }
 
 function computeLCM(swing_counts: EntityTransferCountMap): number {
-    const ratios = swing_counts.mapValues(it => it.transfer_count);
+    const ratios = swing_counts.mapValues(it => it.total_transfer_count);
 
     const denominators = ratios.map(it => it.getDenominator)
 
@@ -208,11 +236,16 @@ function printInserterSwingCounts(transfers: EntityTransferCountMap) {
     console.log("Transfer Counts:");
     transfers.forEach(it => {
         if (Entity.isInserter(it.entity)) {
-            console.log(`- Inserter ${it.entity.entity_id.id} for item ${it.item_name}: ${it.transfer_count} transfers (stack size: ${it.stack_size})`);
+            if (it.item_transfers.length === 1) {
+                console.log(`- Inserter ${it.entity.entity_id.id} for item ${it.item_transfers[0].item_name}: ${it.total_transfer_count} transfers (stack size: ${it.stack_size})`);
+            } else {
+                const items = it.item_transfers.map(t => `${t.item_name} (${t.transfer_count})`).join(", ");
+                console.log(`- Inserter ${it.entity.entity_id.id} for items [${items}]: ${it.total_transfer_count} total transfers (stack size: ${it.stack_size})`);
+            }
         }
 
         if (Entity.isDrill(it.entity)) {
-            console.log(`- Drill ${it.entity.entity_id.id} for item ${it.item_name}: ${it.transfer_count} transfers`);
+            console.log(`- Drill ${it.entity.entity_id.id} for item ${it.item_transfers[0].item_name}: ${it.total_transfer_count} transfers`);
         }
     });
     console.log("----------------------");

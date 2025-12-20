@@ -4,15 +4,15 @@ import { Position, SignalId } from "../blueprints/components";
 import { DeciderCombinatorEntity } from "../blueprints/entity/decider-combinator";
 import { Duration, OpenRange } from "../data-types";
 import { ReadableEntityRegistry, Inserter, EntityId, Entity } from "../entities";
-import { CycleSpec } from "./sequence/cycle/cycle-spec";
 import { InventoryTransfer } from "./sequence/inventory-transfer";
 import { InventoryTransferHistory } from "../control-logic/inventory/inventory-transfer-history";
+import { CraftingCyclePlan } from "./sequence/cycle/crafting-cycle";
 
 function createDeciderCombinatorForTransfers(
     inventory_transfers: InventoryTransfer[],
     entity_id: EntityId,
     entity_registry: ReadableEntityRegistry,
-    cycle_spec: CycleSpec,
+    cycle: CraftingCyclePlan,
     number_of_cycles: number,
     position: Position
 ): DeciderCombinatorEntity {
@@ -22,7 +22,7 @@ function createDeciderCombinatorForTransfers(
 
     let description_lines: string[] = []
 
-    const swing_counts = cycle_spec.swing_counts.get(entity_id);
+    const swing_counts = cycle.entity_transfer_map.get(entity_id);
 
     const items = new Set<string>();
 
@@ -38,8 +38,8 @@ function createDeciderCombinatorForTransfers(
         description_lines = inserterSwingCountDescriptionLines(
             entity_id,
             items,
-            swing_counts.transfer_count,
-            swing_counts.transfer_count.multiply(number_of_cycles)
+            swing_counts.total_transfer_count,
+            swing_counts.total_transfer_count.multiply(number_of_cycles)
         )
     }
 
@@ -136,17 +136,16 @@ function inserterSwingCountDescriptionLines(
 
 function generateClockDescriptionLines(
     final_output_item_name: string,
-    cycle_spec: CycleSpec,
+    cycle: CraftingCyclePlan,
     total_duration: Duration,
 ): string[] {
 
-    const cycle_count = total_duration.ticks / cycle_spec.cycle_duration.ticks;
-
+    const cycle_count = total_duration.ticks / cycle.total_duration.ticks;
     const output_item_icon = SignalId.toDescriptionString(SignalId.item(final_output_item_name))
 
     return [
         `Clock for ${output_item_icon}:`,
-        `- Cycle Duration: ${cycle_spec.cycle_duration.ticks} ticks`,
+        `- Cycle Duration: ${cycle.total_duration.ticks} ticks`,
         `- Cycle Count: ${cycle_count} cycles`,
         `- Total Duration: ${total_duration.ticks} ticks`,
     ]
@@ -155,7 +154,7 @@ function generateClockDescriptionLines(
 
 export function createSignalPerInserterBlueprint(
     final_output_item_name: string,
-    cycle_spec: CycleSpec,
+    cycle: CraftingCyclePlan,
     total_duration: Duration,
     history: InventoryTransferHistory,
     entityRegistry: ReadableEntityRegistry
@@ -173,7 +172,7 @@ export function createSignalPerInserterBlueprint(
         .setMultiLinePlayerDescription(
             generateClockDescriptionLines(
                 final_output_item_name,
-                cycle_spec,
+                cycle,
                 total_duration
             )
         )
@@ -191,8 +190,8 @@ export function createSignalPerInserterBlueprint(
                 transfers,
                 entityId,
                 entityRegistry,
-                cycle_spec,
-                total_duration.ticks / cycle_spec.cycle_duration.ticks,
+                cycle,
+                total_duration.ticks / cycle.total_duration.ticks,
                 Position.fromXY(x, 0)
             )
         )

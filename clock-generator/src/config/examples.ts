@@ -553,8 +553,8 @@ export const PRODUCTION_SCIENCE_CONFIG_SHARED: Config = {
 export const STONE_BRICKS_DIRECT_INSERT_MINING: Config = {
     target_output: {
         recipe: "stone-brick",
-        items_per_second: 240,
-        machines: 6,
+        items_per_second: 120,
+        machines: 3,
     },
     machines: [
         {
@@ -928,6 +928,109 @@ export const CHEMICAL_SCIENCE_CONFIG: Config = {
                 },
                 {
                     ingredient: "engine-unit",
+                    stack_size: 4
+                }
+            ]
+        },
+        {
+            id: 3,
+            type: "turbo-transport-belt",
+            lanes: [
+                {
+                    ingredient: "chemical-science-pack",
+                    stack_size: 4
+                }
+            ]
+        },
+    ]
+}
+
+export const CHEMICAL_SCIENCE_DI_ENGINE_CONFIG: Config = {
+    overrides: {
+        lcm: 2,
+    },
+    target_output: {
+        recipe: "chemical-science-pack",
+        items_per_second: 120,
+        machines: 11,
+    },
+    machines: [
+        {
+            id: 1,
+            recipe: "chemical-science-pack",
+            productivity: 100,
+            crafting_speed: 66.031247377396,
+        },
+        {
+            id: 2,
+            recipe: "engine-unit",
+            productivity: 100,
+            crafting_speed: 49.093750119209,
+        },
+        {
+            id: 3,
+            recipe: "casting-pipe",
+            productivity: 50,
+            crafting_speed: 236.80000305176,
+        }
+    ],
+    inserters: [
+        {
+            source: { type: "machine", id: 1 },
+            sink: { type: "belt", id: 3, },
+            filters: ["chemical-science-pack"],
+            stack_size: 16,
+        },
+        {
+            source: { type: "belt", id: 2 },
+            sink: { type: "machine", id: 1 },
+            filters: ["sulfur", "advanced-circuit"],
+            stack_size: 16,
+        },
+        {
+            source: { type: "machine", id: 2 },
+            sink: { type: "machine", id: 1 },
+            filters: ["engine-unit"],
+            stack_size: 16,
+        },
+        {
+            source: { type: "belt", id: 1 },
+            sink: { type: "machine", id: 2 },
+            filters: ["steel-plate", "iron-gear-wheel"],
+            stack_size: 16,
+        },
+        {
+            source: { type: "machine", id: 3 },
+            sink: { type: "machine", id: 2 },
+            filters: ["pipe"],
+            stack_size: 16,
+        },
+    ],
+    belts: [
+        {
+            id: 1,
+            type: "turbo-transport-belt",
+            lanes: [
+                {
+                    ingredient: "steel-plate",
+                    stack_size: 4
+                },
+                {
+                    ingredient: "iron-gear-wheel",
+                    stack_size: 4
+                }
+            ]
+        },
+        {
+            id: 2,
+            type: "turbo-transport-belt",
+            lanes: [
+                {
+                    ingredient: "sulfur",
+                    stack_size: 4
+                },
+                {
+                    ingredient: "advanced-circuit",
                     stack_size: 4
                 }
             ]

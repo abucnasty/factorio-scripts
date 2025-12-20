@@ -1,6 +1,11 @@
 import { RecipeMetadata } from "./recipe";
 
-export type MachineType = "machine" | "furnace";
+export const MachineType = {
+    MACHINE: "machine",
+    FURNACE: "furnace",
+} as const
+
+export type MachineType = typeof MachineType[keyof typeof MachineType];
 
 export interface MachineMetadata {
     productivity: number;

@@ -1,6 +1,7 @@
+import { computeSimulationMode, SimulationMode } from "../../crafting/sequence";
 import { InventoryTransfer } from "../../crafting/sequence/inventory-transfer";
-import { OpenRange } from "../../data-types";
-import { EntityId } from "../../entities";
+import { Duration, OpenRange } from "../../data-types";
+import { Entity, EntityId, Inserter, Machine, ReadableEntityRegistry } from "../../entities";
 
 export class InventoryTransferHistory {
 
@@ -19,14 +20,54 @@ export class InventoryTransferHistory {
         return new InventoryTransferHistory(deduplicated);
     }
 
+    public static trimEndsToAvoidBackSwingWakeLists(
+        history: InventoryTransferHistory,
+        entity_registry: ReadableEntityRegistry
+    ): InventoryTransferHistory {
+        const trimmed: Map<EntityId, InventoryTransfer[]> = new Map();
+
+        history.getAllTransfers().forEach((transfers, entityId) => {
+            const entity = entity_registry.getEntityByIdOrThrow(entityId);
+            if (!Entity.isInserter(entity)) {
+                trimmed.set(entityId, transfers);
+                return;
+            }
+            const source_machine = entity_registry.getEntityByIdOrThrow(entity.source.entity_id);
+            if (!Entity.isMachine(source_machine)) {
+                trimmed.set(entityId, transfers);
+                return;
+            }
+
+            const last_swing_offset = computeLastSwingOffsetDuration(
+                source_machine,
+                entity
+            );
+
+            const trimmed_transfers: InventoryTransfer[] = transfers.map(transfer => {
+                const original_range = transfer.tick_range;
+                const trimmed_range = OpenRange.from(
+                    original_range.start_inclusive,
+                    original_range.end_inclusive + last_swing_offset.ticks
+                );
+                return {
+                    item_name: transfer.item_name,
+                    tick_range: trimmed_range,
+                }
+            }).filter(transfer => transfer.tick_range.duration().ticks > 0);
+
+            trimmed.set(entityId, trimmed_transfers);
+        })
+        return new InventoryTransferHistory(trimmed);
+    }
+
     public static print(history: InventoryTransferHistory, relative_tick_mod: number = 0): void {
         printInventoryTransfers(history, relative_tick_mod);
     }
-    
+
 
     constructor(
         private readonly transfers: Map<EntityId, InventoryTransfer[]> = new Map()
-    ) {}
+    ) { }
 
     public clear(): void {
         this.transfers.clear();
@@ -114,27 +155,27 @@ function printInventoryTransfers(
     history.getAllTransfers().forEach((transfers, entityId) => {
         console.log(`Transfer Ranges for ${entityId}`);
         transfers
-        .sort((a, b) => a.tick_range.start_inclusive - b.tick_range.start_inclusive)
-        .forEach((transfer) => {
-            const start_inclusive = transfer.tick_range.start_inclusive;
-            const end_inclusive = transfer.tick_range.end_inclusive;
-            if (relative_tick_mod > 0) {
-                const start_mod = start_inclusive % relative_tick_mod;
-                const end_mod = end_inclusive % relative_tick_mod;
-                console.log(`- [${start_inclusive} - ${end_inclusive}](${start_mod} - ${end_mod}) (${transfer.tick_range.duration().ticks} ticks) ${transfer.item_name}`);
-                return;
-            }
-            console.log(`- [${start_inclusive} - ${end_inclusive}] (${transfer.tick_range.duration().ticks} ticks) ${transfer.item_name}`);
-        })
+            .sort((a, b) => a.tick_range.start_inclusive - b.tick_range.start_inclusive)
+            .forEach((transfer) => {
+                const start_inclusive = transfer.tick_range.start_inclusive;
+                const end_inclusive = transfer.tick_range.end_inclusive;
+                if (relative_tick_mod > 0) {
+                    const start_mod = start_inclusive % relative_tick_mod;
+                    const end_mod = end_inclusive % relative_tick_mod;
+                    console.log(`- [${start_inclusive} - ${end_inclusive}](${start_mod} - ${end_mod}) (${transfer.tick_range.duration().ticks} ticks) ${transfer.item_name}`);
+                    return;
+                }
+                console.log(`- [${start_inclusive} - ${end_inclusive}] (${transfer.tick_range.duration().ticks} ticks) ${transfer.item_name}`);
+            })
     })
 }
 
 /**
  * if two entities have the exact same transfer ranges and items, we can reduce them to one entity
  */
-function deduplicateEntityTransfers(transfers: ReadonlyMap<EntityId, InventoryTransfer[]>): Map<EntityId, InventoryTransfer[]>{
+function deduplicateEntityTransfers(transfers: ReadonlyMap<EntityId, InventoryTransfer[]>): Map<EntityId, InventoryTransfer[]> {
     const result: Map<EntityId, InventoryTransfer[]> = new Map();
-    
+
     const seenTransferSignatures: Map<string, EntityId> = new Map();
 
     transfers.forEach((transferList, entityId) => {
@@ -153,4 +194,24 @@ function deduplicateEntityTransfers(transfers: ReadonlyMap<EntityId, InventoryTr
     });
 
     return result;
+}
+
+
+function computeLastSwingOffsetDuration(
+    source_machine: Machine,
+    inserter: Inserter
+): Duration {
+    const mode = computeSimulationMode(source_machine, inserter);
+    if (mode === SimulationMode.NORMAL) {
+        const animation = inserter.animation
+        const offset = animation.rotation.ticks + animation.drop.ticks
+        return Duration.ofTicks(
+            -1 * offset
+        );
+    }
+
+    if (mode === SimulationMode.LOW_INSERTION_LIMITS) {
+        return Duration.ofTicks(2)
+    }
+    return Duration.zero;
 }

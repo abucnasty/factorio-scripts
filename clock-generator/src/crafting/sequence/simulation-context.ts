@@ -39,10 +39,7 @@ export class SimulationContext {
     }
 
     public addDebuggerPlugins(debug_plugin_factory: DebugPluginFactory): void {
-        this.machines.forEach(it => {
-            it.addPlugin(debug_plugin_factory.machineModeChangePlugin(it.machine_state));
-            it.addPlugin(debug_plugin_factory.machineCraftEventPlugin(it.machine_state));
-        });
+        this.machines.forEach(it => debug_plugin_factory.forMachine(it));
 
         this.inserters.forEach(it => {
             it.addPlugin(debug_plugin_factory.inserterModeChangePlugin(it));
