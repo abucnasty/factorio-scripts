@@ -17,6 +17,10 @@ export class Duration {
     public add(other: Duration): Duration {
         return Duration.ofTicks(this.ticks + other.ticks);
     }
+
+    public subtract(other: Duration): Duration {
+        return Duration.ofTicks(this.ticks - other.ticks);
+    }
 }
 
 
