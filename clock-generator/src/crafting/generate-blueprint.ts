@@ -20,6 +20,7 @@ import { CraftingCyclePlan } from "./sequence/cycle/crafting-cycle";
 import { PrepareStep } from "./runner/steps/prepare-step";
 import { WarmupStep } from "./runner/steps/warmup-step";
 import { SimulateStep } from "./runner/steps/simulate-step";
+import { RunnerStepType } from "./runner/steps/runner-step";
 
 const MAX_SIMULATION_TICKS = 500_000;
 
@@ -27,7 +28,16 @@ export interface BlueprintGenerationResult {
     blueprint: FactorioBlueprint;
     crafting_cycle_plan: CraftingCyclePlan;
     simulation_duration: Duration;
+    transfer_history: InventoryTransferHistory;
 }
+
+/**
+ * Configuration for which steps should have debugging enabled.
+ * By default, all steps have debugging disabled.
+ */
+export type DebugSteps = {
+    [K in RunnerStepType]?: boolean;
+};
 
 /**
  * Generates a blueprint from a configuration using the Runner pattern.
@@ -39,11 +49,13 @@ export interface BlueprintGenerationResult {
  * 
  * @param config The configuration for the simulation
  * @param debug Optional debug settings provider (defaults to disabled)
+ * @param debug_steps Optional configuration for which steps should have debugging enabled
  * @returns The generated blueprint and related metadata
  */
 export function generateClockForConfig(
     config: Config,
-    debug: MutableDebugSettingsProvider = DebugSettingsProvider.mutable()
+    debug: MutableDebugSettingsProvider = DebugSettingsProvider.mutable(),
+    debug_steps: DebugSteps = {}
 ): BlueprintGenerationResult {
     
     // Initialize simulation context
@@ -88,7 +100,12 @@ export function generateClockForConfig(
 
     // Step 1: Prepare - wait until all machines are output blocked
     console.log("Pre loading all machines until output blocked...");
-    debug.disable();
+    console.log("Executing Prepare Step");
+    if (debug_steps[RunnerStepType.PREPARE]) {
+        debug.enable();
+    } else {
+        debug.disable();
+    }
     
     const prepare_step = new PrepareStep(simulation_context);
     prepare_step.execute();
@@ -163,8 +180,13 @@ export function generateClockForConfig(
 
     // Step 2: Warm up
     console.log("Warming up simulation...");
+    console.log("Executing Warmup Step");
     enable_control_factory.getResettableLogic().forEach(it => it.reset());
-    debug.disable();
+    if (debug_steps[RunnerStepType.WARM_UP]) {
+        debug.enable();
+    } else {
+        debug.disable();
+    }
     
     const warmup_step = new WarmupStep(new_simulation_context, warmup_period);
     warmup_step.execute();
@@ -173,12 +195,17 @@ export function generateClockForConfig(
 
     // Step 3: Simulate
     console.log(`Starting simulation for ${duration.ticks} ticks`);
+    console.log("Executing Simulate Step");
     inventory_transfer_history.clear();
     relative_tick = simulation_context.tick_provider.getCurrentTick();
     enable_control_factory.getResettableLogic().forEach(it => it.reset());
     
     const simulate_step = new SimulateStep(new_simulation_context, duration);
-    debug.enable();
+    if (debug_steps[RunnerStepType.SIMULATE]) {
+        debug.enable();
+    } else {
+        debug.disable();
+    }
     simulate_step.execute();
     debug.disable();
     
@@ -207,7 +234,8 @@ export function generateClockForConfig(
     return {
         blueprint,
         crafting_cycle_plan,
-        simulation_duration: duration
+        simulation_duration: duration,
+        transfer_history: final_history,
     };
 }
 
