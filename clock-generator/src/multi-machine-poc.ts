@@ -1,16 +1,23 @@
-import { Config } from './config/config';
-import * as EXAMPLES from './config/examples';
+import { loadConfigFromFile } from './config/loader';
+import { ConfigPaths } from './config/config-paths';
 import { DebugSettingsProvider } from './crafting/sequence/debug/debug-settings-provider';
 import { generateClockForConfig } from './crafting/generate-blueprint';
 import { encodeBlueprintFile } from "./blueprints/serde";
+import { Config } from './config/schema';
 
-const config: Config = EXAMPLES.LOGISTIC_SCIENCE_SHARED_INSERTER_CONFIG;
+async function main() {
+    const config: Config = await loadConfigFromFile(
+        ConfigPaths.CHEMICAL_SCIENCE_ADVANCED_CIRCUIT
+    );
 
-const debug = DebugSettingsProvider.mutable();
+    const debug = DebugSettingsProvider.mutable();
 
-const result = generateClockForConfig(config, debug);
+    const result = generateClockForConfig(config, debug);
 
-console.log("----------------------");
-console.log(encodeBlueprintFile({
-    blueprint: result.blueprint
-}));
+    console.log("----------------------");
+    console.log(encodeBlueprintFile({
+        blueprint: result.blueprint
+    }));
+}
+
+main().catch(console.error);

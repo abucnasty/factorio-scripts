@@ -8,5 +8,9 @@
     "sourceMap": true,
     "outDir": "dist"
   },
+  "include": ["src/**/*", "src/types/**/*.d.ts"],
+  "ts-node": {
+    "files": true
+  },
   "lib": ["es2015"]
 }

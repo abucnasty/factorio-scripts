@@ -1,4 +1,5 @@
 import { MiningDrillConfig } from "../../config/config";
+import { MiningDrillType } from "../../common/entity-types";
 import { FactorioDataService } from "../../data/factorio-data-service";
 import { Item, MiningDrillSpec, Resource } from "../../data/factorio-data-types";
 import { Entity } from "../entity";
@@ -8,13 +9,8 @@ import { MiningProductivity } from "./mining-productivity";
 import { fraction } from "fractionability";
 import { ProductionRate } from "../machine";
 
-export const MiningDrillType = {
-    ELECTRIC_MINING_DRILL: "electric-mining-drill",
-    BURNER_MINING_DRILL: "burner-mining-drill",
-    BIG_MINING_DRILL: "big-mining-drill"
-} as const;
-
-export type MiningDrillType = typeof MiningDrillType[keyof typeof MiningDrillType];
+// Re-export for backwards compatibility
+export { MiningDrillType } from "../../common/entity-types";
 
 export interface MiningDrillMetadata {
     type: MiningDrillType;
