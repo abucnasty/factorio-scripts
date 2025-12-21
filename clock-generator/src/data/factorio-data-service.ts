@@ -123,7 +123,11 @@ export class FactorioDataService {
             throw new Error(`Recipe ${recipeName} was not found`)
         }
 
-        const enriched_ingredients: EnrichedIngredient[] = recipe.ingredients
+        console.log(recipe)
+
+        const ingredients = Array.isArray(recipe.ingredients) ? recipe.ingredients : []
+
+        const enriched_ingredients: EnrichedIngredient[] = ingredients
             .filter(it => it.type != "fluid")
             .map(ingredient => {
                 const item = this.findItemOrThrow(ingredient.name);
