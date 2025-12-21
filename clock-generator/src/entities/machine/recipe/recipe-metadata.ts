@@ -51,7 +51,7 @@ function fromRecipe(recipe: EnrichedRecipe): RecipeMetadata {
                 item: input.item,
             },
             output: output_item,
-            fraction: fraction(input.amount, output_item.amount),
+            fraction: fraction(input.amount).divide(output_item.amount),
         });
         outputToInputRatios.set(input.name, {
             input: {
@@ -61,7 +61,7 @@ function fromRecipe(recipe: EnrichedRecipe): RecipeMetadata {
                 item: input.item,
             },
             output: output_item,
-            fraction: fraction(output_item.amount, input.amount),
+            fraction: fraction(output_item.amount).divide(input.amount),
         });
 
         inputsPerCraft.set(input.name, {

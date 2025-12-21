@@ -1,5 +1,7 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import type { Config } from 'clock-generator/browser';
+
+const STORAGE_KEY = 'clock-generator-config';
 
 export interface MachineFormData {
     id: number;
@@ -72,6 +74,32 @@ const createDefaultConfig = (): ConfigFormData => ({
     belts: [],
 });
 
+/** Load config from localStorage, returns default if not found or invalid */
+function loadConfigFromStorage(): ConfigFormData {
+    try {
+        const stored = localStorage.getItem(STORAGE_KEY);
+        if (stored) {
+            const parsed = JSON.parse(stored);
+            // Basic validation - check if it has the required fields
+            if (parsed && parsed.target_output && parsed.machines) {
+                return parsed as ConfigFormData;
+            }
+        }
+    } catch (e) {
+        console.warn('Failed to load config from localStorage:', e);
+    }
+    return createDefaultConfig();
+}
+
+/** Save config to localStorage */
+function saveConfigToStorage(config: ConfigFormData): void {
+    try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(config));
+    } catch (e) {
+        console.warn('Failed to save config to localStorage:', e);
+    }
+}
+
 export interface UseConfigFormResult {
     config: ConfigFormData;
     setConfig: React.Dispatch<React.SetStateAction<ConfigFormData>>;
@@ -112,7 +140,12 @@ export interface UseConfigFormResult {
 }
 
 export function useConfigForm(): UseConfigFormResult {
-    const [config, setConfig] = useState<ConfigFormData>(createDefaultConfig());
+    const [config, setConfig] = useState<ConfigFormData>(loadConfigFromStorage);
+
+    // Save config to localStorage whenever it changes
+    useEffect(() => {
+        saveConfigToStorage(config);
+    }, [config]);
 
     // Target output
     const updateTargetOutput = useCallback((
@@ -176,7 +209,7 @@ export function useConfigForm(): UseConfigFormResult {
                 {
                     source: { type: 'machine', id: 1 },
                     sink: { type: 'belt', id: 1 },
-                    stack_size: 1,
+                    stack_size: 16,
                 },
             ],
         }));
@@ -386,6 +419,7 @@ export function useConfigForm(): UseConfigFormResult {
     }, [config]);
 
     const resetConfig = useCallback(() => {
+        localStorage.removeItem(STORAGE_KEY);
         setConfig(createDefaultConfig());
     }, []);
 
