@@ -53,54 +53,7 @@ function createDeciderCombinatorForTransfers(
         .fromRanges(
             SignalId.clock,
             ranges,
-            outputSignalId
-        )
-        .setPosition(position)
-        .setMultiLinePlayerDescription(description_lines)
-        .build();
-
-    return deciderCombinator
-}
-
-function createDeciderCombinatorForActiveRanges(
-    inserter_active_ranges: OpenRange[],
-    inserter_id: EntityId,
-    entity_registry: ReadableEntityRegistry,
-    position: Position
-): DeciderCombinatorEntity {
-    const inserter: Inserter = entity_registry.getEntityByIdOrThrow(inserter_id)
-    const inserter_number = inserter_id.id.split(":")[1]
-    let outputSignalId = SignalId.virtual(`signal-${inserter_number}`);
-
-    let description_lines: string[] = []
-
-    description_lines.push(`Inserter ${inserter_number} for: `)
-
-    const items = new Set(inserter.filtered_items);
-
-    items.forEach(item_name => {
-        const item_icon = SignalId.toDescriptionString(SignalId.item(item_name))
-        description_lines.push(`- ${item_icon}`)
-    })
-
-    const swing_count = Math.floor(inserter_active_ranges.map(range => range.duration().ticks).reduce((a, b) => a + b, 0) / inserter.animation.total.ticks)
-
-    description_lines.push("")
-    description_lines.push(`Total Swings: ${swing_count}`)
-
-
-
-    if (items.size === 1) {
-        outputSignalId = SignalId.item(Array.from(items)[0])
-    }
-
-    const ranges = OpenRange.reduceRanges(inserter_active_ranges);
-
-    const deciderCombinator = DeciderCombinatorEntity
-        .fromRanges(
-            SignalId.clock,
-            ranges,
-            outputSignalId
+            Array.from(items).map(item_name => SignalId.item(item_name))
         )
         .setPosition(position)
         .setMultiLinePlayerDescription(description_lines)

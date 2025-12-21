@@ -97,16 +97,16 @@ function clock(
 function fromRanges(
     inputSignal: SignalId,
     inputRanges: OpenRange[],
-    outputSignal: SignalId
+    outputSignals: SignalId[]
 ): DeciderCombinatorEntityBuilder {
 
     const conditions = inputRanges.flatMap(range => DeciderCombinatorCondition.fromOpenRange(range, inputSignal));
 
-    const output = DeciderCombinatorOutput.constant(outputSignal, 1);
+    const output_signals = outputSignals.map(signalId => DeciderCombinatorOutput.constant(signalId, 1));
 
     const controlBehavior = new ControlBehaviorBuilder()
         .setDeciderConditions(conditions)
-        .setOutputs([output])
+        .setOutputs(output_signals)
         .build();
 
 
