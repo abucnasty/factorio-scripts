@@ -5,9 +5,6 @@ export const UTILITY_SCIENCE_CONFIG: Config = {
         recipe: "utility-science-pack",
         items_per_second: 120,
         machines: 7,
-        overrides: {
-            output_swings: 3
-        }
     },
     machines: [
         {

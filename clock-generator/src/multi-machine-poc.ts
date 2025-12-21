@@ -7,8 +7,12 @@ import { Config } from './config/schema';
 
 async function main() {
     const config: Config = await loadConfigFromFile(
-        ConfigPaths.CHEMICAL_SCIENCE_ADVANCED_CIRCUIT
+        ConfigPaths.LOGISTIC_SCIENCE_SHARED_INSERTER
     );
+    console.log("Loaded config:");
+    console.log("----------------------");
+    console.log(JSON.stringify(config));
+    console.log("----------------------");
 
     const debug = DebugSettingsProvider.mutable();
 

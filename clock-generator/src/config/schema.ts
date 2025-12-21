@@ -30,10 +30,7 @@ export type MachineConfiguration = z.infer<typeof MachineConfigurationSchema>;
 export const TargetProductionRateConfigSchema = z.object({
     recipe: z.string(),
     items_per_second: z.number().positive(),
-    machines: z.number().int().positive(),
-    overrides: z.object({
-        output_swings: z.number().int().positive().optional()
-    }).optional()
+    machines: z.number().int().positive()
 });
 
 export type TargetProductionRateConfig = z.infer<typeof TargetProductionRateConfigSchema>;

@@ -216,9 +216,6 @@ describe("parseConfig", () => {
                     recipe = "electronic-circuit"
                     items_per_second = 1
                     machines = 1
-                    overrides {
-                        output_swings = 5
-                    }
                 }
                 machines = []
                 inserters = []
@@ -231,7 +228,6 @@ describe("parseConfig", () => {
 
             const config = await parseConfig(hocon);
 
-            expect(config.target_output.overrides?.output_swings).toBe(5);
             expect(config.overrides?.lcm).toBe(120);
             expect(config.overrides?.terminal_swing_count).toBe(10);
         });

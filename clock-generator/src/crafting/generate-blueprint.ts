@@ -176,12 +176,12 @@ export function generateClockForConfig(
     inventory_transfer_history.clear();
     relative_tick = simulation_context.tick_provider.getCurrentTick();
     enable_control_factory.getResettableLogic().forEach(it => it.reset());
-    debug.disable();
     
     const simulate_step = new SimulateStep(new_simulation_context, duration);
-    simulate_step.execute();
-    
     debug.disable();
+    simulate_step.execute();
+    debug.disable();
+    
     console.log(`Simulation complete`);
 
     // Process transfer history

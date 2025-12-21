@@ -26,6 +26,7 @@ export const ConfigPaths = {
     ELECTRIC_FURNACE: path.join(CONFIG_SAMPLES_DIR, 'electric-furnace.conf'),
     LOGISTIC_SCIENCE: path.join(CONFIG_SAMPLES_DIR, 'logistic-science.conf'),
     LOGISTIC_SCIENCE_SHARED_INSERTER: path.join(CONFIG_SAMPLES_DIR, 'logistic-science-shared-inserter.conf'),
+    LOGISTIC_SCIENCE_INSERTER_CRAFTING: path.join(CONFIG_SAMPLES_DIR, 'logistic-science-inserter-crafting.conf'),
     PRODUCTION_SCIENCE: path.join(CONFIG_SAMPLES_DIR, 'production-science.conf'),
     PRODUCTION_SCIENCE_SHARED: path.join(CONFIG_SAMPLES_DIR, 'production-science-shared.conf'),
     PRODUCTIVITY_MODULE: path.join(CONFIG_SAMPLES_DIR, 'productivity-module.conf'),

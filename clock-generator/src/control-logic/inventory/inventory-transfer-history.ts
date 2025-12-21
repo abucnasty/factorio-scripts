@@ -20,6 +20,14 @@ export class InventoryTransferHistory {
         return new InventoryTransferHistory(deduplicated);
     }
 
+    public static offsetHistory(
+        history: InventoryTransferHistory,
+        offset: number
+    ): InventoryTransferHistory {
+        const offset_transfers = offsetInventoryTransfers(history.getAllTransfers(), offset);
+        return new InventoryTransferHistory(offset_transfers);
+    }
+
     public static trimEndsToAvoidBackSwingWakeLists(
         history: InventoryTransferHistory,
         entity_registry: ReadableEntityRegistry
@@ -123,6 +131,27 @@ function mergeOverlappingRanges(original: ReadonlyMap<EntityId, InventoryTransfe
     return result
 }
 
+function offsetInventoryTransfers(
+    original: ReadonlyMap<EntityId, InventoryTransfer[]>,
+    offset: number
+): Map<EntityId, InventoryTransfer[]> {
+    const result: Map<EntityId, InventoryTransfer[]> = new Map();
+
+    original.forEach((ranges, entityId) => {
+        const offset_ranges: InventoryTransfer[] = ranges.map(it => {
+            return {
+                item_name: it.item_name,
+                tick_range: OpenRange.from(
+                    it.tick_range.start_inclusive + offset,
+                    it.tick_range.end_inclusive + offset
+                )
+            }
+        })
+        result.set(entityId, offset_ranges)
+    })
+    return result;
+}
+
 function correctNegativeOffsets(original: ReadonlyMap<EntityId, InventoryTransfer[]>): Map<EntityId, InventoryTransfer[]> {
     const result: Map<EntityId, InventoryTransfer[]> = new Map();
 
@@ -152,22 +181,24 @@ function printInventoryTransfers(
     history: InventoryTransferHistory,
     relative_tick_mod: number = 0
 ): void {
-    history.getAllTransfers().forEach((transfers, entityId) => {
-        console.log(`Transfer Ranges for ${entityId}`);
-        transfers
-            .sort((a, b) => a.tick_range.start_inclusive - b.tick_range.start_inclusive)
-            .forEach((transfer) => {
-                const start_inclusive = transfer.tick_range.start_inclusive;
-                const end_inclusive = transfer.tick_range.end_inclusive;
-                if (relative_tick_mod > 0) {
-                    const start_mod = start_inclusive % relative_tick_mod;
-                    const end_mod = end_inclusive % relative_tick_mod;
-                    console.log(`- [${start_inclusive} - ${end_inclusive}](${start_mod} - ${end_mod}) (${transfer.tick_range.duration().ticks} ticks) ${transfer.item_name}`);
-                    return;
-                }
-                console.log(`- [${start_inclusive} - ${end_inclusive}] (${transfer.tick_range.duration().ticks} ticks) ${transfer.item_name}`);
-            })
-    })
+    Array.from(history.getAllTransfers().values())
+        .sort((a, b) => a[0]?.tick_range.start_inclusive - b[0]?.tick_range.start_inclusive)
+        .forEach((transfers, entityId) => {
+            console.log(`Transfer Ranges for ${entityId}`);
+            transfers
+                .sort((a, b) => a.tick_range.start_inclusive - b.tick_range.start_inclusive)
+                .forEach((transfer) => {
+                    const start_inclusive = transfer.tick_range.start_inclusive;
+                    const end_inclusive = transfer.tick_range.end_inclusive;
+                    if (relative_tick_mod > 0) {
+                        const start_mod = start_inclusive % relative_tick_mod;
+                        const end_mod = end_inclusive % relative_tick_mod;
+                        console.log(`- [${start_inclusive} - ${end_inclusive}](${start_mod} - ${end_mod}) (${transfer.tick_range.duration().ticks} ticks) ${transfer.item_name}`);
+                        return;
+                    }
+                    console.log(`- [${start_inclusive} - ${end_inclusive}] (${transfer.tick_range.duration().ticks} ticks) ${transfer.item_name}`);
+                })
+        })
 }
 
 /**
