@@ -17,8 +17,8 @@ export class MutableDebugSettingsProvider implements DebugSettingsProvider {
         this.debug_settings.enabled = false;
     }
 
-    public setSettings(settings: DebugSettings): void {
-        this.debug_settings = settings;
+    public setSettings(settings: Partial<DebugSettings>): void {
+        this.debug_settings = Object.assign(this.debug_settings, settings);
     }
 
     public settings(): DebugSettings {

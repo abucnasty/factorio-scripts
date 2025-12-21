@@ -23,15 +23,21 @@ const createMachine = (recipeName: string, metadata: Partial<MachineMetadata> = 
 const executeControlLogicForTicks = (state_machine: MachineStateMachine, ticks: number, debug: boolean = false) => {
     const tick_provider = TickProvider.mutable()
     if (debug) {
+        const settings_provider = DebugSettingsProvider.immutable({ 
+            enabled: true,
+            plugin_settings: {
+                craft_event: {
+                    print_bonus_progress: true,
+                    print_craft_progress: true,
+                }
+            }
+         })
         const debug_plugin_factory = new DebugPluginFactory(
             tick_provider,
-            DebugSettingsProvider.immutable({ enabled: true })
+            settings_provider
         )
 
-        debug_plugin_factory.forMachine(state_machine, {
-            print_bonus_progress: true,
-            print_craft_progress: true,
-        });
+        debug_plugin_factory.forMachine(state_machine);
     }
 
     const control_logic = new CompositeControlLogic([

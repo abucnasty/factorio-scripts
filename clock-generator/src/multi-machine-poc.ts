@@ -7,7 +7,7 @@ import { Config } from './config/schema';
 
 async function main() {
     const config: Config = await loadConfigFromFile(
-        ConfigPaths.LOGISTIC_SCIENCE_SHARED_INSERTER
+        ConfigPaths.STONE_BRICKS_DIRECT_INSERT
     );
     console.log("Loaded config:");
     console.log("----------------------");
@@ -15,6 +15,14 @@ async function main() {
     console.log("----------------------");
 
     const debug = DebugSettingsProvider.mutable();
+    debug.setSettings({
+        plugin_settings: {
+            craft_event: {
+                print_bonus_progress: false,
+                print_craft_progress: false,
+            }
+        }
+    })
 
     const result = generateClockForConfig(config, debug);
 

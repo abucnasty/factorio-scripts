@@ -11,6 +11,7 @@ import { DebugLoggerFactory } from "./debug-logger-factory";
 import { DebugSettingsProvider } from "./debug-settings-provider";
 import { DrillMode } from "../../../control-logic/drill/modes/drill-mode";
 import { MachineStateMachine } from "../../../control-logic/machine/machine-state-machine";
+import { CraftEventPluginSettings } from "./debug-settings";
 
 export class DebugPluginFactory {
     constructor(
@@ -57,13 +58,12 @@ export class DebugPluginFactory {
         }
     }
 
-    public machineCraftEventPlugin(
-        machine_state: MachineState, 
-        options: Partial<CraftEventPluginSettings> = {}
-    ) {
+    public machineCraftEventPlugin(machine_state: MachineState) {
         const debugLog = this.log_factory.forEntity(machine_state.machine);
-        return new CraftEventListenerPlugin(machine_state, this.tick_provider, ({ craft_ticks, state }) => {
+        return new CraftEventListenerPlugin(machine_state, this.tick_provider, ({ state }) => {
             let message = `craft event #${machine_state.craftCount}:`;
+
+            const options: Partial<CraftEventPluginSettings> = this.settings_provider.settings().plugin_settings?.craft_event ?? {};
 
             if (options.print_bonus_progress) {
                 // print 14 decimal places for debugging since Lua console commands
@@ -80,7 +80,7 @@ export class DebugPluginFactory {
                 const input_quantity = state.inventoryState.getQuantity(input.ingredient.name);
                 message += ` \t "${input.ingredient.name}"=${input_quantity}`;
             });
-            
+
             const output_quantity = state.inventoryState.getQuantity(state.machine.output.ingredient.name);
             const output_name = state.machine.output.ingredient.name;
             message += ` \t "${output_name}"=${output_quantity}`;
@@ -98,13 +98,8 @@ export class DebugPluginFactory {
         }
     }
 
-    public forMachine(state_machine: MachineStateMachine, options: Partial<CraftEventPluginSettings> = {}): void {
+    public forMachine(state_machine: MachineStateMachine): void {
         state_machine.addPlugin(this.machineModeChangePlugin(state_machine.machine_state));
-        state_machine.addPlugin(this.machineCraftEventPlugin(state_machine.machine_state, options));
+        state_machine.addPlugin(this.machineCraftEventPlugin(state_machine.machine_state));
     }
-}
-
-export interface CraftEventPluginSettings {
-    print_bonus_progress: boolean;
-    print_craft_progress: boolean;
 }

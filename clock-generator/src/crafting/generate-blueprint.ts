@@ -178,7 +178,7 @@ export function generateClockForConfig(
     enable_control_factory.getResettableLogic().forEach(it => it.reset());
     
     const simulate_step = new SimulateStep(new_simulation_context, duration);
-    debug.disable();
+    debug.enable();
     simulate_step.execute();
     debug.disable();
     
