@@ -85,6 +85,9 @@ export function DebugPanel({
                             />
                         ))}
                     </Box>
+                    <Typography variant="caption" gutterBottom>
+                        The debug messages will appear in the browser console after pressing "Generate Blueprint"
+                    </Typography>
                 </Box>
 
                 <Paper
