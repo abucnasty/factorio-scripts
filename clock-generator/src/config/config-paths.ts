@@ -18,7 +18,6 @@ const CONFIG_SAMPLES_DIR = path.resolve(__dirname, '../../resources/config-sampl
  * ```
  */
 export const ConfigPaths = {
-    ADVANCED_CIRCUIT: path.join(CONFIG_SAMPLES_DIR, 'advanced-circuit.conf'),
     CHEMICAL_SCIENCE: path.join(CONFIG_SAMPLES_DIR, 'chemical-science.conf'),
     CHEMICAL_SCIENCE_ADVANCED_CIRCUIT: path.join(CONFIG_SAMPLES_DIR, 'chemical-science-advanced-circuit.conf'),
     CHEMICAL_SCIENCE_DI_ENGINE: path.join(CONFIG_SAMPLES_DIR, 'chemical-science-di-engine.conf'),

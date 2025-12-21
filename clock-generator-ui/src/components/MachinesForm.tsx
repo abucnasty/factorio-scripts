@@ -84,7 +84,7 @@ export function MachinesForm({
                         type="number"
                         value={machine.productivity}
                         onChange={(e) => onUpdate(index, 'productivity', parseFloat(e.target.value) || 0)}
-                        inputProps={{ step: 1, min: 0 }}
+                        slotProps={{ htmlInput: { step: 1, min: 0 } }}
                         sx={{ width: 130 }}
                         size="small"
                     />
@@ -92,9 +92,9 @@ export function MachinesForm({
                         label="Crafting Speed"
                         type="number"
                         value={machine.crafting_speed}
-                        onChange={(e) => onUpdate(index, 'crafting_speed', parseFloat(e.target.value) || 1)}
-                        inputProps={{ step: 0.1, min: 0 }}
-                        sx={{ width: 130 }}
+                        onChange={(e) => onUpdate(index, 'crafting_speed', Number(e.target.value) || 1)}
+                        slotProps={{ htmlInput: { step: 0.1, min: 0 } }}
+                        sx={{ width: 180 }}
                         size="small"
                     />
                     <FormControl size="small" sx={{ minWidth: 120 }}>
