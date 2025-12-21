@@ -25,6 +25,7 @@ import { OverridesForm } from './components/OverridesForm';
 import { ConfigImportExport } from './components/ConfigImportExport';
 import { BlueprintOutput } from './components/BlueprintOutput';
 import { DebugPanel } from './components/DebugPanel';
+import { TransferHistoryVisualization } from './components/TransferHistoryVisualization';
 
 const darkTheme = createTheme({
     palette: {
@@ -62,6 +63,8 @@ function App() {
         resourceNames,
         logs,
         blueprintString,
+        transferHistory,
+        simulationDurationTicks,
         error,
         initialize,
         runSimulation,
@@ -97,8 +100,6 @@ function App() {
         simulate: false,
     });
 
-    const [simulationDurationTicks, setSimulationDurationTicks] = useState<number | undefined>();
-
     // Initialize worker on mount
     useEffect(() => {
         initialize();
@@ -118,7 +119,6 @@ function App() {
 
     const handleGenerate = useCallback(() => {
         const configToRun = exportConfig();
-        setSimulationDurationTicks(undefined);
         runSimulation(configToRun, debugSteps);
     }, [exportConfig, runSimulation, debugSteps]);
 
@@ -240,10 +240,16 @@ function App() {
                                 blueprintString={blueprintString}
                                 isLoading={isRunning}
                                 error={error}
-                                simulationDurationTicks={simulationDurationTicks}
+                                simulationDurationTicks={simulationDurationTicks ?? undefined}
                                 onGenerate={handleGenerate}
                                 disabled={!canGenerate}
                             />
+
+                            {transferHistory && (
+                                <Box sx={{ mt: 2 }}>
+                                    <TransferHistoryVisualization transferHistory={transferHistory} />
+                                </Box>
+                            )}
 
                             <Box sx={{ mt: 2 }}>
                                 <DebugPanel

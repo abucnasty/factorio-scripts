@@ -119,3 +119,14 @@ export {
     BeltType,
     MiningDrillType,
 } from './common/entity-types';
+
+// ============================================================================
+// Transfer History (for visualization)
+// ============================================================================
+
+export {
+    SerializableTransferHistory,
+    SerializableTransferEntry,
+    SerializableEntityTransferHistory,
+    serializeTransferHistory,
+} from './crafting/sequence/transfer-history-serializer';

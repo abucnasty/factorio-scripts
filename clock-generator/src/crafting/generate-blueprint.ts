@@ -22,6 +22,7 @@ import { WarmupStep } from "./runner/steps/warmup-step";
 import { SimulateStep } from "./runner/steps/simulate-step";
 import { RunnerStepType } from "./runner/steps/runner-step";
 import { Logger, defaultLogger } from "../common/logger";
+import { SerializableTransferHistory, serializeTransferHistory } from "./sequence/transfer-history-serializer";
 
 const MAX_SIMULATION_TICKS = 500_000;
 
@@ -30,6 +31,8 @@ export interface BlueprintGenerationResult {
     crafting_cycle_plan: CraftingCyclePlan;
     simulation_duration: Duration;
     transfer_history: InventoryTransferHistory;
+    /** Serializable transfer history for UI visualization */
+    serializable_transfer_history: SerializableTransferHistory;
 }
 
 /**
@@ -246,11 +249,19 @@ export function generateClockForConfig(
         simulation_context.entity_registry
     );
 
+    // Create serializable transfer history for UI visualization
+    const serializable_transfer_history = serializeTransferHistory(
+        final_history,
+        simulation_context.entity_registry,
+        duration.ticks
+    );
+
     return {
         blueprint,
         crafting_cycle_plan,
         simulation_duration: duration,
         transfer_history: final_history,
+        serializable_transfer_history,
     };
 }
 

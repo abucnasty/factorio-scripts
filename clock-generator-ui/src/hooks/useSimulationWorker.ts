@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react';
-import type { Config, DebugSteps, LogMessage, FactorioData } from 'clock-generator/browser';
+import type { Config, DebugSteps, LogMessage, FactorioData, SerializableTransferHistory } from 'clock-generator/browser';
 
 export interface UseSimulationWorkerResult {
     isInitialized: boolean;
@@ -8,6 +8,8 @@ export interface UseSimulationWorkerResult {
     resourceNames: string[];
     logs: LogMessage[];
     blueprintString: string | null;
+    transferHistory: SerializableTransferHistory | null;
+    simulationDurationTicks: number | null;
     error: string | null;
     initialize: () => void;
     runSimulation: (config: Config, debugSteps: DebugSteps) => void;
@@ -28,6 +30,8 @@ export function useSimulationWorker(): UseSimulationWorkerResult {
     const [resourceNames, setResourceNames] = useState<string[]>([]);
     const [logs, setLogs] = useState<LogMessage[]>([]);
     const [blueprintString, setBlueprintString] = useState<string | null>(null);
+    const [transferHistory, setTransferHistory] = useState<SerializableTransferHistory | null>(null);
+    const [simulationDurationTicks, setSimulationDurationTicks] = useState<number | null>(null);
     const [error, setError] = useState<string | null>(null);
 
     const initialize = useCallback(async () => {
@@ -63,6 +67,8 @@ export function useSimulationWorker(): UseSimulationWorkerResult {
 
         setIsRunning(true);
         setBlueprintString(null);
+        setTransferHistory(null);
+        setSimulationDurationTicks(null);
         setError(null);
         setLogs([]);
 
@@ -93,6 +99,8 @@ export function useSimulationWorker(): UseSimulationWorkerResult {
                 });
 
                 setBlueprintString(blueprint);
+                setTransferHistory(result.serializable_transfer_history);
+                setSimulationDurationTicks(result.simulation_duration.ticks);
                 setIsRunning(false);
             } catch (err) {
                 console.error('Simulation error:', err);
@@ -113,6 +121,8 @@ export function useSimulationWorker(): UseSimulationWorkerResult {
         resourceNames,
         logs,
         blueprintString,
+        transferHistory,
+        simulationDurationTicks,
         error,
         initialize,
         runSimulation,
