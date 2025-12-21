@@ -156,7 +156,7 @@ export function InsertersForm({
                         type="number"
                         value={inserter.stack_size}
                         onChange={(e) =>
-                            onUpdate(index, { stack_size: parseInt(e.target.value) || 1 })
+                            onUpdate(index, { stack_size: parseInt(e.target.value) || 16 })
                         }
                         inputProps={{ min: 1, max: 16 }}
                         sx={{ width: 100 }}
