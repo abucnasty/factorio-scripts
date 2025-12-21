@@ -6,6 +6,7 @@ export default defineConfig({
     exclude:[
       ...configDefaults.exclude, 
       'dist/*'
-    ]
+    ],
+    silent: true,
   },
 });
