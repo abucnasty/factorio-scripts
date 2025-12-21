@@ -13,6 +13,7 @@ import {
     Typography,
 } from '@mui/material';
 import type { MachineFormData } from '../hooks/useConfigForm';
+import { FactorioIcon } from './FactorioIcon';
 
 interface MachinesFormProps {
     machines: MachineFormData[];
@@ -74,8 +75,27 @@ export function MachinesForm({
                                 label="Recipe"
                                 placeholder="Search recipes..."
                                 size="small"
+                                slotProps={{
+                                    input: {
+                                        ...params.InputProps,
+                                        startAdornment: machine.recipe ? (
+                                            <Box sx={{ display: 'flex', alignItems: 'center', ml: 1 }}>
+                                                <FactorioIcon name={machine.recipe} size={20} />
+                                            </Box>
+                                        ) : null,
+                                    },
+                                }}
                             />
                         )}
+                        renderOption={(props, option) => {
+                            const { key, ...rest } = props;
+                            return (
+                                <Box component="li" key={key} {...rest} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                    <FactorioIcon name={option} size={20} />
+                                    {option}
+                                </Box>
+                            );
+                        }}
                         freeSolo
                         autoHighlight
                     />
@@ -97,15 +117,31 @@ export function MachinesForm({
                         sx={{ width: 180 }}
                         size="small"
                     />
-                    <FormControl size="small" sx={{ minWidth: 120 }}>
+                    <FormControl size="small" sx={{ minWidth: 140 }}>
                         <InputLabel>Type</InputLabel>
                         <Select
                             value={machine.type || 'machine'}
                             label="Type"
                             onChange={(e) => onUpdate(index, 'type', e.target.value as 'machine' | 'furnace')}
+                            renderValue={(selected) => (
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                    <FactorioIcon name={selected === 'furnace' ? 'electric-furnace' : 'assembling-machine-3'} size={20} />
+                                    {selected === 'furnace' ? 'Furnace' : 'Machine'}
+                                </Box>
+                            )}
                         >
-                            <MenuItem value="machine">Machine</MenuItem>
-                            <MenuItem value="furnace">Furnace</MenuItem>
+                            <MenuItem value="machine">
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                    <FactorioIcon name="assembling-machine-3" size={20} />
+                                    Machine
+                                </Box>
+                            </MenuItem>
+                            <MenuItem value="furnace">
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                    <FactorioIcon name="electric-furnace" size={20} />
+                                    Furnace
+                                </Box>
+                            </MenuItem>
                         </Select>
                     </FormControl>
                     <IconButton

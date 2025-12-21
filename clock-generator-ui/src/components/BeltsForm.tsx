@@ -13,6 +13,7 @@ import {
     Typography,
 } from '@mui/material';
 import type { BeltFormData, BeltLaneFormData } from '../hooks/useConfigForm';
+import { FactorioIcon } from './FactorioIcon';
 
 const BELT_TYPES = [
     { value: 'transport-belt', label: 'Transport Belt' },
@@ -108,10 +109,19 @@ export function BeltsForm({
                                         type: e.target.value as BeltFormData['type'],
                                     })
                                 }
+                                renderValue={(selected) => (
+                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                        <FactorioIcon name={selected} size={20} />
+                                        {BELT_TYPES.find((bt) => bt.value === selected)?.label}
+                                    </Box>
+                                )}
                             >
                                 {BELT_TYPES.map((bt) => (
                                     <MenuItem key={bt.value} value={bt.value}>
-                                        {bt.label}
+                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                            <FactorioIcon name={bt.value} size={20} />
+                                            {bt.label}
+                                        </Box>
                                     </MenuItem>
                                 ))}
                             </Select>
@@ -150,8 +160,27 @@ export function BeltsForm({
                                             label="Ingredient"
                                             placeholder="Search items..."
                                             size="small"
+                                            slotProps={{
+                                                input: {
+                                                    ...params.InputProps,
+                                                    startAdornment: lane.ingredient ? (
+                                                        <Box sx={{ display: 'flex', alignItems: 'center', ml: 1 }}>
+                                                            <FactorioIcon name={lane.ingredient} size={20} />
+                                                        </Box>
+                                                    ) : null,
+                                                },
+                                            }}
                                         />
                                     )}
+                                    renderOption={(props, option) => {
+                                        const { key, ...rest } = props;
+                                        return (
+                                            <Box component="li" key={key} {...rest} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                                <FactorioIcon name={option} size={20} />
+                                                {option}
+                                            </Box>
+                                        );
+                                    }}
                                     freeSolo
                                     autoHighlight
                                 />

@@ -15,6 +15,7 @@ import {
     Typography,
 } from '@mui/material';
 import type { DrillFormData } from '../hooks/useConfigForm';
+import { FactorioIcon } from './FactorioIcon';
 
 const DRILL_TYPES = [
     { value: 'electric-mining-drill', label: 'Electric Mining Drill' },
@@ -148,10 +149,19 @@ export function DrillsForm({
                                                 type: e.target.value as DrillFormData['type'],
                                             })
                                         }
+                                        renderValue={(selected) => (
+                                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                                <FactorioIcon name={selected} size={20} />
+                                                {DRILL_TYPES.find((dt) => dt.value === selected)?.label}
+                                            </Box>
+                                        )}
                                     >
                                         {DRILL_TYPES.map((dt) => (
                                             <MenuItem key={dt.value} value={dt.value}>
-                                                {dt.label}
+                                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                                    <FactorioIcon name={dt.value} size={20} />
+                                                    {dt.label}
+                                                </Box>
                                             </MenuItem>
                                         ))}
                                     </Select>
@@ -169,8 +179,27 @@ export function DrillsForm({
                                             label="Mined Resource"
                                             placeholder="Search resources..."
                                             size="small"
+                                            slotProps={{
+                                                input: {
+                                                    ...params.InputProps,
+                                                    startAdornment: drill.mined_item_name ? (
+                                                        <Box sx={{ display: 'flex', alignItems: 'center', ml: 1 }}>
+                                                            <FactorioIcon name={drill.mined_item_name} size={20} />
+                                                        </Box>
+                                                    ) : null,
+                                                },
+                                            }}
                                         />
                                     )}
+                                    renderOption={(props, option) => {
+                                        const { key, ...rest } = props;
+                                        return (
+                                            <Box component="li" key={key} {...rest} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                                <FactorioIcon name={option} size={20} />
+                                                {option}
+                                            </Box>
+                                        );
+                                    }}
                                     freeSolo
                                     autoHighlight
                                 />

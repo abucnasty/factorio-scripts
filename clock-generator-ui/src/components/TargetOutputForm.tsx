@@ -1,4 +1,5 @@
 import { Autocomplete, Box, Paper, TextField, Typography } from '@mui/material';
+import { FactorioIcon } from './FactorioIcon';
 
 interface TargetOutputFormProps {
     recipe: string;
@@ -36,8 +37,27 @@ export function TargetOutputForm({
                             label="Recipe"
                             placeholder="Search recipes..."
                             required
+                            slotProps={{
+                                input: {
+                                    ...params.InputProps,
+                                    startAdornment: recipe ? (
+                                        <Box sx={{ display: 'flex', alignItems: 'center', ml: 1 }}>
+                                            <FactorioIcon name={recipe} size={20} />
+                                        </Box>
+                                    ) : null,
+                                },
+                            }}
                         />
                     )}
+                    renderOption={(props, option) => {
+                        const { key, ...rest } = props;
+                        return (
+                            <Box component="li" key={key} {...rest} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                <FactorioIcon name={option} size={20} />
+                                {option}
+                            </Box>
+                        );
+                    }}
                     freeSolo
                     autoHighlight
                 />
