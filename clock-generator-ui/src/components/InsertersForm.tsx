@@ -3,24 +3,29 @@ import {
     Autocomplete,
     Box,
     Button,
-    FormControl,
     IconButton,
-    InputLabel,
-    MenuItem,
     Paper,
     Popover,
-    Select,
     TextField,
     Typography,
 } from '@mui/material';
-import { useState } from 'react';
-import type { InserterFormData } from '../hooks/useConfigForm';
+import { useMemo, useState } from 'react';
+import type { BeltFormData, InserterFormData, MachineFormData } from '../hooks/useConfigForm';
 import { FactorioIcon } from './FactorioIcon';
+
+interface EntityOption {
+    type: 'machine' | 'belt';
+    id: number;
+    label: string;
+    icon: string;
+    sublabel?: string;
+    ingredientIcons?: string[]; // For belts: ingredient icons to display
+}
 
 interface InsertersFormProps {
     inserters: InserterFormData[];
-    machineIds: number[];
-    beltIds: number[];
+    machines: MachineFormData[];
+    belts: BeltFormData[];
     itemNames: string[];
     onAdd: () => void;
     onUpdate: (index: number, updates: Partial<InserterFormData>) => void;
@@ -29,8 +34,8 @@ interface InsertersFormProps {
 
 export function InsertersForm({
     inserters,
-    machineIds,
-    beltIds,
+    machines,
+    belts,
     itemNames,
     onAdd,
     onUpdate,
@@ -38,6 +43,41 @@ export function InsertersForm({
 }: InsertersFormProps) {
     const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
     const [activeSlot, setActiveSlot] = useState<{ inserterIndex: number; slotIndex: number } | null>(null);
+
+    // Build entity options for the dropdown
+    const entityOptions = useMemo<EntityOption[]>(() => {
+        const options: EntityOption[] = [];
+        
+        // Add machines
+        machines.forEach((machine) => {
+            options.push({
+                type: 'machine',
+                id: machine.id,
+                label: `Machine ${machine.id}`,
+                icon: machine.recipe || 'assembling-machine-3',
+                sublabel: machine.recipe || 'No recipe',
+            });
+        });
+        
+        // Add belts
+        belts.forEach((belt) => {
+            const ingredientIcons = belt.lanes.map(lane => lane.ingredient).filter(Boolean);
+            options.push({
+                type: 'belt',
+                id: belt.id,
+                label: `Belt ${belt.id}`,
+                icon: belt.type,
+                ingredientIcons: ingredientIcons.length > 0 ? ingredientIcons : undefined,
+            });
+        });
+        
+        return options;
+    }, [machines, belts]);
+
+    // Find entity option by type and id
+    const findEntityOption = (type: 'machine' | 'belt', id: number): EntityOption | undefined => {
+        return entityOptions.find(opt => opt.type === type && opt.id === id);
+    };
 
     const handleSlotClick = (event: React.MouseEvent<HTMLElement>, inserterIndex: number, slotIndex: number) => {
         setAnchorEl(event.currentTarget);
@@ -100,45 +140,87 @@ export function InsertersForm({
                         <Typography variant="body2" color="text.secondary">
                             From:
                         </Typography>
-                        <FormControl size="small" sx={{ minWidth: 100 }}>
-                            <InputLabel>Type</InputLabel>
-                            <Select
-                                value={inserter.source.type}
-                                label="Type"
-                                onChange={(e) =>
+                        <Autocomplete
+                            size="small"
+                            sx={{ minWidth: 250 }}
+                            options={entityOptions}
+                            value={findEntityOption(inserter.source.type, inserter.source.id)}
+                            onChange={(_, newValue) => {
+                                if (newValue) {
                                     onUpdate(index, {
-                                        source: {
-                                            type: e.target.value as 'machine' | 'belt',
-                                            id: inserter.source.id,
-                                        },
-                                    })
+                                        source: { type: newValue.type, id: newValue.id },
+                                    });
                                 }
-                            >
-                                <MenuItem value="machine">Machine</MenuItem>
-                                <MenuItem value="belt">Belt</MenuItem>
-                            </Select>
-                        </FormControl>
-                        <FormControl size="small" sx={{ minWidth: 80 }}>
-                            <InputLabel>ID</InputLabel>
-                            <Select
-                                value={inserter.source.id}
-                                label="ID"
-                                onChange={(e) =>
-                                    onUpdate(index, {
-                                        source: {
-                                            type: inserter.source.type,
-                                            id: e.target.value as number,
-                                        },
-                                    })
-                                }
-                            >
-                                {(inserter.source.type === 'machine' ? machineIds : beltIds).map((id) => (
-                                    <MenuItem key={id} value={id}>
-                                        {id}
-                                    </MenuItem>
-                                ))}
-                            </Select>
-                        </FormControl>
+                            }}
+                            getOptionLabel={(option) => {
+                                if (option.sublabel) return `${option.label} - ${option.sublabel}`;
+                                if (option.ingredientIcons) return option.label;
+                                return option.label;
+                            }}
+                            isOptionEqualToValue={(option, value) => 
+                                option.type === value.type && option.id === value.id
+                            }
+                            renderInput={(params) => {
+                                const selectedOption = findEntityOption(inserter.source.type, inserter.source.id);
+                                return (
+                                    <TextField
+                                        {...params}
+                                        label="Source"
+                                        slotProps={{
+                                            input: {
+                                                ...params.InputProps,
+                                                startAdornment: selectedOption ? (
+                                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, ml: 1 }}>
+                                                        <FactorioIcon name={selectedOption.icon} size={20} />
+                                                        {selectedOption.ingredientIcons && (
+                                                            <>
+                                                                <Typography variant="body2" sx={{ mx: 0.5 }}>:</Typography>
+                                                                {selectedOption.ingredientIcons.map((ing, i) => (
+                                                                    <FactorioIcon key={i} name={ing} size={18} />
+                                                                ))}
+                                                            </>
+                                                        )}
+                                                    </Box>
+                                                ) : null,
+                                            },
+                                        }}
+                                    />
+                                );
+                            }}
+                            renderOption={(props, option) => {
+                                const { key, ...rest } = props;
+                                return (
+                                    <Box
+                                        component="li"
+                                        key={key}
+                                        {...rest}
+                                        sx={{ display: 'flex', alignItems: 'center', gap: 1 }}
+                                    >
+                                        <FactorioIcon name={option.icon} size={24} />
+                                        <Box sx={{ display: 'flex', flexDirection: 'column' }}>
+                                            <Typography variant="body2">{option.label}</Typography>
+                                            {option.sublabel ? (
+                                                <Typography variant="caption" color="text.secondary">
+                                                    {option.sublabel}
+                                                </Typography>
+                                            ) : option.ingredientIcons ? (
+                                                <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center' }}>
+                                                    {option.ingredientIcons.map((ing, i) => (
+                                                        <FactorioIcon key={i} name={ing} size={16} />
+                                                    ))}
+                                                </Box>
+                                            ) : (
+                                                <Typography variant="caption" color="text.secondary">
+                                                    No items
+                                                </Typography>
+                                            )}
+                                        </Box>
+                                    </Box>
+                                );
+                            }}
+                            autoHighlight
+                            disableClearable
+                        />
                     </Box>
 
                     <Typography variant="body2" color="text.secondary">
@@ -150,45 +232,87 @@ export function InsertersForm({
                         <Typography variant="body2" color="text.secondary">
                             To:
                         </Typography>
-                        <FormControl size="small" sx={{ minWidth: 100 }}>
-                            <InputLabel>Type</InputLabel>
-                            <Select
-                                value={inserter.sink.type}
-                                label="Type"
-                                onChange={(e) =>
+                        <Autocomplete
+                            size="small"
+                            sx={{ minWidth: 250 }}
+                            options={entityOptions}
+                            value={findEntityOption(inserter.sink.type, inserter.sink.id)}
+                            onChange={(_, newValue) => {
+                                if (newValue) {
                                     onUpdate(index, {
-                                        sink: {
-                                            type: e.target.value as 'machine' | 'belt',
-                                            id: inserter.sink.id,
-                                        },
-                                    })
+                                        sink: { type: newValue.type, id: newValue.id },
+                                    });
                                 }
-                            >
-                                <MenuItem value="machine">Machine</MenuItem>
-                                <MenuItem value="belt">Belt</MenuItem>
-                            </Select>
-                        </FormControl>
-                        <FormControl size="small" sx={{ minWidth: 80 }}>
-                            <InputLabel>ID</InputLabel>
-                            <Select
-                                value={inserter.sink.id}
-                                label="ID"
-                                onChange={(e) =>
-                                    onUpdate(index, {
-                                        sink: {
-                                            type: inserter.sink.type,
-                                            id: e.target.value as number,
-                                        },
-                                    })
-                                }
-                            >
-                                {(inserter.sink.type === 'machine' ? machineIds : beltIds).map((id) => (
-                                    <MenuItem key={id} value={id}>
-                                        {id}
-                                    </MenuItem>
-                                ))}
-                            </Select>
-                        </FormControl>
+                            }}
+                            getOptionLabel={(option) => {
+                                if (option.sublabel) return `${option.label} - ${option.sublabel}`;
+                                if (option.ingredientIcons) return option.label;
+                                return option.label;
+                            }}
+                            isOptionEqualToValue={(option, value) =>
+                                option.type === value.type && option.id === value.id
+                            }
+                            renderInput={(params) => {
+                                const selectedOption = findEntityOption(inserter.sink.type, inserter.sink.id);
+                                return (
+                                    <TextField
+                                        {...params}
+                                        label="Destination"
+                                        slotProps={{
+                                            input: {
+                                                ...params.InputProps,
+                                                startAdornment: selectedOption ? (
+                                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, ml: 1 }}>
+                                                        <FactorioIcon name={selectedOption.icon} size={20} />
+                                                        {selectedOption.ingredientIcons && (
+                                                            <>
+                                                                <Typography variant="body2" sx={{ mx: 0.5 }}>:</Typography>
+                                                                {selectedOption.ingredientIcons.map((ing, i) => (
+                                                                    <FactorioIcon key={i} name={ing} size={18} />
+                                                                ))}
+                                                            </>
+                                                        )}
+                                                    </Box>
+                                                ) : null,
+                                            },
+                                        }}
+                                    />
+                                );
+                            }}
+                            renderOption={(props, option) => {
+                                const { key, ...rest } = props;
+                                return (
+                                    <Box
+                                        component="li"
+                                        key={key}
+                                        {...rest}
+                                        sx={{ display: 'flex', alignItems: 'center', gap: 1 }}
+                                    >
+                                        <FactorioIcon name={option.icon} size={24} />
+                                        <Box sx={{ display: 'flex', flexDirection: 'column' }}>
+                                            <Typography variant="body2">{option.label}</Typography>
+                                            {option.sublabel ? (
+                                                <Typography variant="caption" color="text.secondary">
+                                                    {option.sublabel}
+                                                </Typography>
+                                            ) : option.ingredientIcons ? (
+                                                <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center' }}>
+                                                    {option.ingredientIcons.map((ing, i) => (
+                                                        <FactorioIcon key={i} name={ing} size={16} />
+                                                    ))}
+                                                </Box>
+                                            ) : (
+                                                <Typography variant="caption" color="text.secondary">
+                                                    No items
+                                                </Typography>
+                                            )}
+                                        </Box>
+                                    </Box>
+                                );
+                            }}
+                            autoHighlight
+                            disableClearable
+                        />
                     </Box>
 
                     <TextField

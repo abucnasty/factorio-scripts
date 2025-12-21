@@ -110,7 +110,6 @@ function App() {
 
     // Extract IDs for dropdown population
     const machineIds = useMemo(() => config.machines.map((m) => m.id), [config.machines]);
-    const beltIds = useMemo(() => config.belts.map((b) => b.id), [config.belts]);
 
     // All item names (from recipes and resources)
     const itemNames = useMemo(() => {
@@ -207,8 +206,8 @@ function App() {
 
                             <InsertersForm
                                 inserters={config.inserters}
-                                machineIds={machineIds}
-                                beltIds={beltIds}
+                                machines={config.machines}
+                                belts={config.belts}
                                 itemNames={itemNames}
                                 onAdd={addInserter}
                                 onUpdate={updateInserter}
