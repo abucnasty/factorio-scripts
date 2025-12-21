@@ -209,6 +209,7 @@ function App() {
                                 inserters={config.inserters}
                                 machineIds={machineIds}
                                 beltIds={beltIds}
+                                itemNames={itemNames}
                                 onAdd={addInserter}
                                 onUpdate={updateInserter}
                                 onRemove={removeInserter}
