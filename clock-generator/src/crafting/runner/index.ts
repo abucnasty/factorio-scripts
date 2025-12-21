@@ -1,2 +1,5 @@
 export * from "./runner"
 export * from "./steps/runner-step"
+export * from "./steps/prepare-step"
+export * from "./steps/warmup-step"
+export * from "./steps/simulate-step"

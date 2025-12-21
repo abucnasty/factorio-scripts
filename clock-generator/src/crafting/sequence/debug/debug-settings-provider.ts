@@ -4,7 +4,7 @@ export interface DebugSettingsProvider {
     settings(): DebugSettings;
 }
 
-class MutableDebugSettingsProvider implements DebugSettingsProvider {
+export class MutableDebugSettingsProvider implements DebugSettingsProvider {
     private debug_settings: DebugSettings = {
         enabled: true,
     };
