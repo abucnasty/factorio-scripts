@@ -1,4 +1,4 @@
-import assert from "assert";
+import assert from "../../../common/assert";
 import { EntityId, Inserter, InserterStackSize, Machine, MiningDrill, miningDrillMaxInsertion } from "../../../entities";
 import { EntityTransferCountMap } from "../cycle/swing-counts";
 import { AlwaysEnabledControl, EnableControl, Resettable, TickProvider } from "../../../control-logic";

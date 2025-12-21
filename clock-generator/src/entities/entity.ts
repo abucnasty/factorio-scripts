@@ -1,4 +1,4 @@
-import assert from "assert"
+import assert from "../common/assert"
 import { Belt } from "./belt";
 import { EntityId } from "./entity-id";
 import { Inserter } from "./inserter";

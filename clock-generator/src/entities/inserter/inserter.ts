@@ -5,7 +5,7 @@ import { EntityType } from "../entity-type";
 import { ReadableMachineRegistry } from "../machine";
 import { InserterMetadata } from "./metadata/inserter-metadata";
 import { InserterAnimation } from "./inserter-animation";
-import assert from "assert";
+import assert from "../../common/assert";
 import { assertIsBelt, assertIsMachine, Entity } from "../entity";
 import { EntityId } from "../entity-id";
 import { EntityRegistry } from "../entity-registry";

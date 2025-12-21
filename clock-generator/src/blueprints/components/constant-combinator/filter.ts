@@ -1,7 +1,7 @@
 import { ItemName } from "../../../data"
 import { ComparatorString } from "../decider-combinator"
 import { QualityIdType, SignalId } from "../signal"
-import assert from "assert"
+import assert from "../../../common/assert"
 
 export interface ConstantCombinatorFilter extends SignalId {
     index: number

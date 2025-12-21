@@ -1,4 +1,4 @@
-import assert from "assert";
+import assert from "../../../common/assert";
 
 // 1.166 is a magic number representing the maximum number of seconds it takes for a base game inserter to do one cycle.
 // the calculated overload multiplier is the number of crafts we can complete during one inserter full swing + 1

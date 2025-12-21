@@ -1,4 +1,4 @@
-import assert from "assert";
+import assert from "../common/assert";
 import { MapExtended } from "../data-types";
 import { Entity } from "./entity";
 import { EntityId } from "./entity-id";

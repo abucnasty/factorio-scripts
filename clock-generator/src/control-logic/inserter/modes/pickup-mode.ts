@@ -1,4 +1,4 @@
-import assert from "assert";
+import assert from "../../../common/assert";
 import { ItemName } from "../../../data";
 import { BeltState, EntityState, InserterState, InserterStatus, MachineState, ReadableEntityStateRegistry } from "../../../state";
 import { InserterMode } from "./inserter-mode";

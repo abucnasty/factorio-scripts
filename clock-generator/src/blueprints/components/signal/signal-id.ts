@@ -1,5 +1,5 @@
 import { QualityIdType, SignalIdType } from "./constant";
-import assert from "assert";
+import assert from "../../../common/assert";
 
 export interface SignalId {
     name: string,

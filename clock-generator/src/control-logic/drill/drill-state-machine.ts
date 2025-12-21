@@ -1,4 +1,4 @@
-import assert from "assert";
+import assert from "../../common/assert";
 import { DrillState, DrillStatus, EntityState } from "../../state";
 import { AlwaysEnabledControl, EnableControl } from "../enable-control";
 import { ModePlugin, ModeStateMachine, ModeTransitionEvaluator } from "../mode";

@@ -1,4 +1,4 @@
-import assert from "assert";
+import assert from "../common/assert";
 import { Config } from '../config';
 import { DebugPluginFactory } from './sequence/debug/debug-plugin-factory';
 import { DebugSettingsProvider, MutableDebugSettingsProvider } from './sequence/debug/debug-settings-provider';
@@ -21,6 +21,7 @@ import { PrepareStep } from "./runner/steps/prepare-step";
 import { WarmupStep } from "./runner/steps/warmup-step";
 import { SimulateStep } from "./runner/steps/simulate-step";
 import { RunnerStepType } from "./runner/steps/runner-step";
+import { Logger, defaultLogger } from "../common/logger";
 
 const MAX_SIMULATION_TICKS = 500_000;
 
@@ -40,6 +41,18 @@ export type DebugSteps = {
 };
 
 /**
+ * Options for blueprint generation.
+ */
+export interface GenerateClockOptions {
+    /** Debug settings provider (defaults to disabled) */
+    debug?: MutableDebugSettingsProvider;
+    /** Configuration for which steps should have debugging enabled */
+    debug_steps?: DebugSteps;
+    /** Logger for output messages (defaults to console) */
+    logger?: Logger;
+}
+
+/**
  * Generates a blueprint from a configuration using the Runner pattern.
  * 
  * This function encapsulates the three-step process:
@@ -48,15 +61,16 @@ export type DebugSteps = {
  * 3. Simulate: Run the final simulation and collect transfer history
  * 
  * @param config The configuration for the simulation
- * @param debug Optional debug settings provider (defaults to disabled)
- * @param debug_steps Optional configuration for which steps should have debugging enabled
+ * @param options Optional generation options (debug, debug_steps, logger)
  * @returns The generated blueprint and related metadata
  */
 export function generateClockForConfig(
     config: Config,
-    debug: MutableDebugSettingsProvider = DebugSettingsProvider.mutable(),
-    debug_steps: DebugSteps = {}
+    options: GenerateClockOptions = {}
 ): BlueprintGenerationResult {
+    const debug = options.debug ?? DebugSettingsProvider.mutable();
+    const debug_steps = options.debug_steps ?? {};
+    const logger = options.logger ?? defaultLogger;
     
     // Initialize simulation context
     const simulation_context = SimulationContext.fromConfig(config);
@@ -96,11 +110,11 @@ export function generateClockForConfig(
         ))
     });
 
-    console.log(`Created simulation context with ${simulation_context.machines.length} machines and ${simulation_context.inserters.length} inserters.`);
+    logger.log(`Created simulation context with ${simulation_context.machines.length} machines and ${simulation_context.inserters.length} inserters.`);
 
     // Step 1: Prepare - wait until all machines are output blocked
-    console.log("Pre loading all machines until output blocked...");
-    console.log("Executing Prepare Step");
+    logger.log("Pre loading all machines until output blocked...");
+    logger.log("Executing Prepare Step");
     if (debug_steps[RunnerStepType.PREPARE]) {
         debug.enable();
     } else {
@@ -139,19 +153,20 @@ export function generateClockForConfig(
         output_machine_state_machine.machine_state,
         simulation_context.entity_registry,
         output_inserter.inserter,
-        config
+        config,
+        logger
     );
 
-    console.log("All machines are output blocked.");
+    logger.log("All machines are output blocked.");
     simulation_context.machines.forEach(it => {
-        MachineState.print(it.machine_state);
+        MachineState.print(it.machine_state, logger);
     });
 
     const swing_counts = crafting_cycle_plan.entity_transfer_map;
-    EntityTransferCountMap.print(swing_counts);
+    EntityTransferCountMap.print(swing_counts, logger);
 
     const recipe_lcm = config.overrides?.lcm ?? EntityTransferCountMap.lcm(swing_counts);
-    console.log(`Simulation context ingredient LCM: ${recipe_lcm}`);
+    logger.log(`Simulation context ingredient LCM: ${recipe_lcm}`);
 
     // Create enable control factory
     const enable_control_factory = new EnableControlFactory(
@@ -175,12 +190,12 @@ export function generateClockForConfig(
 
     assert(warmup_period.ticks < MAX_SIMULATION_TICKS, `Warmup period of ${warmup_period.ticks} ticks exceeds maximum allowed ${MAX_SIMULATION_TICKS} ticks`);
 
-    console.log(`Warm up period: ${warmup_period.ticks} ticks`);
-    console.log(`Simulation period: ${duration.ticks} ticks`);
+    logger.log(`Warm up period: ${warmup_period.ticks} ticks`);
+    logger.log(`Simulation period: ${duration.ticks} ticks`);
 
     // Step 2: Warm up
-    console.log("Warming up simulation...");
-    console.log("Executing Warmup Step");
+    logger.log("Warming up simulation...");
+    logger.log("Executing Warmup Step");
     enable_control_factory.getResettableLogic().forEach(it => it.reset());
     if (debug_steps[RunnerStepType.WARM_UP]) {
         debug.enable();
@@ -194,8 +209,8 @@ export function generateClockForConfig(
     debug.disable();
 
     // Step 3: Simulate
-    console.log(`Starting simulation for ${duration.ticks} ticks`);
-    console.log("Executing Simulate Step");
+    logger.log(`Starting simulation for ${duration.ticks} ticks`);
+    logger.log("Executing Simulate Step");
     inventory_transfer_history.clear();
     relative_tick = simulation_context.tick_provider.getCurrentTick();
     enable_control_factory.getResettableLogic().forEach(it => it.reset());
@@ -209,7 +224,7 @@ export function generateClockForConfig(
     simulate_step.execute();
     debug.disable();
     
-    console.log(`Simulation complete`);
+    logger.log(`Simulation complete`);
 
     // Process transfer history
     const merged_ranges = InventoryTransferHistory.mergeOverlappingRanges(inventory_transfer_history);
@@ -220,7 +235,7 @@ export function generateClockForConfig(
     );
     const final_history = trimmed_history;
 
-    InventoryTransferHistory.print(final_history);
+    InventoryTransferHistory.print(final_history, logger);
 
     // Create blueprint
     const blueprint = createSignalPerInserterBlueprint(
@@ -248,19 +263,20 @@ function computeCraftingCyclePlan(
     output_machine_state: MachineState,
     entity_registry: ReadableEntityRegistry,
     output_inserter: Inserter,
-    config: Config
+    config: Config,
+    logger: Logger
 ): CraftingCyclePlan {
 
     const output_machine = output_machine_state.machine;
     const output_item_name = output_machine.output.item_name;
     const output_crafted = output_machine_state.craftCount * output_machine.output.amount_per_craft.toDecimal();
-    console.log(`Output machine ${output_machine.entity_id} crafted ${output_crafted} ${output_item_name}`);
+    logger.log(`Output machine ${output_machine.entity_id} crafted ${output_crafted} ${output_item_name}`);
     
     let max_swings_possible = fraction(output_crafted).divide(output_inserter.metadata.stack_size);
 
     if (config.overrides?.terminal_swing_count !== undefined) {
         max_swings_possible = fraction(config.overrides.terminal_swing_count);
-        console.log(`Overriding max swings possible to ${max_swings_possible} due to config override`);
+        logger.log(`Overriding max swings possible to ${max_swings_possible} due to config override`);
     }
 
     return CraftingCyclePlan.create(

@@ -2,6 +2,7 @@ import { computeSimulationMode, SimulationMode } from "./simulation-mode";
 import { InventoryTransfer } from "./inventory-transfer";
 import { Duration, MapExtended, OpenRange } from "../../data-types";
 import { Entity, EntityId, Inserter, Machine, ReadableEntityRegistry } from "../../entities";
+import { Logger, defaultLogger } from "../../common/logger";
 
 export class InventoryTransferHistory extends MapExtended<EntityId, InventoryTransfer[]> {
 
@@ -68,8 +69,8 @@ export class InventoryTransferHistory extends MapExtended<EntityId, InventoryTra
         return new InventoryTransferHistory(trimmed);
     }
 
-    public static print(history: InventoryTransferHistory, relative_tick_mod: number = 0): void {
-        printInventoryTransfers(history, relative_tick_mod);
+    public static print(history: InventoryTransferHistory, logger: Logger = defaultLogger, relative_tick_mod: number = 0): void {
+        printInventoryTransfers(history, logger, relative_tick_mod);
     }
 
 
@@ -169,12 +170,13 @@ function correctNegativeOffsets(original: ReadonlyMap<EntityId, InventoryTransfe
 
 function printInventoryTransfers(
     history: InventoryTransferHistory,
+    logger: Logger = defaultLogger,
     relative_tick_mod: number = 0
 ): void {
     Array.from(history.getAllTransfers().values())
         .sort((a, b) => a[0]?.tick_range.start_inclusive - b[0]?.tick_range.start_inclusive)
         .forEach((transfers, entityId) => {
-            console.log(`Transfer Ranges for ${entityId}`);
+            logger.log(`Transfer Ranges for ${entityId}`);
             transfers
                 .sort((a, b) => a.tick_range.start_inclusive - b.tick_range.start_inclusive)
                 .forEach((transfer) => {
@@ -183,10 +185,10 @@ function printInventoryTransfers(
                     if (relative_tick_mod > 0) {
                         const start_mod = start_inclusive % relative_tick_mod;
                         const end_mod = end_inclusive % relative_tick_mod;
-                        console.log(`- [${start_inclusive} - ${end_inclusive}](${start_mod} - ${end_mod}) (${transfer.tick_range.duration().ticks} ticks) ${transfer.item_name}`);
+                        logger.log(`- [${start_inclusive} - ${end_inclusive}](${start_mod} - ${end_mod}) (${transfer.tick_range.duration().ticks} ticks) ${transfer.item_name}`);
                         return;
                     }
-                    console.log(`- [${start_inclusive} - ${end_inclusive}] (${transfer.tick_range.duration().ticks} ticks) ${transfer.item_name}`);
+                    logger.log(`- [${start_inclusive} - ${end_inclusive}] (${transfer.tick_range.duration().ticks} ticks) ${transfer.item_name}`);
                 })
         })
 }

@@ -2,7 +2,7 @@ import { QualityIdType } from "../../../blueprints/components";
 import { INSERTER_SPECS } from "./inserter-spec";
 import { InserterType } from "./inserter-type";
 import { InserterStackSize } from "./stack-size";
-import assert from "assert"
+import assert from "../../../common/assert"
 import { ItemName } from "../../../data";
 import { InserterAnimationMetadata } from "./animation";
 import { InserterAnimationOverrideConfig } from "../../../config";

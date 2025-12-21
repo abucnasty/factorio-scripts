@@ -1,0 +1,416 @@
+import { useCallback, useState } from 'react';
+import type { Config } from 'clock-generator/browser';
+
+export interface MachineFormData {
+    id: number;
+    recipe: string;
+    productivity: number;
+    crafting_speed: number;
+    type?: 'machine' | 'furnace';
+}
+
+export interface InserterFormData {
+    source: { type: 'machine' | 'belt'; id: number };
+    sink: { type: 'machine' | 'belt'; id: number };
+    stack_size: number;
+    filters?: string[];
+}
+
+export interface BeltLaneFormData {
+    ingredient: string;
+    stack_size: number;
+}
+
+export interface BeltFormData {
+    id: number;
+    type: 'transport-belt' | 'fast-transport-belt' | 'express-transport-belt' | 'turbo-transport-belt';
+    lanes: [BeltLaneFormData] | [BeltLaneFormData, BeltLaneFormData];
+}
+
+export interface DrillFormData {
+    id: number;
+    type: 'electric-mining-drill' | 'burner-mining-drill' | 'big-mining-drill';
+    mined_item_name: string;
+    speed_bonus: number;
+    target: { type: 'machine'; id: number };
+}
+
+export interface ConfigFormData {
+    target_output: {
+        recipe: string;
+        items_per_second: number;
+        machines: number;
+    };
+    machines: MachineFormData[];
+    inserters: InserterFormData[];
+    belts: BeltFormData[];
+    drills?: {
+        mining_productivity_level: number;
+        configs: DrillFormData[];
+    };
+    overrides?: {
+        lcm?: number;
+        terminal_swing_count?: number;
+    };
+}
+
+const createDefaultConfig = (): ConfigFormData => ({
+    target_output: {
+        recipe: '',
+        items_per_second: 1,
+        machines: 1,
+    },
+    machines: [
+        {
+            id: 1,
+            recipe: '',
+            productivity: 0,
+            crafting_speed: 1,
+        },
+    ],
+    inserters: [],
+    belts: [],
+});
+
+export interface UseConfigFormResult {
+    config: ConfigFormData;
+    setConfig: React.Dispatch<React.SetStateAction<ConfigFormData>>;
+    
+    // Target output
+    updateTargetOutput: (field: keyof ConfigFormData['target_output'], value: string | number) => void;
+    
+    // Machines
+    addMachine: () => void;
+    updateMachine: (index: number, field: keyof MachineFormData, value: string | number) => void;
+    removeMachine: (index: number) => void;
+    
+    // Inserters
+    addInserter: () => void;
+    updateInserter: (index: number, updates: Partial<InserterFormData>) => void;
+    removeInserter: (index: number) => void;
+    
+    // Belts
+    addBelt: () => void;
+    updateBelt: (index: number, updates: Partial<BeltFormData>) => void;
+    removeBelt: (index: number) => void;
+    
+    // Drills
+    enableDrills: () => void;
+    disableDrills: () => void;
+    updateDrillsConfig: (field: 'mining_productivity_level', value: number) => void;
+    addDrill: () => void;
+    updateDrill: (index: number, updates: Partial<DrillFormData>) => void;
+    removeDrill: (index: number) => void;
+    
+    // Overrides
+    updateOverrides: (field: keyof NonNullable<ConfigFormData['overrides']>, value: number | undefined) => void;
+    
+    // Import/Export
+    importConfig: (config: Config) => void;
+    exportConfig: () => Config;
+    resetConfig: () => void;
+}
+
+export function useConfigForm(): UseConfigFormResult {
+    const [config, setConfig] = useState<ConfigFormData>(createDefaultConfig());
+
+    // Target output
+    const updateTargetOutput = useCallback((
+        field: keyof ConfigFormData['target_output'],
+        value: string | number
+    ) => {
+        setConfig((prev) => ({
+            ...prev,
+            target_output: {
+                ...prev.target_output,
+                [field]: value,
+            },
+        }));
+    }, []);
+
+    // Machines
+    const addMachine = useCallback(() => {
+        setConfig((prev) => {
+            const maxId = Math.max(0, ...prev.machines.map((m) => m.id));
+            return {
+                ...prev,
+                machines: [
+                    ...prev.machines,
+                    {
+                        id: maxId + 1,
+                        recipe: '',
+                        productivity: 0,
+                        crafting_speed: 1,
+                    },
+                ],
+            };
+        });
+    }, []);
+
+    const updateMachine = useCallback((
+        index: number,
+        field: keyof MachineFormData,
+        value: string | number
+    ) => {
+        setConfig((prev) => ({
+            ...prev,
+            machines: prev.machines.map((m, i) =>
+                i === index ? { ...m, [field]: value } : m
+            ),
+        }));
+    }, []);
+
+    const removeMachine = useCallback((index: number) => {
+        setConfig((prev) => ({
+            ...prev,
+            machines: prev.machines.filter((_, i) => i !== index),
+        }));
+    }, []);
+
+    // Inserters
+    const addInserter = useCallback(() => {
+        setConfig((prev) => ({
+            ...prev,
+            inserters: [
+                ...prev.inserters,
+                {
+                    source: { type: 'machine', id: 1 },
+                    sink: { type: 'belt', id: 1 },
+                    stack_size: 1,
+                },
+            ],
+        }));
+    }, []);
+
+    const updateInserter = useCallback((index: number, updates: Partial<InserterFormData>) => {
+        setConfig((prev) => ({
+            ...prev,
+            inserters: prev.inserters.map((ins, i) =>
+                i === index ? { ...ins, ...updates } : ins
+            ),
+        }));
+    }, []);
+
+    const removeInserter = useCallback((index: number) => {
+        setConfig((prev) => ({
+            ...prev,
+            inserters: prev.inserters.filter((_, i) => i !== index),
+        }));
+    }, []);
+
+    // Belts
+    const addBelt = useCallback(() => {
+        setConfig((prev) => {
+            const maxId = Math.max(0, ...prev.belts.map((b) => b.id));
+            return {
+                ...prev,
+                belts: [
+                    ...prev.belts,
+                    {
+                        id: maxId + 1,
+                        type: 'transport-belt' as const,
+                        lanes: [{ ingredient: '', stack_size: 1 }] as [BeltLaneFormData],
+                    },
+                ],
+            };
+        });
+    }, []);
+
+    const updateBelt = useCallback((index: number, updates: Partial<BeltFormData>) => {
+        setConfig((prev) => ({
+            ...prev,
+            belts: prev.belts.map((b, i) =>
+                i === index ? { ...b, ...updates } : b
+            ),
+        }));
+    }, []);
+
+    const removeBelt = useCallback((index: number) => {
+        setConfig((prev) => ({
+            ...prev,
+            belts: prev.belts.filter((_, i) => i !== index),
+        }));
+    }, []);
+
+    // Drills
+    const enableDrills = useCallback(() => {
+        setConfig((prev) => ({
+            ...prev,
+            drills: {
+                mining_productivity_level: 0,
+                configs: [],
+            },
+        }));
+    }, []);
+
+    const disableDrills = useCallback(() => {
+        setConfig((prev) => {
+            const { drills: _, ...rest } = prev;
+            return rest as ConfigFormData;
+        });
+    }, []);
+
+    const updateDrillsConfig = useCallback((field: 'mining_productivity_level', value: number) => {
+        setConfig((prev) => {
+            if (!prev.drills) return prev;
+            return {
+                ...prev,
+                drills: {
+                    ...prev.drills,
+                    [field]: value,
+                },
+            };
+        });
+    }, []);
+
+    const addDrill = useCallback(() => {
+        setConfig((prev) => {
+            if (!prev.drills) return prev;
+            const maxId = Math.max(0, ...prev.drills.configs.map((d) => d.id));
+            return {
+                ...prev,
+                drills: {
+                    ...prev.drills,
+                    configs: [
+                        ...prev.drills.configs,
+                        {
+                            id: maxId + 1,
+                            type: 'electric-mining-drill' as const,
+                            mined_item_name: '',
+                            speed_bonus: 0,
+                            target: { type: 'machine' as const, id: 1 },
+                        },
+                    ],
+                },
+            };
+        });
+    }, []);
+
+    const updateDrill = useCallback((index: number, updates: Partial<DrillFormData>) => {
+        setConfig((prev) => {
+            if (!prev.drills) return prev;
+            return {
+                ...prev,
+                drills: {
+                    ...prev.drills,
+                    configs: prev.drills.configs.map((d, i) =>
+                        i === index ? { ...d, ...updates } : d
+                    ),
+                },
+            };
+        });
+    }, []);
+
+    const removeDrill = useCallback((index: number) => {
+        setConfig((prev) => {
+            if (!prev.drills) return prev;
+            return {
+                ...prev,
+                drills: {
+                    ...prev.drills,
+                    configs: prev.drills.configs.filter((_, i) => i !== index),
+                },
+            };
+        });
+    }, []);
+
+    // Overrides
+    const updateOverrides = useCallback((
+        field: keyof NonNullable<ConfigFormData['overrides']>,
+        value: number | undefined
+    ) => {
+        setConfig((prev) => {
+            const newOverrides = {
+                ...prev.overrides,
+                [field]: value,
+            };
+            // Remove undefined values
+            Object.keys(newOverrides).forEach((key) => {
+                if (newOverrides[key as keyof typeof newOverrides] === undefined) {
+                    delete newOverrides[key as keyof typeof newOverrides];
+                }
+            });
+            // If no overrides left, remove the object
+            if (Object.keys(newOverrides).length === 0) {
+                const { overrides: _, ...rest } = prev;
+                return rest as ConfigFormData;
+            }
+            return {
+                ...prev,
+                overrides: newOverrides,
+            };
+        });
+    }, []);
+
+    // Import/Export
+    const importConfig = useCallback((imported: Config) => {
+        const formData: ConfigFormData = {
+            target_output: imported.target_output,
+            machines: imported.machines.map((m) => ({
+                id: m.id,
+                recipe: m.recipe,
+                productivity: m.productivity,
+                crafting_speed: m.crafting_speed,
+                type: m.type,
+            })),
+            inserters: imported.inserters.map((ins) => ({
+                source: ins.source,
+                sink: ins.sink,
+                stack_size: ins.stack_size,
+                filters: ins.filters,
+            })),
+            belts: imported.belts.map((b) => ({
+                id: b.id,
+                type: b.type,
+                lanes: b.lanes as [BeltLaneFormData] | [BeltLaneFormData, BeltLaneFormData],
+            })),
+            drills: imported.drills
+                ? {
+                    mining_productivity_level: imported.drills.mining_productivity_level,
+                    configs: imported.drills.configs.map((d) => ({
+                        id: d.id,
+                        type: d.type,
+                        mined_item_name: d.mined_item_name,
+                        speed_bonus: d.speed_bonus,
+                        target: d.target,
+                    })),
+                }
+                : undefined,
+            overrides: imported.overrides,
+        };
+        setConfig(formData);
+    }, []);
+
+    const exportConfig = useCallback((): Config => {
+        return config as Config;
+    }, [config]);
+
+    const resetConfig = useCallback(() => {
+        setConfig(createDefaultConfig());
+    }, []);
+
+    return {
+        config,
+        setConfig,
+        updateTargetOutput,
+        addMachine,
+        updateMachine,
+        removeMachine,
+        addInserter,
+        updateInserter,
+        removeInserter,
+        addBelt,
+        updateBelt,
+        removeBelt,
+        enableDrills,
+        disableDrills,
+        updateDrillsConfig,
+        addDrill,
+        updateDrill,
+        removeDrill,
+        updateOverrides,
+        importConfig,
+        exportConfig,
+        resetConfig,
+    };
+}

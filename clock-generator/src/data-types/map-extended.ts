@@ -1,4 +1,4 @@
-import assert from "assert";
+import assert from "../common/assert";
 
 export class MapExtended<K, V> extends Map<K, V> {
     

@@ -1,5 +1,5 @@
 import { SignalId } from "./signal-id";
-import assert from "assert";
+import assert from "../../../common/assert";
 
 export interface Signal {
     readonly signal: SignalId;

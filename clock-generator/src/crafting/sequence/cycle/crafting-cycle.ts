@@ -1,4 +1,4 @@
-import assert from "assert";
+import assert from "../../../common/assert";
 import Fraction, { fraction } from "fractionability";
 import { Duration } from "../../../data-types/duration";
 import { TargetProductionRate } from "../../target-production-rate";

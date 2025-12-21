@@ -1,4 +1,4 @@
-import assert from "assert"
+import assert from "../../common/assert"
 import { ModePlugin, ModeStateMachine, ModeTransitionEvaluator } from "../mode";
 import { InserterDropMode, InserterIdleMode, InserterMode, InserterPickupMode, InserterSwingMode } from "./modes";
 import { EntityId } from "../../entities";

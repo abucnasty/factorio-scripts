@@ -1,0 +1,121 @@
+import { useCallback, useState } from 'react';
+import type { Config, DebugSteps, LogMessage, FactorioData } from 'clock-generator/browser';
+
+export interface UseSimulationWorkerResult {
+    isInitialized: boolean;
+    isRunning: boolean;
+    recipeNames: string[];
+    resourceNames: string[];
+    logs: LogMessage[];
+    blueprintString: string | null;
+    error: string | null;
+    initialize: () => void;
+    runSimulation: (config: Config, debugSteps: DebugSteps) => void;
+    clearLogs: () => void;
+}
+
+// Dynamic imports for the clock-generator library
+let FactorioDataService: typeof import('clock-generator/browser').FactorioDataService | null = null;
+let generateClockForConfig: typeof import('clock-generator/browser').generateClockForConfig | null = null;
+let encodeBlueprintFileBrowser: typeof import('clock-generator/browser').encodeBlueprintFileBrowser | null = null;
+let DebugSettingsProvider: typeof import('clock-generator/browser').DebugSettingsProvider | null = null;
+let StreamingLogger: typeof import('clock-generator/browser').StreamingLogger | null = null;
+
+export function useSimulationWorker(): UseSimulationWorkerResult {
+    const [isInitialized, setIsInitialized] = useState(false);
+    const [isRunning, setIsRunning] = useState(false);
+    const [recipeNames, setRecipeNames] = useState<string[]>([]);
+    const [resourceNames, setResourceNames] = useState<string[]>([]);
+    const [logs, setLogs] = useState<LogMessage[]>([]);
+    const [blueprintString, setBlueprintString] = useState<string | null>(null);
+    const [error, setError] = useState<string | null>(null);
+
+    const initialize = useCallback(async () => {
+        try {
+            // Dynamically import the clock-generator browser module
+            const clockGenerator = await import('clock-generator/browser');
+            
+            FactorioDataService = clockGenerator.FactorioDataService;
+            generateClockForConfig = clockGenerator.generateClockForConfig;
+            encodeBlueprintFileBrowser = clockGenerator.encodeBlueprintFileBrowser;
+            DebugSettingsProvider = clockGenerator.DebugSettingsProvider;
+            StreamingLogger = clockGenerator.StreamingLogger;
+
+            // Fetch and initialize Factorio data
+            const response = await fetch('/data-filtered.json');
+            const data: FactorioData = await response.json();
+            FactorioDataService.initialize(data);
+
+            setRecipeNames(FactorioDataService.getAllRecipeNames());
+            setResourceNames(FactorioDataService.getAllResourceNames());
+            setIsInitialized(true);
+        } catch (err) {
+            console.error('Failed to initialize:', err);
+            setError(err instanceof Error ? err.message : 'Failed to initialize');
+        }
+    }, []);
+
+    const runSimulation = useCallback(async (config: Config, debugSteps: DebugSteps) => {
+        if (!generateClockForConfig || !encodeBlueprintFileBrowser || !DebugSettingsProvider || !StreamingLogger) {
+            setError('Not initialized');
+            return;
+        }
+
+        setIsRunning(true);
+        setBlueprintString(null);
+        setError(null);
+        setLogs([]);
+
+        // Use setTimeout to allow UI to update before running simulation
+        setTimeout(() => {
+            try {
+                // Create a streaming logger to capture logs
+                const capturedLogs: LogMessage[] = [];
+                const logger = new StreamingLogger!((message) => {
+                    capturedLogs.push(message);
+                    // Update logs in batches to avoid too many re-renders
+                    setLogs([...capturedLogs]);
+                });
+
+                // Create mutable debug settings
+                const debug = DebugSettingsProvider!.mutable();
+
+                // Run the simulation
+                const result = generateClockForConfig!(config, {
+                    debug,
+                    debug_steps: debugSteps,
+                    logger,
+                });
+
+                // Encode the blueprint
+                const blueprint = encodeBlueprintFileBrowser!({
+                    blueprint: result.blueprint,
+                });
+
+                setBlueprintString(blueprint);
+                setIsRunning(false);
+            } catch (err) {
+                console.error('Simulation error:', err);
+                setError(err instanceof Error ? err.message : 'Simulation failed');
+                setIsRunning(false);
+            }
+        }, 100);
+    }, []);
+
+    const clearLogs = useCallback(() => {
+        setLogs([]);
+    }, []);
+
+    return {
+        isInitialized,
+        isRunning,
+        recipeNames,
+        resourceNames,
+        logs,
+        blueprintString,
+        error,
+        initialize,
+        runSimulation,
+        clearLogs,
+    };
+}

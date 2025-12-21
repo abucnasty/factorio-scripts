@@ -1,9 +1,10 @@
 import Fraction from "fractionability";
 import { Entity, EntityId, Inserter, InserterStackSize, Machine, MiningDrill, ReadableEntityRegistry } from "../../../entities";
-import assert from "assert";
+import assert from "../../../common/assert";
 import { MachineIngredientRatios } from "./machine-ratios";
 import * as math from "mathjs"
 import { MapExtended } from "../../../data-types";
+import { Logger, defaultLogger } from "../../../common/logger";
 
 export interface ItemTransfer {
     item_name: string;
@@ -231,22 +232,22 @@ function computeLCM(swing_counts: EntityTransferCountMap): number {
     return denominators.reduce((lcm, denominator) => math.lcm(lcm, denominator), 1);
 }
 
-function printInserterSwingCounts(transfers: EntityTransferCountMap) {
-    console.log("----------------------");
-    console.log("Transfer Counts:");
+function printInserterSwingCounts(transfers: EntityTransferCountMap, logger: Logger = defaultLogger) {
+    logger.log("----------------------");
+    logger.log("Transfer Counts:");
     transfers.forEach(it => {
         if (Entity.isInserter(it.entity)) {
             if (it.item_transfers.length === 1) {
-                console.log(`- Inserter ${it.entity.entity_id.id} for item ${it.item_transfers[0].item_name}: ${it.total_transfer_count} transfers (stack size: ${it.stack_size})`);
+                logger.log(`- Inserter ${it.entity.entity_id.id} for item ${it.item_transfers[0].item_name}: ${it.total_transfer_count} transfers (stack size: ${it.stack_size})`);
             } else {
                 const items = it.item_transfers.map(t => `${t.item_name} (${t.transfer_count})`).join(", ");
-                console.log(`- Inserter ${it.entity.entity_id.id} for items [${items}]: ${it.total_transfer_count} total transfers (stack size: ${it.stack_size})`);
+                logger.log(`- Inserter ${it.entity.entity_id.id} for items [${items}]: ${it.total_transfer_count} total transfers (stack size: ${it.stack_size})`);
             }
         }
 
         if (Entity.isDrill(it.entity)) {
-            console.log(`- Drill ${it.entity.entity_id.id} for item ${it.item_transfers[0].item_name}: ${it.total_transfer_count} transfers`);
+            logger.log(`- Drill ${it.entity.entity_id.id} for item ${it.item_transfers[0].item_name}: ${it.total_transfer_count} transfers`);
         }
     });
-    console.log("----------------------");
+    logger.log("----------------------");
 };

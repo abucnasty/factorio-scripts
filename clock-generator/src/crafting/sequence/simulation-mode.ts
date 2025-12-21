@@ -1,4 +1,4 @@
-import assert from "assert";
+import assert from "../../common/assert";
 import { Duration } from "../../data-types";
 import { Inserter, InserterStackSize, Machine } from "../../entities";
 

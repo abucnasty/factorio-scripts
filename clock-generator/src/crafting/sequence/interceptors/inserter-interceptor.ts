@@ -1,4 +1,4 @@
-import assert from "assert";
+import assert from "../../../common/assert";
 import { AlwaysEnabledControl, EnableControl } from "../../../control-logic";
 import { InserterState, EntityState, MachineStatus } from "../../../state";
 

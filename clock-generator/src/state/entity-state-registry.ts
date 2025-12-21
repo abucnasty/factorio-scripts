@@ -1,6 +1,6 @@
 import { EntityId, ReadableEntityRegistry } from "../entities";
 import { EntityState } from "./entity-state";
-import assert from "assert";
+import assert from "../common/assert";
 
 export interface ReadableEntityStateRegistry {
     hasStateForEntity(entityId: EntityId): boolean;

@@ -1,7 +1,7 @@
 import { loadConfigFromFile } from './config/loader';
 import { ConfigPaths } from './config/config-paths';
 import { DebugSettingsProvider } from './crafting/sequence/debug/debug-settings-provider';
-import { DebugSteps, generateClockForConfig } from './crafting/generate-blueprint';
+import { generateClockForConfig, GenerateClockOptions } from './crafting/generate-blueprint';
 import { encodeBlueprintFile } from "./blueprints/serde";
 import { Config } from './config/schema';
 import { RunnerStepType } from './crafting/runner';
@@ -24,19 +24,17 @@ async function main() {
             }
         }
     })
+    const options: GenerateClockOptions = {
+        // Define which steps to enable debug logging for
+        debug_steps: {
+            [RunnerStepType.PREPARE]: false,
+            [RunnerStepType.WARM_UP]: false,
+            [RunnerStepType.SIMULATE]: false
+        },
+        debug: debug
+    };
 
-    // Define which steps to enable debug logging for
-    const debug_steps: DebugSteps = {
-        [RunnerStepType.PREPARE]: false,
-        [RunnerStepType.WARM_UP]: false,
-        [RunnerStepType.SIMULATE]: false
-    }
-
-    const result = generateClockForConfig(
-        config,
-        debug,
-        debug_steps
-    );
+    const result = generateClockForConfig(config, options);
 
     console.log("----------------------");
     console.log(encodeBlueprintFile({

@@ -1,4 +1,4 @@
-import assert from "assert"
+import assert from "../../common/assert"
 import { EntityId } from "../../entities";
 import { EntityState, MachineState, MachineStatus, ReadableEntityStateRegistry } from "../../state";
 import { TickProvider } from "../current-tick-provider";

@@ -2,7 +2,8 @@ import { InventoryState, WritableInventoryState } from "./inventory-state";
 import { ProgressState } from "./progress-state";
 import { EntityId, Machine } from "../entities";
 import { EntityState } from "./entity-state";
-import assert from "assert";
+import assert from "../common/assert";
+import { Logger, defaultLogger } from "../common/logger";
 
 export const MachineStatus = {
     INGREDIENT_SHORTAGE: 'INGREDIENT_SHORTAGE',
@@ -97,15 +98,15 @@ function machineIsOutputBlocked(machineState: MachineState): boolean {
 }
 
 
-function printMachineState(machineState: MachineState): void {
-    console.log(`Machine ${machineState.entity_id}: (recipe = ${machineState.machine.metadata.recipe.name})`);
-    console.log(`  Status: ${machineState.status}`);
-    console.log(`  Craft Count: ${machineState.craftCount}`);
-    console.log(`  Total Crafted: ${machineState.totalCrafted}`);
-    console.log(`  Crafting Progress: ${machineState.craftingProgress.progress}`);
-    console.log(`  Bonus Progress: ${machineState.bonusProgress.progress}`);
-    console.log(`  Inventory State:`);
+function printMachineState(machineState: MachineState, logger: Logger = defaultLogger): void {
+    logger.log(`Machine ${machineState.entity_id}: (recipe = ${machineState.machine.metadata.recipe.name})`);
+    logger.log(`  Status: ${machineState.status}`);
+    logger.log(`  Craft Count: ${machineState.craftCount}`);
+    logger.log(`  Total Crafted: ${machineState.totalCrafted}`);
+    logger.log(`  Crafting Progress: ${machineState.craftingProgress.progress}`);
+    logger.log(`  Bonus Progress: ${machineState.bonusProgress.progress}`);
+    logger.log(`  Inventory State:`);
     for (const inventory_item of machineState.inventoryState.getAllItems()) {
-        console.log(`    ${inventory_item.item_name}: ${inventory_item.quantity}`);
+        logger.log(`    ${inventory_item.item_name}: ${inventory_item.quantity}`);
     }
 }

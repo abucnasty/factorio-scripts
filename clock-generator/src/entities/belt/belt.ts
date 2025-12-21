@@ -1,6 +1,6 @@
 import { BeltConfig } from "../../config";
 import { ItemName } from "../../data";
-import assert from "assert";
+import assert from "../../common/assert";
 import { BeltStackSize, isValidBeltStackSize } from "./belt-stack-size";
 import { EntityId } from "../entity-id";
 import { Entity } from "../entity";

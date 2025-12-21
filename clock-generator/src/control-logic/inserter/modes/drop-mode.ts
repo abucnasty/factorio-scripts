@@ -1,4 +1,4 @@
-import assert from "assert";
+import assert from "../../../common/assert";
 import { EntityState, InserterState, InserterStatus, MachineState } from "../../../state";
 import { InserterMode } from "./inserter-mode";
 
