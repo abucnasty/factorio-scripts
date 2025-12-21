@@ -21,6 +21,8 @@ import { PrepareStep } from "./runner/steps/prepare-step";
 import { WarmupStep } from "./runner/steps/warmup-step";
 import { SimulateStep } from "./runner/steps/simulate-step";
 
+const MAX_SIMULATION_TICKS = 500_000;
+
 export interface BlueprintGenerationResult {
     blueprint: FactorioBlueprint;
     crafting_cycle_plan: CraftingCyclePlan;
@@ -153,6 +155,8 @@ export function generateClockForConfig(
 
     const warmup_period: Duration = Duration.ofTicks(crafting_cycle_plan.total_duration.ticks * recipe_lcm * 10);
     const duration: Duration = Duration.ofTicks(crafting_cycle_plan.total_duration.ticks * recipe_lcm);
+
+    assert(warmup_period.ticks < MAX_SIMULATION_TICKS, `Warmup period of ${warmup_period.ticks} ticks exceeds maximum allowed ${MAX_SIMULATION_TICKS} ticks`);
 
     console.log(`Warm up period: ${warmup_period.ticks} ticks`);
     console.log(`Simulation period: ${duration.ticks} ticks`);
