@@ -1,9 +1,9 @@
 import { computeSimulationMode, SimulationMode } from "./simulation-mode";
 import { InventoryTransfer } from "./inventory-transfer";
-import { Duration, OpenRange } from "../../data-types";
+import { Duration, MapExtended, OpenRange } from "../../data-types";
 import { Entity, EntityId, Inserter, Machine, ReadableEntityRegistry } from "../../entities";
 
-export class InventoryTransferHistory {
+export class InventoryTransferHistory extends MapExtended<EntityId, InventoryTransfer[]> {
 
     public static mergeOverlappingRanges(history: InventoryTransferHistory, overlap_threshold: number = 1): InventoryTransferHistory {
         const merged = mergeOverlappingRanges(history.getAllTransfers(), overlap_threshold);
@@ -74,30 +74,20 @@ export class InventoryTransferHistory {
 
 
     constructor(
-        private readonly transfers: Map<EntityId, InventoryTransfer[]> = new Map()
-    ) { }
-
-    public clear(): void {
-        this.transfers.clear();
+        transfers: Map<EntityId, InventoryTransfer[]> = new Map()
+    ) {
+        super(Array.from(transfers.entries()));
     }
 
     public recordTransfer(entity_id: EntityId, transfer: InventoryTransfer): void {
-        const transfer_list = this.transfers.get(entity_id) ?? [];
+        const transfer_list = this.get(entity_id) ?? [];
         transfer_list.push(transfer);
-        this.transfers.set(entity_id, transfer_list);
-    }
-
-    public setRecords(entity_id: EntityId, transfers: InventoryTransfer[]): void {
-        this.transfers.set(entity_id, transfers);
-    }
-
-    public getTransfers(entity_id: EntityId): InventoryTransfer[] {
-        return this.transfers.get(entity_id) ?? [];
+        this.set(entity_id, transfer_list);
     }
 
     public getAllTransfers(): ReadonlyMap<EntityId, InventoryTransfer[]> {
         const copy = new Map();
-        this.transfers.forEach((value, key) => {
+        this.forEach((value, key) => {
             copy.set(key, [...value.map(it => ({ ...it }))]);
         });
         return copy;
