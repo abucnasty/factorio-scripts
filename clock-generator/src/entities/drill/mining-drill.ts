@@ -1,7 +1,6 @@
-import { MiningDrillConfig } from "../../config/config";
+import { MiningDrillConfig } from "../../config";
 import { MiningDrillType } from "../../common/entity-types";
-import { FactorioDataService } from "../../data/factorio-data-service";
-import { Item, MiningDrillSpec, Resource } from "../../data/factorio-data-types";
+import { FactorioDataService, Item, MiningDrillSpec, Resource } from "../../data";
 import { Entity } from "../entity";
 import { EntityId } from "../entity-id";
 import { CraftingRate } from "../machine/traits";

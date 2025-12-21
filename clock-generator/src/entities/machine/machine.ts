@@ -1,5 +1,5 @@
 import { fraction } from "fractionability"
-import { MachineConfiguration } from "../../config/config";
+import { MachineConfiguration } from "../../config";
 import { AutomatedInsertionLimit, ConsumptionRate } from "./input";
 import { MachineMetadata } from "./machine-metadata";
 import { MachineOutput, OutputBlock, OverloadMultiplier, ProductionRate } from "./output";
@@ -7,7 +7,7 @@ import { RecipeMetadata } from "./recipe";
 import { BonusProductivityRate, CraftingRate, InsertionDuration } from "./traits";
 import { Entity } from "../entity";
 import { EntityId } from "../entity-id";
-import { Percentage } from "../../data-types/percent";
+import { Percentage } from "../../data-types";
 import { MachineInputs } from "./input/machine-inputs";
 
 

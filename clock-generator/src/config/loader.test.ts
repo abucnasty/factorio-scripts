@@ -1,6 +1,8 @@
 import { describe, it, expect } from "vitest";
 import { parseConfig, parseConfigSafe } from "./loader";
 import { ConfigValidationError } from "./errors";
+import { BeltType } from "./config";
+import { MiningDrillType } from "../entities";
 
 describe("parseConfig", () => {
     describe("valid configurations", () => {
@@ -233,12 +235,7 @@ describe("parseConfig", () => {
         });
 
         it("should parse all belt types", async () => {
-            const beltTypes = [
-                "transport-belt",
-                "fast-transport-belt",
-                "express-transport-belt",
-                "turbo-transport-belt"
-            ];
+            const beltTypes = Object.values(BeltType)
 
             for (const beltType of beltTypes) {
                 const hocon = `
@@ -254,12 +251,7 @@ describe("parseConfig", () => {
         });
 
         it("should parse all drill types", async () => {
-            const drillTypes = [
-                "electric-mining-drill",
-                "burner-mining-drill",
-                "big-mining-drill"
-            ];
-
+            const drillTypes = Object.values(MiningDrillType);
             for (const drillType of drillTypes) {
                 const hocon = `
                     target_output { recipe = "test", items_per_second = 1, machines = 1 }

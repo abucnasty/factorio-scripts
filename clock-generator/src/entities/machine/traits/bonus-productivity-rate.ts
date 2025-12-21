@@ -1,6 +1,6 @@
 import Fraction, { fraction } from "fractionability";
 import { CraftingRate } from "./crafting-rate";
-import { Percentage } from "../../../data-types/percent";
+import { Percentage } from "../../../data-types";
 
 export interface BonusProductivityRate {
     readonly progress_per_second: number;

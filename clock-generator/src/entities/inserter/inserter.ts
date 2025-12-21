@@ -1,5 +1,5 @@
-import { InserterConfig } from "../../config/config";
-import { ItemName } from "../../data/factorio-data-types";
+import { InserterConfig } from "../../config";
+import { ItemName } from "../../data";
 import { ReadableBeltRegistry } from "../belt";
 import { EntityType } from "../entity-type";
 import { ReadableMachineRegistry } from "../machine";

@@ -1,4 +1,4 @@
-import { ItemName } from "../../../data/factorio-data-types";
+import { ItemName } from "../../../data";
 import { MachineType } from "../machine-metadata";
 import { RecipeMetadata } from "../recipe";
 import { OverloadMultiplier } from "../traits/overload-multiplier";

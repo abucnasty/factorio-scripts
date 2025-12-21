@@ -34,5 +34,3 @@ export const ConfigPaths = {
     STONE_BRICKS_DIRECT_INSERT: path.join(CONFIG_SAMPLES_DIR, 'stone-bricks-direct-insert.conf'),
     UTILITY_SCIENCE: path.join(CONFIG_SAMPLES_DIR, 'utility-science.conf'),
 } as const;
-
-export type ConfigPathKey = keyof typeof ConfigPaths;

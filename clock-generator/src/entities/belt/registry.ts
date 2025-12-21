@@ -1,4 +1,4 @@
-import { ItemName } from "../../data/factorio-data-types";
+import { ItemName } from "../../data";
 import { EntityId } from "../entity-id";
 import { ReadableEntityRegistry } from "../entity-registry";
 import { EntityType } from "../entity-type";

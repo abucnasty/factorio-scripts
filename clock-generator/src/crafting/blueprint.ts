@@ -5,7 +5,7 @@ import { DeciderCombinatorEntity } from "../blueprints/entity/decider-combinator
 import { Duration, OpenRange } from "../data-types";
 import { ReadableEntityRegistry, Inserter, EntityId, Entity } from "../entities";
 import { InventoryTransfer } from "./sequence/inventory-transfer";
-import { InventoryTransferHistory } from "../control-logic/inventory/inventory-transfer-history";
+import { InventoryTransferHistory } from "./sequence/inventory-transfer-history";
 import { CraftingCyclePlan } from "./sequence/cycle/crafting-cycle";
 
 function createDeciderCombinatorForTransfers(

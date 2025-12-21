@@ -1,4 +1,4 @@
-import { Percentage } from "../../data-types/percent";
+import { Percentage } from "../../data-types";
 
 export interface MiningProductivity {
     readonly productivity: Percentage;

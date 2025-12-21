@@ -1,14 +1,12 @@
 import assert from "assert";
 import { EntityId, Inserter, InserterStackSize, Machine, MiningDrill, miningDrillMaxInsertion } from "../../../entities";
 import { EntityTransferCountMap } from "../cycle/swing-counts";
-import { AlwaysEnabledControl, EnableControl } from "../../../control-logic/enable-control";
+import { AlwaysEnabledControl, EnableControl, Resettable, TickProvider } from "../../../control-logic";
 import { assertIsInserterState, assertIsMachineState, BeltState, EntityState, InserterState, MachineState, ReadableEntityStateRegistry } from "../../../state";
-import { ItemName } from "../../../data/factorio-data-types";
+import { ItemName } from "../../../data";
 import { computeSimulationMode, SimulationMode, simulationModeForInput } from "../simulation-mode";
 import { CraftingCyclePlan } from "../cycle/crafting-cycle";
 import { Duration, OpenRange } from "../../../data-types";
-import { Resettable } from "../../../control-logic/resettable";
-import { TickProvider } from "../../../control-logic/current-tick-provider";
 
 export class EnableControlFactory {
 

@@ -1,7 +1,7 @@
 import Fraction, {fraction} from "fractionability";
 import { ProductionRate } from "../entities";
 import { TICKS_PER_SECOND } from "../data-types";
-import { TargetProductionRateConfig } from "../config/config";
+import { TargetProductionRateConfig } from "../config";
 
 export interface TargetProductionRate {
     machine_production_rate: ProductionRate;

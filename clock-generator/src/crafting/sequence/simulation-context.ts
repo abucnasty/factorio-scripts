@@ -1,7 +1,6 @@
-import { Config } from "../../config/config";
-import { MutableTickProvider } from "../../control-logic/current-tick-provider";
+import { Config } from "../../config";
+import { AlwaysEnabledControl, EnableControl, MutableTickProvider } from "../../control-logic";
 import { DrillStateMachine } from "../../control-logic/drill/drill-state-machine";
-import { AlwaysEnabledControl, EnableControl } from "../../control-logic/enable-control";
 import { InserterStateMachine } from "../../control-logic/inserter/inserter-state-machine";
 import { MachineStateMachine } from "../../control-logic/machine/machine-state-machine";
 import { Belt, EntityRegistry, InserterFactory, Machine, WritableEntityRegistry } from "../../entities";

@@ -1,5 +1,5 @@
 import chalk from "chalk";
-import { TickProvider } from "../../../control-logic/current-tick-provider";
+import { TickProvider } from "../../../control-logic";
 import { InserterStateMachine } from "../../../control-logic/inserter/inserter-state-machine";
 import { InserterMode } from "../../../control-logic/inserter/modes";
 import { InserterHandContentsChangePlugin } from "../../../control-logic/inserter/plugins";

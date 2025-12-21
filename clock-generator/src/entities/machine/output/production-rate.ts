@@ -1,8 +1,7 @@
 import Fraction, { fraction } from "fractionability";
-import { TICKS_PER_SECOND } from "../../../data-types";
+import { TICKS_PER_SECOND, Percentage } from "../../../data-types";
 import { CraftingRate } from "../traits";
-import { ItemName } from "../../../data/factorio-data-types";
-import { Percentage } from "../../../data-types/percent";
+import { ItemName } from "../../../data";
 
 export interface ProductionRate {
     readonly item: string;

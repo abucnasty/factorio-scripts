@@ -3,9 +3,9 @@ import { INSERTER_SPECS } from "./inserter-spec";
 import { InserterType } from "./inserter-type";
 import { InserterStackSize } from "./stack-size";
 import assert from "assert"
-import { ItemName } from "../../../data/factorio-data-types";
+import { ItemName } from "../../../data";
 import { InserterAnimationMetadata } from "./animation";
-import { InserterAnimationOverrideConfig } from "../../../config/config";
+import { InserterAnimationOverrideConfig } from "../../../config";
 import { EntityType } from "../../entity-type";
 
 

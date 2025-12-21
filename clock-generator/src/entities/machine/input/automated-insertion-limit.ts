@@ -1,4 +1,4 @@
-import { Ingredient } from "../../../data/factorio-data-types";
+import { Ingredient } from "../../../data";
 import { OverloadMultiplier } from "../output";
 
 export interface AutomatedInsertionLimit {

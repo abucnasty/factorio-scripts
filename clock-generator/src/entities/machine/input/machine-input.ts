@@ -1,4 +1,4 @@
-import { Ingredient } from "../../../data/factorio-data-types";
+import { Ingredient } from "../../../data";
 import { AutomatedInsertionLimit } from "./automated-insertion-limit";
 import { ConsumptionRate } from "./consumption-rate";
 

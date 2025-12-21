@@ -1,7 +1,7 @@
 import { OpenRange } from "../../../data-types";
 import { InserterState } from "../../../state";
 import { TickProvider } from "../../current-tick-provider";
-import { InventoryTransferHistory } from "../../inventory/inventory-transfer-history";
+import { InventoryTransferHistory } from "../../../crafting/sequence/inventory-transfer-history";
 import { ModePlugin, Transition } from "../../mode";
 import { InserterMode } from "../modes";
 import { InserterTransferTrackerPlugin, TransferSnapshot } from "./inserter-transfer-tracker-plugin";

@@ -1,5 +1,5 @@
 import assert from "assert";
-import { Config } from '../config/config';
+import { Config } from '../config';
 import { DebugPluginFactory } from './sequence/debug/debug-plugin-factory';
 import { DebugSettingsProvider, MutableDebugSettingsProvider } from './sequence/debug/debug-settings-provider';
 import { cloneSimulationContextWithInterceptors, SimulationContext } from './sequence/simulation-context';
@@ -10,9 +10,9 @@ import { EntityState, MachineState } from "../state";
 import { fraction } from "fractionability";
 import { createSignalPerInserterBlueprint } from "./blueprint";
 import { FactorioBlueprint } from "../blueprints/blueprint";
-import { TickProvider } from "../control-logic/current-tick-provider";
+import { TickProvider } from "../control-logic";
 import { EntityTransferCountMap } from "./sequence/cycle/swing-counts";
-import { InventoryTransferHistory } from "../control-logic/inventory/inventory-transfer-history";
+import { InventoryTransferHistory } from "./sequence/inventory-transfer-history";
 import { InserterInventoryHistoryPlugin } from "../control-logic/inserter/plugins/inserter-inventory-transfer-plugin";
 import { DrillInventoryTransferPlugin } from "../control-logic/drill/plugins/drill-inventory-transfer-plugin";
 import { EnableControlFactory } from "./sequence/interceptors/inserter-enable-control-factory";

@@ -1,7 +1,6 @@
 import Fraction, { fraction } from "fractionability";
 import assert from "assert"
-import { Ingredient, ItemName, Recipe } from "../../../data/factorio-data-types";
-import { EnrichedIngredient, EnrichedRecipe, FactorioDataService } from "../../../data/factorio-data-service";
+import { Ingredient, ItemName, Recipe, EnrichedIngredient, EnrichedRecipe, FactorioDataService } from "../../../data";
 
 export interface IngredientRatio {
     input: EnrichedIngredient;

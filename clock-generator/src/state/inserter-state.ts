@@ -1,4 +1,4 @@
-import { ItemName } from "../data/factorio-data-types";
+import { ItemName } from "../data";
 import { Inserter } from "../entities";
 import { EntityState } from "./entity-state";
 import { InventoryState } from "./inventory-state";

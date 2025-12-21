@@ -2,7 +2,7 @@ import { OpenRange } from "../../../data-types";
 import { MiningDrill } from "../../../entities";
 import { DrillStatus } from "../../../state";
 import { TickProvider } from "../../current-tick-provider";
-import { InventoryTransferHistory } from "../../inventory/inventory-transfer-history";
+import { InventoryTransferHistory } from "../../../crafting/sequence/inventory-transfer-history";
 import { ModePlugin, Transition } from "../../mode";
 import { DrillMode } from "../modes/drill-mode";
 

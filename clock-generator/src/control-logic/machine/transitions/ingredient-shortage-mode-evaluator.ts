@@ -1,4 +1,4 @@
-import { ItemName } from "../../../data/factorio-data-types";
+import { ItemName } from "../../../data";
 import { MachineState } from "../../../state";
 import { ModeTransition, ModeTransitionEvaluator } from "../../mode";
 import { MachineMode, MachineWorkingMode } from "../modes";

@@ -1,6 +1,6 @@
 import { assertIsMachineState, DrillState, DrillStatus, EntityState, MachineState } from "../../../state";
 import { DrillMode } from "./drill-mode";
-import { Item } from "../../../data/factorio-data-types";
+import { Item } from "../../../data";
 import { miningDrillMaxInsertion } from "../../../entities";
 
 export class DrillWorkingMode implements DrillMode {

@@ -1,5 +1,5 @@
-import { computeSimulationMode, SimulationMode } from "../../crafting/sequence";
-import { InventoryTransfer } from "../../crafting/sequence/inventory-transfer";
+import { computeSimulationMode, SimulationMode } from "./simulation-mode";
+import { InventoryTransfer } from "./inventory-transfer";
 import { Duration, OpenRange } from "../../data-types";
 import { Entity, EntityId, Inserter, Machine, ReadableEntityRegistry } from "../../entities";
 

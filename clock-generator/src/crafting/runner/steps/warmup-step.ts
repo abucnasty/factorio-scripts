@@ -1,6 +1,4 @@
-import { CompositeControlLogic } from "../../../control-logic/composite-control-logic";
-import { ControlLogic } from "../../../control-logic/control-logic";
-import { TickControlLogic } from "../../../control-logic/tick-control-logic";
+import { CompositeControlLogic, ControlLogic, TickControlLogic } from "../../../control-logic";
 import { Duration } from "../../../data-types";
 import { SimulationContext } from "../../sequence";
 import { RunnerStep, RunnerStepType } from "./runner-step";

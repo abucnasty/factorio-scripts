@@ -1,5 +1,5 @@
 export class Percentage {
-readonly value: number;
+  readonly value: number;
   readonly normalized: number;
 
   static readonly ZERO = new Percentage(0.0);

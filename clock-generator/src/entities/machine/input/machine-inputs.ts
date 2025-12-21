@@ -1,5 +1,5 @@
 import { MapExtended } from "../../../data-types";
-import { ItemName } from "../../../data/factorio-data-types";
+import { ItemName } from "../../../data";
 import { MachineInput } from "./machine-input";
 
 export class MachineInputs extends MapExtended<ItemName, MachineInput> {

@@ -1,4 +1,4 @@
-import { ItemName } from "../data/factorio-data-types";
+import { ItemName } from "../data";
 import { MachineInput } from "../entities";
 
 export interface InventoryItem {

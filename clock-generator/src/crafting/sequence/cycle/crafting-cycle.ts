@@ -4,7 +4,7 @@ import { Duration } from "../../../data-types/duration";
 import { TargetProductionRate } from "../../target-production-rate";
 import { EntityTransferCountMap } from "./swing-counts";
 import { Entity, ReadableEntityRegistry } from "../../../entities";
-import { ConfigOverrides } from "../../../config/config";
+import { ConfigOverrides } from "../../../config";
 
 export interface CraftingCyclePlan {
     readonly total_duration: Duration;

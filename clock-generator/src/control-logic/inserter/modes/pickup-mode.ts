@@ -1,5 +1,5 @@
 import assert from "assert";
-import { ItemName } from "../../../data/factorio-data-types";
+import { ItemName } from "../../../data";
 import { BeltState, EntityState, InserterState, InserterStatus, MachineState, ReadableEntityStateRegistry } from "../../../state";
 import { InserterMode } from "./inserter-mode";
 

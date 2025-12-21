@@ -3,8 +3,6 @@ import { OverloadMultiplier, ProductionRate } from "../output";
 
 /**
  * Represents a range of ticks during which an inserter can insert items.
- * 
- * TODO: consider removing
  */
 export interface InsertionDuration {
     readonly tick_duration: Fraction;

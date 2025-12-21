@@ -1,7 +1,4 @@
-import { CompositeControlLogic } from "../../../control-logic/composite-control-logic";
-import { ControlLogic } from "../../../control-logic/control-logic";
-import { EnableControl } from "../../../control-logic/enable-control";
-import { TickControlLogic } from "../../../control-logic/tick-control-logic";
+import { CompositeControlLogic, ControlLogic, EnableControl, TickControlLogic } from "../../../control-logic";
 import { EntityId } from "../../../entities";
 import { MachineStatus } from "../../../state";
 import { cloneSimulationContextWithInterceptors, SimulationContext } from "../../sequence";

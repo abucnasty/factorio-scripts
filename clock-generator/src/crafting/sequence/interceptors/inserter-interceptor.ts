@@ -1,5 +1,5 @@
 import assert from "assert";
-import { AlwaysEnabledControl, EnableControl } from "../../../control-logic/enable-control";
+import { AlwaysEnabledControl, EnableControl } from "../../../control-logic";
 import { InserterState, EntityState, MachineStatus } from "../../../state";
 
 export type InserterInterceptor = (inserter_state: InserterState, source_state: EntityState, sink_state: EntityState) => EnableControl

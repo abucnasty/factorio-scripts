@@ -1,4 +1,4 @@
-import { ItemName } from "../../../data/factorio-data-types"
+import { ItemName } from "../../../data"
 import { ComparatorString } from "../decider-combinator"
 import { QualityIdType, SignalId } from "../signal"
 import assert from "assert"

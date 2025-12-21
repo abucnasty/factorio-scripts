@@ -1,4 +1,4 @@
-import { InserterAnimationOverrideConfig } from "../../../config/config";
+import { InserterAnimationOverrideConfig } from "../../../config";
 import { Duration } from "../../../data-types";
 import { EntityType } from "../../entity-type";
 import { InserterSpec } from "./inserter-spec";

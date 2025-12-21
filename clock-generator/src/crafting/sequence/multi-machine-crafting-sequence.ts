@@ -1,6 +1,4 @@
-import { CompositeControlLogic } from "../../control-logic/composite-control-logic";
-import { EnableControl } from "../../control-logic/enable-control";
-import { TickControlLogic } from "../../control-logic/tick-control-logic";
+import { CompositeControlLogic, EnableControl, TickControlLogic } from "../../control-logic";
 import { Duration } from "../../data-types";
 import { EntityId } from "../../entities";
 import { DrillStatus, MachineStatus } from "../../state";
