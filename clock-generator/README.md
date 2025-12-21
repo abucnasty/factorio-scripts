@@ -27,26 +27,30 @@ npm install
 
 ### Basic Usage
 
-1. Choose or create a configuration in `src/config/examples.ts`
+1. Choose or create a configuration file in `resources/config-samples/` (HOCON format)
 2. Update `src/multi-machine-poc.ts` to use your desired config:
 
 ```typescript
-import { Config } from './config/config';
-import * as EXAMPLES from './config/examples';
+import { loadConfigFromFile } from './config/loader';
+import { ConfigPaths } from './config/config-paths';
 import { DebugSettingsProvider } from './crafting/sequence/debug/debug-settings-provider';
 import { generateClockForConfig } from './crafting/generate-blueprint';
 import { encodeBlueprintFile } from "./blueprints/serde";
 
-// Select your configuration
-const config: Config = EXAMPLES.LOGISTIC_SCIENCE_SHARED_INSERTER_CONFIG;
+async function main() {
+    // Load configuration from HOCON file
+    const config = await loadConfigFromFile(ConfigPaths.LOGISTIC_SCIENCE_SHARED_INSERTER);
 
-const debug = DebugSettingsProvider.mutable();
-const result = generateClockForConfig(config, debug);
+    const debug = DebugSettingsProvider.mutable();
+    const result = generateClockForConfig(config, debug);
 
-console.log("----------------------");
-console.log(encodeBlueprintFile({
-    blueprint: result.blueprint
-}));
+    console.log("----------------------");
+    console.log(encodeBlueprintFile({
+        blueprint: result.blueprint
+    }));
+}
+
+main().catch(console.error);
 ```
 
 3. Run the generator:
@@ -57,78 +61,95 @@ npm run dev
 
 4. Copy the output blueprint string and import it into Factorio
 
-### Configuration Example
+### Configuration Format
+Multiple formats are supports:
+1. HOCON (.conf)
+2. JSON (.json)
+
+Built with [hocon](https://github.com/lightbend/config/blob/main/HOCON.md) configuration in mind but is backwards compatible with normal JSON files.
+
+Available sample configs in `resources/config-samples/`:
+- `utility-science.conf` - Utility science pack production
+- `logistic-science.conf` - Logistic science pack production
+- `logistic-science-shared-inserter.conf` - Logistic science with shared inserters
+- `chemical-science.conf` - Chemical science pack production
+- `production-science.conf` - Production science pack production
+- `advanced-circuit.conf` - Advanced circuit production chain
+- `productivity-module.conf` - Productivity module production
+- `electric-furnace.conf` - Electric furnace with direct insertion mining
+- And more...
+
+### Configuration Example (HOCON)
 
 Here's a complete configuration for a utility science pack setup:
 
-```typescript
-export const UTILITY_SCIENCE_CONFIG: Config = {
-    target_output: {
-        recipe: "utility-science-pack",
-        items_per_second: 120,        // Target production rate
-        machines: 7,                  // Number of machines in your build
+```conf
+# Utility Science Pack Configuration
+
+target_output {
+    recipe = "utility-science-pack"
+    items_per_second = 120        # Target production rate
+    machines = 7                  # Number of machines in your build
+    overrides {
+        output_swings = 3
+    }
+}
+
+machines = [
+    {
+        id = 1
+
+        # recipe names must match the factorio recipe name
+        recipe = "utility-science-pack"
+        
+        # Productivity bonus percentage
+        productivity = 100
+        
+        # Hover over machine in Factorio and execute:
+        # /c game.print(game.player.selected.crafting_speed)
+        crafting_speed = 68.90625
+    }
+]
+
+inserters = [
+    {
+        source { type = "belt", id = 1 }
+        sink { type = "machine", id = 1 }
+        filters = ["low-density-structure", "processing-unit"]
+        stack_size = 16             # Stack inserter capacity bonus
     },
-    machines: [
-        {
-            id: 1,
-            recipe: "utility-science-pack",
-            productivity: 100,          // Productivity bonus percentage
-            // obtained by hovering over machine and executing 
-            // `/c game.print(game.player.selected.crafting_speed)`
-            crafting_speed: 68.90625,
-        },
-    ],
-    inserters: [
-        {
-            source: { type: "belt", id: 1 },
-            sink: { type: "machine", id: 1 },
-            filters: ["low-density-structure", "processing-unit"],
-            stack_size: 16,             // Stack inserter capacity bonus
-        },
-        {
-            source: { type: "belt", id: 2 },
-            sink: { type: "machine", id: 1 },
-            stack_size: 16,
-            filters: ["low-density-structure", "flying-robot-frame"]
-        },
-        {
-            source: { type: "machine", id: 1 },
-            sink: { type: "belt", id: 1 },
-            filters: ["utility-science-pack"],
-            stack_size: 16,
-        },
-    ],
-    belts: [
-        {
-            id: 1,
-            type: "turbo-transport-belt",
-            lanes: [
-                {
-                    ingredient: "low-density-structure",
-                    stack_size: 4       // Items per stack on belt
-                },
-                {
-                    ingredient: "processing-unit",
-                    stack_size: 4
-                }
-            ]
-        },
-        {
-            id: 2,
-            type: "turbo-transport-belt",
-            lanes: [
-                {
-                    ingredient: "low-density-structure",
-                    stack_size: 4
-                },
-                {
-                    ingredient: "flying-robot-frame",
-                    stack_size: 4
-                }
-            ]
-        }
-    ]
-};
+    {
+        source { type = "belt", id = 2 }
+        sink { type = "machine", id = 1 }
+        stack_size = 16
+        filters = ["low-density-structure", "flying-robot-frame"]
+    },
+    {
+        source { type = "machine", id = 1 }
+        sink { type = "belt", id = 1 }
+        filters = ["utility-science-pack"]
+        stack_size = 16
+    }
+]
+
+belts = [
+    {
+        id = 1
+        type = "turbo-transport-belt"
+        lanes = [
+            { ingredient = "low-density-structure", stack_size = 4 },
+            { ingredient = "processing-unit", stack_size = 4 }
+        ]
+    },
+    {
+        id = 2
+        type = "turbo-transport-belt"
+        lanes = [
+            { ingredient = "low-density-structure", stack_size = 4 },
+            { ingredient = "flying-robot-frame", stack_size = 4 }
+        ]
+    }
+]
 ```
 
 ## How It Works
@@ -157,13 +178,6 @@ The `generateClockForConfig` function executes three distinct steps:
 The tool generates a Factorio blueprint containing:
 - **Decider combinators** that act as clock signals
 - **Timing ranges** for each inserter (when they should be enabled)
-- **Properly configured** circuit connections to control inserters
-
-### Key Concepts
-
-- **Overload Multiplier**: Intentionally allows machines to build up input inventory, reducing inserter swing counts
-- **Automated Insertion Limit**: Factorio's per-ingredient inventory limits that affect stability
-- **Fast-Crafting Stability Threshold**: Automatically detects when machines craft too quickly for always-enabled inserters
 
 ## Advanced Configuration
 
@@ -218,13 +232,22 @@ overrides: {
 
 ```
 src/
-├── config/           # Configuration definitions and examples
+├── common/           # Shared constants (entity types)
+├── config/           # Configuration loading and validation
+│   ├── schema.ts     # Zod schemas for config validation
+│   ├── loader.ts     # HOCON config file loader
+│   ├── config-paths.ts # Path constants for sample configs
+│   └── examples.ts   # Legacy TypeScript config examples
 ├── crafting/         # Core simulation and blueprint generation
 │   ├── runner/       # Step-based execution framework
 │   └── sequence/     # Simulation logic and interceptors
 ├── control-logic/    # Entity behavior and state machines
 ├── entities/         # Machine, inserter, and belt models
-└── blueprints/       # Blueprint encoding/decoding
+├── blueprints/       # Blueprint encoding/decoding
+└── types/            # Custom type declarations
+
+resources/
+└── config-samples/   # HOCON configuration files
 ```
 
 ### Running Tests
@@ -232,6 +255,40 @@ src/
 ```bash
 npm test
 ```
+
+### Configuration Validation
+
+Configurations are validated at runtime using [Zod](https://zod.dev/) schemas. If you provide an invalid configuration, you'll get detailed error messages:
+
+```typescript
+import { parseConfig } from './config/loader';
+
+try {
+    const config = await parseConfig(hoconString);
+} catch (error) {
+    if (error instanceof ConfigValidationError) {
+        console.error(error.getFormattedIssues());
+        // Output: target_output.items_per_second: Expected number, received string
+    }
+}
+```
+
+### Browser Compatibility
+
+The configuration system is designed to work in browser environments:
+
+```typescript
+import { createBrowserConfigLoader } from './config/loader';
+
+const loader = createBrowserConfigLoader(async (url) => {
+    const response = await fetch(url);
+    return response.text();
+});
+
+const config = await loader.loadFromUrl('/api/config');
+```
+
+Note: HOCON `include` directives are disabled in browser mode for security.
 
 ## License
 
