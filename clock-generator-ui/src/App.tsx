@@ -11,6 +11,7 @@ import {
     createTheme,
     Alert,
     Divider,
+    Icon,
 } from '@mui/material';
 import type { Config, DebugSteps } from 'clock-generator/browser';
 import { useSimulationWorker } from './hooks/useSimulationWorker';
@@ -144,8 +145,11 @@ function App() {
             <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
                 <AppBar position="fixed">
                     <Toolbar>
+                        <Icon sx={{ mr: 3 }}>
+                            <img src="/big_biter_q5_right.png" alt="Logo" style={{ width: 26, height: 26 }} />
+                        </Icon>
                         <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
-                            ⚙️ Factorio Clock Generator
+                            Factorio Clock Generator
                         </Typography>
                         <ConfigImportExport
                             config={exportConfig()}
