@@ -200,15 +200,19 @@ export function BeltsForm({
                                     sx={{ width: 100 }}
                                     size="small"
                                 />
-                                {belt.lanes.length > 1 && laneIndex === 1 && (
-                                    <IconButton
-                                        size="small"
-                                        onClick={() => removeLane(beltIndex)}
-                                        color="error"
-                                    >
-                                        <Delete fontSize="small" />
-                                    </IconButton>
-                                )}
+                                {belt.lanes.length > 1 ? (
+                                    laneIndex === 1 ? (
+                                        <IconButton
+                                            size="small"
+                                            onClick={() => removeLane(beltIndex)}
+                                            color="error"
+                                        >
+                                            <Delete fontSize="small" />
+                                        </IconButton>
+                                    ) : (
+                                        <Box sx={{ width: 28 }} />
+                                    )
+                                ) : null}
                             </Box>
                         ))}
                     </Box>
