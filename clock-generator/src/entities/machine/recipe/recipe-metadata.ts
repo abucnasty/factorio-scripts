@@ -1,6 +1,7 @@
 import Fraction, { fraction } from "fractionability";
 import assert from "../../../common/assert"
 import { Ingredient, ItemName, Recipe, EnrichedIngredient, EnrichedRecipe, FactorioDataService } from "../../../data";
+import { MapExtended } from "../../../data-types";
 
 export interface IngredientRatio {
     input: EnrichedIngredient;
@@ -12,9 +13,9 @@ export interface RecipeMetadata {
     readonly name: string;
     readonly energy_required: number;
     readonly output: EnrichedIngredient;
-    readonly inputToOutputRatios: Map<ItemName, IngredientRatio>;
-    readonly outputToInputRatios: Map<ItemName, IngredientRatio>;
-    readonly inputsPerCraft: Map<ItemName, EnrichedIngredient>;
+    readonly inputToOutputRatios: MapExtended<ItemName, IngredientRatio>;
+    readonly outputToInputRatios: MapExtended<ItemName, IngredientRatio>;
+    readonly inputsPerCraft: MapExtended<ItemName, EnrichedIngredient>;
     readonly raw: EnrichedRecipe;
 }
 
@@ -38,9 +39,9 @@ function fromRecipe(recipe: EnrichedRecipe): RecipeMetadata {
         item: output.item,
     };
 
-    const inputToOutputRatios: Map<ItemName, IngredientRatio> = new Map();
-    const outputToInputRatios: Map<ItemName, IngredientRatio> = new Map();
-    const inputsPerCraft: Map<ItemName, EnrichedIngredient> = new Map();
+    const inputToOutputRatios: MapExtended<ItemName, IngredientRatio> = new MapExtended();
+    const outputToInputRatios: MapExtended<ItemName, IngredientRatio> = new MapExtended();
+    const inputsPerCraft: MapExtended<ItemName, EnrichedIngredient> = new MapExtended();
 
     ingredients.forEach(input => {
         inputToOutputRatios.set(input.name, {

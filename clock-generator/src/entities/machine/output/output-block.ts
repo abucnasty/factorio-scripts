@@ -11,11 +11,11 @@ export interface OutputBlock {
 
 
 function fromRecipe(machine_type: MachineType, recipe: RecipeMetadata, overloadMultiplier: OverloadMultiplier): OutputBlock {
-    if(machine_type === "furnace") {
+    if (machine_type === "furnace") {
         return forFurnace(recipe);
     }
 
-    if(machine_type === "machine") {
+    if (machine_type === "machine") {
         return forMachine(recipe, overloadMultiplier);
     }
 
@@ -23,21 +23,29 @@ function fromRecipe(machine_type: MachineType, recipe: RecipeMetadata, overloadM
 }
 
 function forFurnace(recipe: RecipeMetadata): OutputBlock {
-    const stack_size = recipe.output.item.stack_size
-    return {
-        item_name: recipe.output.name,
-        quantity: stack_size,
-        max_stack_size: stack_size,
-    };
+    return itemStackSize(recipe);
 }
 
 function forMachine(recipe: RecipeMetadata, overloadMultiplier: OverloadMultiplier): OutputBlock {
     const stack_size = recipe.output.item.stack_size
     const overload_quantity = overloadMultiplier.overload_multiplier * recipe.output.amount
+    if (recipe.inputsPerCraft.size === 0) {
+        // no output block condition since no item inputs
+        return itemStackSize(recipe);
+    }
     return {
         item_name: recipe.output.name,
         quantity: Math.min(stack_size, overload_quantity),
-        max_stack_size: recipe.output.item.stack_size,
+        max_stack_size: stack_size,
+    };
+}
+
+function itemStackSize(recipe: RecipeMetadata): OutputBlock {
+    const stack_size = recipe.output.item.stack_size
+    return {
+        item_name: recipe.output.name,
+        quantity: stack_size,
+        max_stack_size: stack_size,
     };
 }
 
