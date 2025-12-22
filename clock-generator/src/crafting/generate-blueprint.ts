@@ -5,7 +5,7 @@ import { DebugPluginFactory } from './sequence/debug/debug-plugin-factory';
 import { DebugSettingsProvider, MutableDebugSettingsProvider } from './sequence/debug/debug-settings-provider';
 import { cloneSimulationContextWithInterceptors, SimulationContext } from './sequence/simulation-context';
 import { Duration } from '../data-types';
-import { Inserter, Machine, ReadableEntityRegistry } from '../entities';
+import { assertIsMachine, Inserter, Machine, ReadableEntityRegistry } from '../entities';
 import { TargetProductionRate } from "./target-production-rate";
 import { EntityState, MachineState } from "../state";
 import { fraction } from "fractionability";
@@ -108,8 +108,13 @@ export function generateClockForConfig(
         ))
     });
     simulation_context.drills.forEach(it => {
+        const sink_machine = simulation_context.entity_registry.getEntityByIdOrThrow(
+            it.drill_state.drill.sink_id
+        );
+        assertIsMachine(sink_machine);
         it.addPlugin(new DrillInventoryTransferPlugin(
             it.drill_state.drill,
+            sink_machine,
             relative_tick_provider,
             inventory_transfer_history
         ))

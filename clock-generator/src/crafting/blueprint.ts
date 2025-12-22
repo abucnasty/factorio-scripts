@@ -100,7 +100,7 @@ function generateClockDescriptionLines(
         `Clock for ${output_item_icon}:`,
         `- Cycle Duration: ${cycle.total_duration.ticks} ticks`,
         `- Cycle Count: ${cycle_count} cycles`,
-        `- Total Duration: ${total_duration.ticks} ticks`,
+        `- Total Duration: ${total_duration.ticks} ticks`
     ]
 }
 

@@ -13,7 +13,8 @@ export interface TransferSnapshot {
     transition: {
         from_status: InserterStatus;
         to_status: InserterStatus;
-    }
+    },
+    amount: number;
 }
 
 export type TransferStatusCallback = (snapshot: TransferSnapshot) => void
@@ -80,7 +81,9 @@ export class InserterTransferTrackerPlugin implements ModePlugin<InserterMode> {
             transition: {
                 from_status: from_status,
                 to_status: to_status,
-            }
+            },
+            // TODO: this assumes full transfer, should only work with stack inserters
+            amount: this.inserter_state.inserter.metadata.stack_size
         };
         this.callback(inserter_transfer);
 

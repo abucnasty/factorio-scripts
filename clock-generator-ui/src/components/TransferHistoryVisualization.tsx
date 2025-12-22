@@ -1,30 +1,8 @@
 import { Close, Fullscreen } from '@mui/icons-material';
 import { Box, Dialog, DialogContent, DialogTitle, IconButton, Paper, Tooltip, Typography } from '@mui/material';
 import { useState } from 'react';
-import type { SerializableTransferHistory } from 'clock-generator/browser';
+import type { SerializableEntityTransferHistory, SerializableTransferEntry, SerializableTransferHistory } from 'clock-generator/browser';
 import { FactorioIcon } from './FactorioIcon';
-
-// Re-define the nested types locally since they may not be immediately available
-interface SerializableTransferEntry {
-    item_name: string;
-    start_tick: number;
-    end_tick: number;
-}
-
-interface SerializableEntityTransferHistory {
-    entity_id: string;
-    entity_type: 'inserter' | 'drill';
-    label: string;
-    source?: {
-        entity_id: string;
-        label: string;
-    };
-    sink?: {
-        entity_id: string;
-        label: string;
-    };
-    transfers: SerializableTransferEntry[];
-}
 
 interface TransferHistoryVisualizationProps {
     transferHistory: SerializableTransferHistory;
@@ -80,6 +58,9 @@ function TransferBar({ transfer, totalDuration, rowHeight, colorMap }: TransferB
                         <FactorioIcon name={transfer.item_name} size={16} />
                         <Typography variant="body2">{transfer.item_name}</Typography>
                     </Box>
+                    <Typography variant="caption" display="block">
+                        Amount: {transfer.amount}
+                    </Typography>
                     <Typography variant="caption" display="block">
                         Tick {transfer.start_tick} → {transfer.end_tick}
                     </Typography>

@@ -36,6 +36,7 @@ export class InserterInventoryHistoryPlugin implements ModePlugin<InserterMode> 
                     snapshot.tick_range.start_inclusive,
                     snapshot.tick_range.end_inclusive
                 ),
+                amount: snapshot.amount,
             }
         )
     }

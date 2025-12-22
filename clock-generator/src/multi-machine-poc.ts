@@ -27,7 +27,7 @@ async function saveAllHoconConfigsToJson() {
 
 async function main() {
     const config: Config = await loadConfigFromFile(
-        ConfigPaths.STONE_BRICKS_DIRECT_INSERT
+        ConfigPaths.PRODUCTION_SCIENCE_SHARED
     );
     console.log("Loaded config:");
     console.log("----------------------");

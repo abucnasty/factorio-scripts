@@ -61,6 +61,7 @@ export class InventoryTransferHistory extends MapExtended<EntityId, InventoryTra
                 return {
                     item_name: transfer.item_name,
                     tick_range: trimmed_range,
+                    amount: transfer.amount,
                 }
             }).filter(transfer => transfer.tick_range.duration().ticks > 0);
 
@@ -112,6 +113,7 @@ function mergeOverlappingRanges(original: ReadonlyMap<EntityId, InventoryTransfe
                 return {
                     item_name: itemName,
                     tick_range: it,
+                    amount: ranges.filter(r => it.overlaps(r.tick_range)).reduce((sum, r) => sum + r.amount, 0),
                 }
             })
             const existing_ranges = result.get(entityId) ?? []
@@ -135,7 +137,8 @@ function offsetInventoryTransfers(
                 tick_range: OpenRange.from(
                     it.tick_range.start_inclusive + offset,
                     it.tick_range.end_inclusive + offset
-                )
+                ),
+                amount: it.amount,
             }
         })
         result.set(entityId, offset_ranges)
@@ -159,8 +162,9 @@ function correctNegativeOffsets(original: ReadonlyMap<EntityId, InventoryTransfe
                 item_name: it.item_name,
                 tick_range: OpenRange.from(
                     it.tick_range.start_inclusive - offset,
-                    it.tick_range.end_inclusive - offset
-                )
+                    it.tick_range.end_inclusive - offset,
+                ),
+                amount: it.amount,
             }
         })
         result.set(entityId, corrected_ranges)

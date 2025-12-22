@@ -5,12 +5,10 @@ import { ReadableEntityRegistry, Entity } from "../../entities";
  * A single transfer entry that is JSON-serializable
  */
 export interface SerializableTransferEntry {
-    /** The item being transferred */
     item_name: string;
-    /** Start tick (inclusive) */
     start_tick: number;
-    /** End tick (inclusive) */
     end_tick: number;
+    amount: number;
 }
 
 /**
@@ -98,6 +96,7 @@ export function serializeTransferHistory(
             item_name: t.item_name,
             start_tick: t.tick_range.start_inclusive,
             end_tick: t.tick_range.end_inclusive,
+            amount: t.amount,
         }));
 
         entities.push({

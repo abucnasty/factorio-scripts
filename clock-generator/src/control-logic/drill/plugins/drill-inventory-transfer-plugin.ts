@@ -1,5 +1,5 @@
 import { OpenRange } from "../../../data-types";
-import { MiningDrill } from "../../../entities";
+import { Machine, MiningDrill, miningDrillMaxInsertion } from "../../../entities";
 import { DrillStatus } from "../../../state";
 import { TickProvider } from "../../current-tick-provider";
 import { InventoryTransferHistory } from "../../../crafting/sequence/inventory-transfer-history";
@@ -12,6 +12,7 @@ export class DrillInventoryTransferPlugin implements ModePlugin<DrillMode> {
 
     constructor(
         private readonly drill_entity: MiningDrill,
+        private readonly sink_entity: Machine,
         private readonly tick_provider: TickProvider,
         private readonly transfer_history: InventoryTransferHistory,
     ) { }
@@ -28,7 +29,9 @@ export class DrillInventoryTransferPlugin implements ModePlugin<DrillMode> {
                     tick_range: OpenRange.from(
                         this.last_enabled_tick,
                         this.tick_provider.getCurrentTick()
-                    )
+                    ),
+                    // TODO: this assumes full insertion each time, should be based on actual mined amount
+                    amount: miningDrillMaxInsertion(this.drill_entity, this.sink_entity),
                 }
             )
             this.last_enabled_tick = null;
