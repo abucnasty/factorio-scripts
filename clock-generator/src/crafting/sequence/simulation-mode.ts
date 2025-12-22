@@ -1,6 +1,7 @@
 import assert from "../../common/assert";
 import { Duration } from "../../data-types";
 import { Inserter, InserterStackSize, Machine } from "../../entities";
+import { EntityTransferCount } from "./cycle/swing-counts";
 
 export const SimulationMode = {
     LOW_INSERTION_LIMITS: "low_insertion_limits",
@@ -32,21 +33,35 @@ export function simulationModeForInput(
 
 export function simulationModeForOutput(
     inserter: Inserter,
+    entity_transfer_count: EntityTransferCount,
     source_machine: Machine
 ): SimulationMode {
+    
 
     const machine_inputs = Array.from(source_machine.inputs.values());
     const is_output_inserter = inserter.source.entity_id.id === source_machine.entity_id.id;
 
     assert(is_output_inserter, `Inserter ${inserter.entity_id} is not an output inserter for machine ${source_machine.entity_id}`)
 
-    const any_input_has_low_insertion_limit = machine_inputs.some(it => it.automated_insertion_limit.quantity < InserterStackSize.SIZE_16)
+    const output_block = source_machine.output.outputBlock;
+
+    const expected_transfer_count = entity_transfer_count.total_transfer_count;
+    const expected_transfer_amount = expected_transfer_count.multiply(inserter.metadata.stack_size).toDecimal();
+
+
+    if (expected_transfer_amount > output_block.quantity) {
+        return SimulationMode.PREVENT_DESYNCS;
+    }
+
+    const any_input_has_low_insertion_limit = machine_inputs.some(it => it.automated_insertion_limit.quantity < inserter.metadata.stack_size);
 
     if (any_input_has_low_insertion_limit) {
         return SimulationMode.LOW_INSERTION_LIMITS;
     }
 
-    const output_block = source_machine.output.outputBlock;
+    
+
+    
 
     // if the output block condition is less than the max stack size for the ingredient, need to prevent
     // desyncs and add a buffer of a pickup to use the inserter as the inventory holder
@@ -58,7 +73,8 @@ export function simulationModeForOutput(
 
 export function computeSimulationMode(
     machine: Machine,
-    inserter: Inserter
+    inserter: Inserter,
+    entity_transfer_count: EntityTransferCount,
 ): SimulationMode {
 
     const is_output_inserter = inserter.source.entity_id.id === machine.entity_id.id;
@@ -69,7 +85,7 @@ export function computeSimulationMode(
     }
 
     if (is_output_inserter) {
-        return simulationModeForOutput(inserter, machine);
+        return simulationModeForOutput(inserter, entity_transfer_count, machine);
     }
 
     throw new Error(`Inserter ${inserter.entity_id} is not connected to machine ${machine.entity_id}`);
@@ -77,9 +93,10 @@ export function computeSimulationMode(
 
 export function computeLastSwingOffsetDuration(
     source_machine: Machine,
-    inserter: Inserter
+    inserter: Inserter,
+    entity_transfer_count: EntityTransferCount
 ): Duration {
-    const mode = computeSimulationMode(source_machine, inserter);
+    const mode = computeSimulationMode(source_machine, inserter, entity_transfer_count);
     if (mode === SimulationMode.NORMAL) {
         const animation = inserter.animation
         return Duration.ofTicks(

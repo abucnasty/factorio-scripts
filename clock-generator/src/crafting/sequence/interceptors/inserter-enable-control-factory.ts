@@ -94,7 +94,11 @@ export class EnableControlFactory {
         const transferred_items = belt_item_names.filter(it => inserter_filtered_items.has(it))
         const buffer_multiplier = 2
 
-        const mode: SimulationMode = computeSimulationMode(sink_state.machine, inserter);
+        const mode: SimulationMode = computeSimulationMode(
+            sink_state.machine, 
+            inserter,
+            this.entity_transfer_map.getOrThrow(inserter.entity_id),
+        );
 
         if (mode === SimulationMode.LOW_INSERTION_LIMITS) {
             return AlwaysEnabledControl
@@ -131,7 +135,11 @@ export class EnableControlFactory {
         const source_item_name = source_state.machine.output.item_name;
         const buffer_multiplier = 2
 
-        const mode: SimulationMode = computeSimulationMode(sink_state.machine, inserter);
+        const mode: SimulationMode = computeSimulationMode(
+            sink_state.machine,
+            inserter,
+            this.entity_transfer_map.getOrThrow(inserter.entity_id),
+        );
 
         if (mode === SimulationMode.LOW_INSERTION_LIMITS) {
             return this.sourceIsGreaterThanStackSize(
@@ -254,7 +262,11 @@ export class EnableControlFactory {
             ]
         )
 
-        const mode = computeSimulationMode(source_state.machine, inserter_state.inserter);
+        const mode = computeSimulationMode(
+            source_state.machine,
+            inserter_state.inserter,
+            this.entity_transfer_map.getOrThrow(inserter_state.inserter.entity_id),
+        );
 
         if (mode === SimulationMode.NORMAL) {
             return EnableControl.all(
@@ -368,7 +380,11 @@ export class EnableControlFactory {
         const total_transfer_count = Math.ceil(transfer_count.total_transfer_count.toDecimal());
         const animation = inserter_state.inserter.animation;
 
-        const mode = computeSimulationMode(source_state.machine, inserter_state.inserter);
+        const mode = computeSimulationMode(
+            source_state.machine,
+            inserter_state.inserter,
+            this.entity_transfer_map.getOrThrow(inserter_state.inserter.entity_id),
+        );
 
         if (mode === SimulationMode.LOW_INSERTION_LIMITS) {
             const total_swing_duration = Duration.ofTicks(

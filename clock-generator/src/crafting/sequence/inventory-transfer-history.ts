@@ -3,6 +3,7 @@ import { InventoryTransfer } from "./inventory-transfer";
 import { Duration, MapExtended, OpenRange } from "../../data-types";
 import { Entity, EntityId, Inserter, Machine, ReadableEntityRegistry } from "../../entities";
 import { Logger, defaultLogger } from "../../common/logger";
+import { EntityTransferCount, EntityTransferCountMap } from "./cycle/swing-counts";
 
 export class InventoryTransferHistory extends MapExtended<EntityId, InventoryTransfer[]> {
 
@@ -31,7 +32,8 @@ export class InventoryTransferHistory extends MapExtended<EntityId, InventoryTra
 
     public static trimEndsToAvoidBackSwingWakeLists(
         history: InventoryTransferHistory,
-        entity_registry: ReadableEntityRegistry
+        entity_registry: ReadableEntityRegistry,
+        entity_transfer_count_map: EntityTransferCountMap
     ): InventoryTransferHistory {
         const trimmed: Map<EntityId, InventoryTransfer[]> = new Map();
 
@@ -47,7 +49,11 @@ export class InventoryTransferHistory extends MapExtended<EntityId, InventoryTra
                 return;
             }
 
-            const last_swing_offset = computeLastSwingOffsetDuration(source_machine, entity);
+            const last_swing_offset = computeLastSwingOffsetDuration(
+                source_machine,
+                entity,
+                entity_transfer_count_map.getOrThrow(entityId)
+            );
 
             const trimmed_transfers: InventoryTransfer[] = transfers.map(transfer => {
                 const original_range = transfer.tick_range;
@@ -223,16 +229,17 @@ function deduplicateEntityTransfers(transfers: ReadonlyMap<EntityId, InventoryTr
 
 function computeLastSwingOffsetDuration(
     source_machine: Machine,
-    inserter: Inserter
+    inserter: Inserter,
+    entity_transfer_count: EntityTransferCount
 ): Duration {
-    const mode = computeSimulationMode(source_machine, inserter);
+    const mode = computeSimulationMode(source_machine, inserter, entity_transfer_count);
     if (mode === SimulationMode.NORMAL) {
         const animation = inserter.animation
         const offset = animation.rotation.ticks
         return Duration.ofTicks(-1 * offset);
     }
 
-    if (mode === SimulationMode.LOW_INSERTION_LIMITS) {
+    if (mode === SimulationMode.PREVENT_DESYNCS || mode === SimulationMode.LOW_INSERTION_LIMITS) {
         const inserter_stack_size = inserter.metadata.stack_size;
         const amount_per_craft_int = Math.ceil(source_machine.output.amount_per_craft.toDecimal());
         /**

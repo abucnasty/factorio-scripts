@@ -272,7 +272,8 @@ export function generateClockForConfig(
     const offset_history = InventoryTransferHistory.correctNegativeOffsets(merged_ranges);
     const trimmed_history = InventoryTransferHistory.trimEndsToAvoidBackSwingWakeLists(
         offset_history,
-        simulation_context.entity_registry
+        simulation_context.entity_registry,
+        crafting_cycle_plan.entity_transfer_map,
     );
     const final_history = trimmed_history;
 
