@@ -146,7 +146,7 @@ describe("generateClockForConfig", () => {
                 const expected_start_inclusive = 1
                 // the output inserter swings 6 times, so the end range can be anywhere between 61 and 71
                 // if 72 or more, the inserter will cause instability due to swinging a 7th time
-                const expected_end_inclusive = 49
+                const expected_end_inclusive = 50
                 
                 expect(inserterTransfers.length).toBe(1);
                 const transfer = inserterTransfers[0];

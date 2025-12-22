@@ -11,20 +11,20 @@ import { Duration, OpenRange } from "../../../data-types";
 export class EnableControlFactory {
 
     private readonly target_output_item_name: string;
-    private readonly terminal_machine_state: MachineState;
-    private readonly terminal_inserter_state: InserterState;
+    private readonly terminal_machine_states: Set<MachineState>;
+    private readonly terminal_inserter_states: Set<InserterState>;
     private readonly entity_transfer_map: EntityTransferCountMap
 
     constructor(
         private readonly entity_state_registry: ReadableEntityStateRegistry,
         private readonly crafting_cycle_plan: CraftingCyclePlan,
         private readonly tick_provider: TickProvider,
-        private readonly resettable_registry: ResettableRegistry,
+        private readonly resettable_registry: ResettableRegistry
     ) {
         this.target_output_item_name = this.crafting_cycle_plan.production_rate.machine_production_rate.item;
         this.entity_transfer_map = this.crafting_cycle_plan.entity_transfer_map;
-        this.terminal_machine_state = this.findFinalMachineOrThrow();
-        this.terminal_inserter_state = this.findFinalInserterOrThrow();
+        this.terminal_machine_states = this.findFinalMachines();
+        this.terminal_inserter_states = this.findFinalInserters();
     }
 
     public createForEntityId(entity_id: EntityId): EnableControl {
@@ -41,21 +41,24 @@ export class EnableControlFactory {
         const source_state = this.entity_state_registry.getSourceStateOrThrow(entity_id);
         const sink_state = this.entity_state_registry.getSinkStateOrThrow(entity_id);
 
-        if (entity_state === this.terminal_inserter_state) {
-            // create output inserter control here
+        // Check if this is a terminal output inserter
+        if (this.terminal_inserter_states.has(entity_state)) {
+            // Find the corresponding terminal machine for this inserter
+            const terminal_machine = this.findTerminalMachineForInserter(entity_state);
             return this.transferCountFromMachine(
-                this.terminal_inserter_state,
-                this.terminal_machine_state,
+                entity_state,
+                terminal_machine,
             );
         }
 
         const additional_enable_controls: EnableControl[] = [];
 
-        if (sink_state === this.terminal_machine_state) {
+        // Check if this inserter feeds into any terminal machine
+        if (EntityState.isMachine(sink_state) && this.terminal_machine_states.has(sink_state)) {
             additional_enable_controls.push(
                 this.transferCountToMachine(
                     entity_state,
-                    this.terminal_machine_state,
+                    sink_state,
                 )
             );
         }
@@ -453,25 +456,52 @@ export class EnableControlFactory {
         })
     }
 
-    private findFinalMachineOrThrow(): MachineState {
-        const final_machine = this.entity_state_registry
+    /**
+     * Find all machines that produce the target output item.
+     */
+    private findFinalMachines(): Set<MachineState> {
+        const final_machines = this.entity_state_registry
             .getAllStates()
             .filter(EntityState.isMachine)
-            .find(s => s.machine.output.item_name === this.target_output_item_name);
-        assert(final_machine !== undefined,
+            .filter(s => s.machine.output.item_name === this.target_output_item_name);
+        assert(
+            final_machines.length > 0,
             `No machine found producing target output item ${this.target_output_item_name}`
-        )
-        return final_machine;
+        );
+        return new Set(final_machines);
     }
 
-    private findFinalInserterOrThrow(): InserterState {
-        const final_inserter = this.entity_state_registry
-            .getAllStates()
-            .filter(EntityState.isInserter)
-            .find(s => s.inserter.source.entity_id.id === this.terminal_machine_state.entity_id.id);
-        assert(final_inserter !== undefined,
-            `No inserter found taking output from machine ${this.terminal_machine_state.entity_id}`
-        )
-        return final_inserter
+    /**
+     * Find all inserters that take output from terminal machines.
+     * Each terminal machine must have exactly one dedicated output inserter.
+     */
+    private findFinalInserters(): Set<InserterState> {
+        const final_inserters = new Set<InserterState>();
+        for (const terminal_machine of this.terminal_machine_states) {
+            const inserter = this.entity_state_registry
+                .getAllStates()
+                .filter(EntityState.isInserter)
+                .find(s => s.inserter.source.entity_id.id === terminal_machine.entity_id.id);
+            assert(
+                inserter !== undefined,
+                `No inserter found taking output from terminal machine ${terminal_machine.entity_id.id}`
+            );
+            final_inserters.add(inserter);
+        }
+        return final_inserters;
+    }
+
+    /**
+     * Find the terminal machine that a given terminal inserter takes output from.
+     */
+    private findTerminalMachineForInserter(inserter_state: InserterState): MachineState {
+        for (const terminal_machine of this.terminal_machine_states) {
+            if (inserter_state.inserter.source.entity_id.id === terminal_machine.entity_id.id) {
+                return terminal_machine;
+            }
+        }
+        throw new Error(
+            `Inserter ${inserter_state.entity_id.id} is not connected to any terminal machine`
+        );
     }
 }

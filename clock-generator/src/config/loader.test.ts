@@ -22,7 +22,7 @@ describe("parseConfig", () => {
 
             expect(config.target_output.recipe).toBe("electronic-circuit");
             expect(config.target_output.items_per_second).toBe(1.5);
-            expect(config.target_output.machines).toBe(2);
+            expect(config.target_output.copies).toBe(2);
             expect(config.machines).toEqual([]);
             expect(config.inserters).toEqual([]);
             expect(config.belts).toEqual([]);

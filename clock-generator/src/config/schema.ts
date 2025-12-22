@@ -27,13 +27,46 @@ export type MachineConfiguration = z.infer<typeof MachineConfigurationSchema>;
 // Target Production Rate Configuration
 // ============================================================================
 
+/**
+ * Schema for target production rate configuration.
+ * 
+ * @property recipe - The recipe name to produce
+ * @property items_per_second - Target production rate in items per second
+ * @property copies - Number of duplicate setups being modeled (multiplier for ratio calculations)
+ * @property machines - DEPRECATED: Use 'copies' instead. Kept for backward compatibility.
+ */
 export const TargetProductionRateConfigSchema = z.object({
     recipe: z.string(),
     items_per_second: z.number().positive(),
-    machines: z.number().int().positive()
+    copies: z.number().int().positive().optional(),
+    /** @deprecated Use 'copies' instead */
+    machines: z.number().int().positive().optional()
+}).transform((data) => {
+    // Handle backward compatibility: machines -> copies
+    let copies: number;
+    if (data.copies !== undefined) {
+        copies = data.copies;
+    } else if (data.machines !== undefined) {
+        console.warn(
+            `[DEPRECATION WARNING] The 'machines' field in target_output is deprecated. ` +
+            `Please use 'copies' instead. Found in recipe: ${data.recipe}`
+        );
+        copies = data.machines;
+    } else {
+        throw new Error(
+            `target_output must specify either 'copies' or 'machines' (deprecated). ` +
+            `Found in recipe: ${data.recipe}`
+        );
+    }
+    
+    return {
+        recipe: data.recipe,
+        items_per_second: data.items_per_second,
+        copies
+    };
 });
 
-export type TargetProductionRateConfig = z.infer<typeof TargetProductionRateConfigSchema>;
+export type TargetProductionRateConfig = z.output<typeof TargetProductionRateConfigSchema>;
 
 // ============================================================================
 // Enable Control Override Configuration

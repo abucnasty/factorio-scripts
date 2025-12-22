@@ -47,10 +47,7 @@ export class InventoryTransferHistory extends MapExtended<EntityId, InventoryTra
                 return;
             }
 
-            const last_swing_offset = computeLastSwingOffsetDuration(
-                source_machine,
-                entity
-            );
+            const last_swing_offset = computeLastSwingOffsetDuration(source_machine, entity);
 
             const trimmed_transfers: InventoryTransfer[] = transfers.map(transfer => {
                 const original_range = transfer.tick_range;

@@ -27,7 +27,7 @@ async function saveAllHoconConfigsToJson() {
 
 async function main() {
     const config: Config = await loadConfigFromFile(
-        ConfigPaths.PRODUCTION_SCIENCE_SHARED
+        ConfigPaths.CHEMICAL_SCIENCE_ENGINES
     );
     console.log("Loaded config:");
     console.log("----------------------");

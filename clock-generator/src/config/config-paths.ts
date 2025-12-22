@@ -21,7 +21,7 @@ export const ConfigPaths = {
     CHEMICAL_SCIENCE: path.join(CONFIG_SAMPLES_DIR, 'chemical-science.conf'),
     CHEMICAL_SCIENCE_ADVANCED_CIRCUIT: path.join(CONFIG_SAMPLES_DIR, 'chemical-science-advanced-circuit.conf'),
     CHEMICAL_SCIENCE_DI_ENGINE: path.join(CONFIG_SAMPLES_DIR, 'chemical-science-di-engine.conf'),
-    CHEMICAL_SCIENCE_ENGINES: path.join(CONFIG_SAMPLES_DIR, 'chemical-science-engines.conf'),
+    CHEMICAL_SCIENCE_ENGINES: path.join(CONFIG_SAMPLES_DIR, 'chemical-science-engines.json'),
     ELECTRIC_FURNACE: path.join(CONFIG_SAMPLES_DIR, 'electric-furnace.conf'),
     LOGISTIC_SCIENCE: path.join(CONFIG_SAMPLES_DIR, 'logistic-science.conf'),
     LOGISTIC_SCIENCE_SHARED_INSERTER: path.join(CONFIG_SAMPLES_DIR, 'logistic-science-shared-inserter.conf'),

@@ -4,21 +4,22 @@ import { FactorioIcon } from './FactorioIcon';
 interface TargetOutputFormProps {
     recipe: string;
     itemsPerSecond: number;
-    machines: number;
+    /** Number of duplicate setups being modeled */
+    copies: number;
     recipeNames: string[];
     onRecipeChange: (recipe: string) => void;
     onItemsPerSecondChange: (value: number) => void;
-    onMachinesChange: (value: number) => void;
+    onCopiesChange: (value: number) => void;
 }
 
 export function TargetOutputForm({
     recipe,
     itemsPerSecond,
-    machines,
+    copies,
     recipeNames,
     onRecipeChange,
     onItemsPerSecondChange,
-    onMachinesChange,
+    onCopiesChange,
 }: TargetOutputFormProps) {
     return (
         <Paper sx={{ p: 2, mb: 2 }}>
@@ -71,10 +72,10 @@ export function TargetOutputForm({
                     required
                 />
                 <TextField
-                    label="Machines"
+                    label="Copies"
                     type="number"
-                    value={machines}
-                    onChange={(e) => onMachinesChange(parseInt(e.target.value) || 1)}
+                    value={copies}
+                    onChange={(e) => onCopiesChange(parseInt(e.target.value) || 1)}
                     inputProps={{ step: 1, min: 1 }}
                     sx={{ width: 120 }}
                     required

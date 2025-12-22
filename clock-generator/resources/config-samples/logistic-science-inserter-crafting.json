@@ -2,7 +2,7 @@
   "target_output": {
     "recipe": "inserter",
     "items_per_second": 240,
-    "machines": 3
+    "copies": 3
   },
   "machines": [
     {

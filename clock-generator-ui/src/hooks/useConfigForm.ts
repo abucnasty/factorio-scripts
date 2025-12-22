@@ -68,7 +68,8 @@ export interface ConfigFormData {
     target_output: {
         recipe: string;
         items_per_second: number;
-        machines: number;
+        /** Number of duplicate setups being modeled (multiplier for ratio calculations) */
+        copies: number;
     };
     machines: MachineFormData[];
     inserters: InserterFormData[];
@@ -87,7 +88,7 @@ const createDefaultConfig = (): ConfigFormData => ({
     target_output: {
         recipe: '',
         items_per_second: 1,
-        machines: 1,
+        copies: 1,
     },
     machines: [
         {
@@ -109,6 +110,12 @@ function loadConfigFromStorage(): ConfigFormData {
             const parsed = JSON.parse(stored);
             // Basic validation - check if it has the required fields
             if (parsed && parsed.target_output && parsed.machines) {
+                // Handle backward compatibility: machines -> copies in target_output
+                if (parsed.target_output.machines !== undefined && parsed.target_output.copies === undefined) {
+                    console.warn('[DEPRECATION] Migrating target_output.machines to target_output.copies');
+                    parsed.target_output.copies = parsed.target_output.machines;
+                    delete parsed.target_output.machines;
+                }
                 return parsed as ConfigFormData;
             }
         }

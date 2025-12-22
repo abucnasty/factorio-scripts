@@ -1,8 +1,8 @@
 {
   "target_output": {
     "recipe": "engine-unit",
-    "items_per_second": 60,
-    "machines": 5
+    "items_per_second": 24,
+    "copies": 1
   },
   "machines": [
     {
@@ -41,7 +41,8 @@
         "type": "belt",
         "id": 1
       },
-      "stack_size": 16
+      "stack_size": 16,
+      "overrides": {}
     },
     {
       "source": {
@@ -52,7 +53,8 @@
         "type": "belt",
         "id": 1
       },
-      "stack_size": 16
+      "stack_size": 16,
+      "overrides": {}
     },
     {
       "source": {
@@ -91,7 +93,12 @@
         "type": "machine",
         "id": 2
       },
-      "stack_size": 16
+      "stack_size": 16,
+      "overrides": {
+        "enable_control": {
+          "mode": "ALWAYS"
+        }
+      }
     },
     {
       "source": {
@@ -102,7 +109,12 @@
         "type": "machine",
         "id": 3
       },
-      "stack_size": 16
+      "stack_size": 16,
+      "overrides": {
+        "enable_control": {
+          "mode": "ALWAYS"
+        }
+      }
     },
     {
       "source": {
@@ -170,5 +182,8 @@
         }
       ]
     }
-  ]
+  ],
+  "overrides": {
+    "terminal_swing_count": 1
+  }
 }
