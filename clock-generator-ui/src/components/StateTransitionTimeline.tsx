@@ -143,22 +143,6 @@ interface EntityRowProps {
 }
 
 function EntityRow({ entity, totalDuration, rowHeight, viewMode, statusFilters }: EntityRowProps) {
-    const transitionCount = entity.transitions.length;
-
-    // Get icon name based on entity type
-    const iconName = entity.entity_type === 'inserter' 
-        ? 'stack-inserter' 
-        : entity.entity_type === 'drill'
-        ? 'electric-mining-drill'
-        : 'assembling-machine-3';
-
-    // Get entity type color
-    const entityTypeColor = entity.entity_type === 'machine' 
-        ? 'success.main' 
-        : entity.entity_type === 'drill'
-        ? 'warning.main'
-        : 'info.main';
-
     // Determine if a transition is filtered out
     const isTransitionFiltered = (transition: SerializableStateTransition): boolean => {
         if (viewMode === 'simplified') {
@@ -175,6 +159,23 @@ function EntityRow({ entity, totalDuration, rowHeight, viewMode, statusFilters }
             }
         }
     };
+
+    const totalTransitionCount = entity.transitions.length;
+    const visibleTransitionCount = entity.transitions.filter(t => !isTransitionFiltered(t)).length;
+
+    // Get icon name based on entity type
+    const iconName = entity.entity_type === 'inserter' 
+        ? 'stack-inserter' 
+        : entity.entity_type === 'drill'
+        ? 'electric-mining-drill'
+        : 'assembling-machine-3';
+
+    // Get entity type color
+    const entityTypeColor = entity.entity_type === 'machine' 
+        ? 'success.main' 
+        : entity.entity_type === 'drill'
+        ? 'warning.main'
+        : 'info.main';
 
     return (
         <Box sx={{ display: 'flex', alignItems: 'center', height: rowHeight, mb: 0.5 }}>
@@ -195,7 +196,7 @@ function EntityRow({ entity, totalDuration, rowHeight, viewMode, statusFilters }
                                 </Typography>
                             )}
                             <Typography variant="caption" display="block">
-                                Transitions: {transitionCount}
+                                Transitions: {visibleTransitionCount}/{totalTransitionCount}
                             </Typography>
                             <Typography variant="caption" display="block">
                                 Initial: {getStatusLabel(entity.initial_status)}
@@ -227,7 +228,9 @@ function EntityRow({ entity, totalDuration, rowHeight, viewMode, statusFilters }
                                 borderRadius: 0.5,
                             }}
                         >
-                            {transitionCount}
+                            {visibleTransitionCount !== totalTransitionCount 
+                                ? `${visibleTransitionCount}/${totalTransitionCount}` 
+                                : totalTransitionCount}
                         </Typography>
                         {/* Show item icons for associated items */}
                         {entity.items.length > 0 && (
@@ -392,6 +395,43 @@ export function StateTransitionTimeline({ stateTransitionHistory }: StateTransit
         const drills = sortedEntities.filter(e => e.entity_type === 'drill');
         return { machines, inserters, drills };
     }, [sortedEntities]);
+
+    // Helper to check if a transition is filtered for a given entity type
+    const isTransitionVisible = (entityType: 'inserter' | 'machine' | 'drill', status: string): boolean => {
+        if (viewMode === 'simplified') {
+            const category = statusToCategory(entityType, status);
+            return statusFilters.categories.has(category);
+        } else {
+            if (entityType === 'inserter') {
+                return statusFilters.inserterStatuses.has(status);
+            } else if (entityType === 'machine') {
+                return statusFilters.machineStatuses.has(status);
+            } else {
+                return statusFilters.drillStatuses.has(status);
+            }
+        }
+    };
+
+    // Calculate visible transition counts for section headers
+    const transitionCounts = useMemo(() => {
+        const countForEntities = (entities: SerializableEntityStateTransitions[]) => {
+            let visible = 0;
+            let total = 0;
+            for (const entity of entities) {
+                total += entity.transitions.length;
+                visible += entity.transitions.filter(t => 
+                    isTransitionVisible(entity.entity_type, t.to_status)
+                ).length;
+            }
+            return { visible, total };
+        };
+
+        return {
+            machines: countForEntities(machines),
+            inserters: countForEntities(inserters),
+            drills: countForEntities(drills),
+        };
+    }, [machines, inserters, drills, viewMode, statusFilters]);
 
     // Calculate tick markers
     const tickMarkers: number[] = [];
@@ -684,7 +724,9 @@ export function StateTransitionTimeline({ stateTransitionHistory }: StateTransit
                     {machines.length > 0 && filters.machine && (
                         <Box sx={{ mb: 2 }}>
                             <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1 }}>
-                                Machines ({machines.length})
+                                Machines ({machines.length}) · {transitionCounts.machines.visible !== transitionCounts.machines.total 
+                                    ? `${transitionCounts.machines.visible}/${transitionCounts.machines.total} transitions` 
+                                    : `${transitionCounts.machines.total} transitions`}
                             </Typography>
                             {machines.map(entity => (
                                 <EntityRow
@@ -703,7 +745,9 @@ export function StateTransitionTimeline({ stateTransitionHistory }: StateTransit
                     {inserters.length > 0 && filters.inserter && (
                         <Box sx={{ mb: 2 }}>
                             <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1 }}>
-                                Inserters ({inserters.length})
+                                Inserters ({inserters.length}) · {transitionCounts.inserters.visible !== transitionCounts.inserters.total 
+                                    ? `${transitionCounts.inserters.visible}/${transitionCounts.inserters.total} transitions` 
+                                    : `${transitionCounts.inserters.total} transitions`}
                             </Typography>
                             {inserters.map(entity => (
                                 <EntityRow
@@ -722,7 +766,9 @@ export function StateTransitionTimeline({ stateTransitionHistory }: StateTransit
                     {drills.length > 0 && filters.drill && (
                         <Box>
                             <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1 }}>
-                                Mining Drills ({drills.length})
+                                Mining Drills ({drills.length}) · {transitionCounts.drills.visible !== transitionCounts.drills.total 
+                                    ? `${transitionCounts.drills.visible}/${transitionCounts.drills.total} transitions` 
+                                    : `${transitionCounts.drills.total} transitions`}
                             </Typography>
                             {drills.map(entity => (
                                 <EntityRow
