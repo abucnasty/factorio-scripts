@@ -154,7 +154,18 @@
           "type": "machine",
           "id": 2
         },
-        "overrides": {}
+        "overrides": {
+          "enable_control": {
+            "mode": "CLOCKED",
+            "ranges": [
+              {
+                "start": 1,
+                "end": 2
+              }
+            ],
+            "period_duration_ticks": 168
+          }
+        }
       }
     ]
   }
