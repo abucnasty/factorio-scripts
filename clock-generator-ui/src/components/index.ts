@@ -7,3 +7,4 @@ export { OverridesForm } from './OverridesForm';
 export { ConfigImportExport } from './ConfigImportExport';
 export { BlueprintOutput } from './BlueprintOutput';
 export { DebugPanel } from './DebugPanel';
+export { StateTransitionTimeline } from './StateTransitionTimeline';

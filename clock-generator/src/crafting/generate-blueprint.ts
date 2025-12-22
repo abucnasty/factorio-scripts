@@ -25,6 +25,11 @@ import { SimulateStep } from "./runner/steps/simulate-step";
 import { RunnerStepType } from "./runner/steps/runner-step";
 import { Logger, defaultLogger } from "../common/logger";
 import { SerializableTransferHistory, serializeTransferHistory } from "./sequence/transfer-history-serializer";
+import { StateTransitionHistory } from "./sequence/state-transition-history";
+import { SerializableStateTransitionHistory, serializeStateTransitionHistory } from "./sequence/state-transition-serializer";
+import { InserterStateTransitionTrackerPlugin } from "../control-logic/inserter/plugins/inserter-state-transition-tracker-plugin";
+import { MachineStateTransitionTrackerPlugin } from "../control-logic/machine/plugins/machine-state-transition-tracker-plugin";
+import { DrillStateTransitionTrackerPlugin } from "../control-logic/drill/plugins/drill-state-transition-tracker-plugin";
 
 const MAX_SIMULATION_TICKS = 500_000;
 
@@ -35,6 +40,8 @@ export interface BlueprintGenerationResult {
     transfer_history: InventoryTransferHistory;
     /** Serializable transfer history for UI visualization */
     serializable_transfer_history: SerializableTransferHistory;
+    /** Serializable state transition history for UI visualization */
+    serializable_state_transition_history: SerializableStateTransitionHistory;
 }
 
 /**
@@ -118,6 +125,36 @@ export function generateClockForConfig(
             relative_tick_provider,
             inventory_transfer_history
         ))
+    });
+
+    // Add state transition tracking plugins
+    const state_transition_history = new StateTransitionHistory();
+    const inserter_transition_callback = state_transition_history.createInserterCallback();
+    const machine_transition_callback = state_transition_history.createMachineCallback();
+    const drill_transition_callback = state_transition_history.createDrillCallback();
+
+    simulation_context.inserters.forEach(it => {
+        it.addPlugin(new InserterStateTransitionTrackerPlugin(
+            it.inserter_state.entity_id,
+            relative_tick_provider,
+            inserter_transition_callback
+        ));
+    });
+
+    simulation_context.machines.forEach(it => {
+        it.addPlugin(new MachineStateTransitionTrackerPlugin(
+            it.machine_state.entity_id,
+            relative_tick_provider,
+            machine_transition_callback
+        ));
+    });
+
+    simulation_context.drills.forEach(it => {
+        it.addPlugin(new DrillStateTransitionTrackerPlugin(
+            it.drill_state.entity_id,
+            relative_tick_provider,
+            drill_transition_callback
+        ));
     });
 
     logger.log(`Created simulation context with ${simulation_context.machines.length} machines and ${simulation_context.inserters.length} inserters.`);
@@ -248,6 +285,7 @@ export function generateClockForConfig(
     logger.log(`Starting simulation for ${duration.ticks} ticks`);
     logger.log("Executing Simulate Step");
     inventory_transfer_history.clear();
+    state_transition_history.clear();
     relative_tick = simulation_context.tick_provider.getCurrentTick();
     resettable_registry.resetAll();
     
@@ -289,12 +327,20 @@ export function generateClockForConfig(
         duration.ticks
     );
 
+    // Create serializable state transition history for UI visualization
+    const serializable_state_transition_history = serializeStateTransitionHistory(
+        state_transition_history,
+        simulation_context.entity_registry,
+        duration.ticks
+    );
+
     return {
         blueprint,
         crafting_cycle_plan,
         simulation_duration: duration,
         transfer_history: final_history,
         serializable_transfer_history,
+        serializable_state_transition_history,
     };
 }
 

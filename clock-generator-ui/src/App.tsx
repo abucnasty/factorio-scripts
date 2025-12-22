@@ -28,6 +28,7 @@ import { ConfigImportExport } from './components/ConfigImportExport';
 import { BlueprintOutput } from './components/BlueprintOutput';
 import { DebugPanel } from './components/DebugPanel';
 import { TransferHistoryVisualization } from './components/TransferHistoryVisualization';
+import { StateTransitionTimeline } from './components/StateTransitionTimeline';
 
 const darkTheme = createTheme({
     palette: {
@@ -66,6 +67,7 @@ function App() {
         logs,
         blueprintString,
         transferHistory,
+        stateTransitionHistory,
         simulationDurationTicks,
         error,
         initialize,
@@ -262,6 +264,12 @@ function App() {
                             {transferHistory && (
                                 <Box sx={{ mt: 2 }}>
                                     <TransferHistoryVisualization transferHistory={transferHistory} />
+                                </Box>
+                            )}
+
+                            {stateTransitionHistory && (
+                                <Box sx={{ mt: 2 }}>
+                                    <StateTransitionTimeline stateTransitionHistory={stateTransitionHistory} />
                                 </Box>
                             )}
 
