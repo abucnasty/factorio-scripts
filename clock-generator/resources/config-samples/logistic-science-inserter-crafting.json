@@ -1,0 +1,240 @@
+{
+  "target_output": {
+    "recipe": "inserter",
+    "items_per_second": 240,
+    "machines": 3
+  },
+  "machines": [
+    {
+      "id": 1,
+      "recipe": "inserter",
+      "productivity": 0,
+      "crafting_speed": 74.000000953674
+    },
+    {
+      "id": 2,
+      "recipe": "iron-plate",
+      "productivity": 50,
+      "crafting_speed": 86.149997711182,
+      "type": "furnace"
+    },
+    {
+      "id": 3,
+      "recipe": "iron-plate",
+      "productivity": 50,
+      "crafting_speed": 86.149997711182,
+      "type": "furnace"
+    },
+    {
+      "id": 4,
+      "recipe": "iron-gear-wheel",
+      "productivity": 100,
+      "crafting_speed": 40.312498807907
+    },
+    {
+      "id": 5,
+      "recipe": "iron-plate",
+      "productivity": 50,
+      "crafting_speed": 86.149997711182,
+      "type": "furnace"
+    },
+    {
+      "id": 6,
+      "recipe": "iron-plate",
+      "productivity": 50,
+      "crafting_speed": 86.149997711182,
+      "type": "furnace"
+    }
+  ],
+  "inserters": [
+    {
+      "source": {
+        "type": "belt",
+        "id": 1
+      },
+      "sink": {
+        "type": "machine",
+        "id": 2
+      },
+      "stack_size": 16,
+      "filters": [
+        "iron-ore"
+      ]
+    },
+    {
+      "source": {
+        "type": "belt",
+        "id": 1
+      },
+      "sink": {
+        "type": "machine",
+        "id": 3
+      },
+      "stack_size": 16,
+      "filters": [
+        "iron-ore"
+      ]
+    },
+    {
+      "source": {
+        "type": "belt",
+        "id": 1
+      },
+      "sink": {
+        "type": "machine",
+        "id": 5
+      },
+      "stack_size": 16,
+      "filters": [
+        "iron-ore"
+      ]
+    },
+    {
+      "source": {
+        "type": "belt",
+        "id": 1
+      },
+      "sink": {
+        "type": "machine",
+        "id": 6
+      },
+      "stack_size": 16,
+      "filters": [
+        "iron-ore"
+      ]
+    },
+    {
+      "source": {
+        "type": "machine",
+        "id": 4
+      },
+      "sink": {
+        "type": "machine",
+        "id": 1
+      },
+      "stack_size": 16,
+      "filters": [
+        "iron-gear-wheel"
+      ]
+    },
+    {
+      "source": {
+        "type": "machine",
+        "id": 2
+      },
+      "sink": {
+        "type": "machine",
+        "id": 1
+      },
+      "stack_size": 16,
+      "filters": [
+        "iron-plate"
+      ]
+    },
+    {
+      "source": {
+        "type": "machine",
+        "id": 3
+      },
+      "sink": {
+        "type": "machine",
+        "id": 1
+      },
+      "stack_size": 16,
+      "filters": [
+        "iron-plate"
+      ]
+    },
+    {
+      "source": {
+        "type": "belt",
+        "id": 2
+      },
+      "sink": {
+        "type": "machine",
+        "id": 1
+      },
+      "stack_size": 16,
+      "filters": [
+        "electronic-circuit"
+      ]
+    },
+    {
+      "source": {
+        "type": "machine",
+        "id": 1
+      },
+      "sink": {
+        "type": "belt",
+        "id": 3
+      },
+      "stack_size": 16,
+      "filters": [
+        "inserter"
+      ]
+    },
+    {
+      "source": {
+        "type": "machine",
+        "id": 5
+      },
+      "sink": {
+        "type": "machine",
+        "id": 4
+      },
+      "stack_size": 16,
+      "filters": [
+        "iron-plate"
+      ]
+    },
+    {
+      "source": {
+        "type": "machine",
+        "id": 6
+      },
+      "sink": {
+        "type": "machine",
+        "id": 4
+      },
+      "stack_size": 16,
+      "filters": [
+        "iron-plate"
+      ]
+    }
+  ],
+  "belts": [
+    {
+      "id": 1,
+      "type": "turbo-transport-belt",
+      "lanes": [
+        {
+          "ingredient": "iron-ore",
+          "stack_size": 4
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "type": "turbo-transport-belt",
+      "lanes": [
+        {
+          "ingredient": "electronic-circuit",
+          "stack_size": 4
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "type": "turbo-transport-belt",
+      "lanes": [
+        {
+          "ingredient": "inserter",
+          "stack_size": 4
+        }
+      ]
+    }
+  ],
+  "overrides": {
+    "terminal_swing_count": 5
+  }
+}

@@ -24,8 +24,21 @@
       },
       "stack_size": 16,
       "filters": [
-        "transport-belt",
         "inserter"
+      ]
+    },
+    {
+      "source": {
+        "type": "belt",
+        "id": 1
+      },
+      "sink": {
+        "type": "machine",
+        "id": 1
+      },
+      "stack_size": 16,
+      "filters": [
+        "transport-belt"
       ]
     },
     {
@@ -35,7 +48,7 @@
       },
       "sink": {
         "type": "belt",
-        "id": 2
+        "id": 1
       },
       "stack_size": 16,
       "filters": [
@@ -54,16 +67,6 @@
         },
         {
           "ingredient": "inserter",
-          "stack_size": 4
-        }
-      ]
-    },
-    {
-      "id": 2,
-      "type": "turbo-transport-belt",
-      "lanes": [
-        {
-          "ingredient": "logistic-science-pack",
           "stack_size": 4
         }
       ]

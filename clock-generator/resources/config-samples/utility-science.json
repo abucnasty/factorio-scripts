@@ -1,15 +1,15 @@
 {
   "target_output": {
-    "recipe": "logistic-science-pack",
-    "items_per_second": 240,
-    "machines": 11
+    "recipe": "utility-science-pack",
+    "items_per_second": 120,
+    "machines": 7
   },
   "machines": [
     {
       "id": 1,
-      "recipe": "logistic-science-pack",
+      "recipe": "utility-science-pack",
       "productivity": 100,
-      "crafting_speed": 68.906247615814
+      "crafting_speed": 68.90625
     }
   ],
   "inserters": [
@@ -24,8 +24,23 @@
       },
       "stack_size": 16,
       "filters": [
-        "transport-belt",
-        "inserter"
+        "low-density-structure",
+        "processing-unit"
+      ]
+    },
+    {
+      "source": {
+        "type": "belt",
+        "id": 2
+      },
+      "sink": {
+        "type": "machine",
+        "id": 1
+      },
+      "stack_size": 16,
+      "filters": [
+        "low-density-structure",
+        "flying-robot-frame"
       ]
     },
     {
@@ -35,11 +50,11 @@
       },
       "sink": {
         "type": "belt",
-        "id": 2
+        "id": 1
       },
       "stack_size": 16,
       "filters": [
-        "logistic-science-pack"
+        "utility-science-pack"
       ]
     }
   ],
@@ -49,11 +64,11 @@
       "type": "turbo-transport-belt",
       "lanes": [
         {
-          "ingredient": "transport-belt",
+          "ingredient": "low-density-structure",
           "stack_size": 4
         },
         {
-          "ingredient": "inserter",
+          "ingredient": "processing-unit",
           "stack_size": 4
         }
       ]
@@ -63,7 +78,11 @@
       "type": "turbo-transport-belt",
       "lanes": [
         {
-          "ingredient": "logistic-science-pack",
+          "ingredient": "low-density-structure",
+          "stack_size": 4
+        },
+        {
+          "ingredient": "flying-robot-frame",
           "stack_size": 4
         }
       ]
