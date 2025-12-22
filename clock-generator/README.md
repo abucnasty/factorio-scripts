@@ -186,16 +186,93 @@ The tool generates a Factorio blueprint containing:
 For direct-insertion mining setups:
 
 ```typescript
-drills: [
+drills: {
+    mining_productivity_level: 50,
+    configs: [
+        {
+            id: 1,
+            type: "electric-mining-drill",
+            mined_item_name: "stone",
+            speed_bonus: 2.5,  // Get from: /c game.print(game.player.selected.speed_bonus)
+            target: { type: "machine", id: 1 }
+        }
+    ]
+}
+```
+
+### Enable Control Overrides
+
+You can override the automatic enable control logic for individual inserters and drills. This is useful when you want to manually specify when an entity should be enabled during the crafting cycle.
+
+#### Available Modes
+
+| Mode | Description |
+|------|-------------|
+| `AUTO` | Use automatic control logic (default behavior) |
+| `ALWAYS` | Entity is always enabled |
+| `NEVER` | Entity is never enabled |
+| `CLOCKED` | Entity is enabled during specified tick ranges |
+
+#### Inserter Override Example
+
+```conf
+inserters = [
     {
-        id: 1,
-        type: "electric-mining-drill",
-        mined_item_name: "stone",
-        speed_bonus: 2.5,  // Get from: /c game.print(game.player.selected.speed_bonus)
-        target: { type: "machine", id: 1 }
+        source { type = "belt", id = 1 }
+        sink { type = "machine", id = 1 }
+        stack_size = 16
+        overrides {
+            # Animation timing overrides (optional)
+            animation {
+                pickup_duration_ticks = 15
+            }
+            # Enable control override (optional)
+            enable_control {
+                mode = "CLOCKED"
+                ranges = [
+                    { start = 0, end = 100 },
+                    { start = 200, end = 300 }
+                ]
+                # Optional: custom period duration (defaults to crafting cycle duration)
+                period_duration_ticks = 500
+            }
+        }
     }
 ]
 ```
+
+#### Drill Override Example
+
+```conf
+drills {
+    mining_productivity_level = 50
+    configs = [
+        {
+            id = 1
+            type = "electric-mining-drill"
+            mined_item_name = "iron-ore"
+            speed_bonus = 0.5
+            target { type = "machine", id = 1 }
+            overrides {
+                enable_control { mode = "ALWAYS" }
+            }
+        }
+    ]
+}
+```
+
+#### Mode Details
+
+**AUTO (default)**: The simulation determines optimal enable windows automatically. This is the recommended mode for most setups.
+
+**ALWAYS**: The entity is always enabled. Use this when you want the entity to operate freely without clock control.
+
+**NEVER**: The entity is never enabled. Useful for debugging or temporarily disabling an entity.
+
+**CLOCKED**: The entity is enabled only during specified tick ranges within the period. Each range has:
+- `start`: The tick when the entity becomes enabled (inclusive)
+- `end`: The tick when the entity becomes disabled (inclusive)
+- `period_duration_ticks` (optional): The period length in ticks. If not specified, uses the crafting cycle duration.
 
 ### Configuration Overrides
 
