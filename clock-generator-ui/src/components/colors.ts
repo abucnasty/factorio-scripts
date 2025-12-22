@@ -23,16 +23,16 @@ export const COLOR_PALETTE = {
 export const CATEGORY_COLORS: Record<StatusCategory, string> = {
     ACTIVE: COLOR_PALETTE.green,       // actively working
     WAITING: COLOR_PALETTE.yellow,     // waiting for something
-    BLOCKED: COLOR_PALETTE.orange,     // blocked/cannot proceed
+    BLOCKED: COLOR_PALETTE.reddishPurple,     // blocked/cannot proceed
     DISABLED: COLOR_PALETTE.darkGrey,  // disabled by control
     IDLE: COLOR_PALETTE.lightGrey,     // nothing to do
 };
 
 // Detailed status colors for inserters
 export const INSERTER_STATUS_COLORS: Record<string, string> = {
-    PICKUP: COLOR_PALETTE.blue,        // picking up items
+    PICKUP: COLOR_PALETTE.green,        // picking up items
     DROP: COLOR_PALETTE.skyBlue,       // dropping items
-    SWING: COLOR_PALETTE.green,        // in motion
+    SWING: COLOR_PALETTE.blue,        // in motion
     IDLE: COLOR_PALETTE.lightGrey,     // waiting
     DISABLED: COLOR_PALETTE.darkGrey,  // disabled
 };
@@ -41,7 +41,7 @@ export const INSERTER_STATUS_COLORS: Record<string, string> = {
 export const MACHINE_STATUS_COLORS: Record<string, string> = {
     WORKING: COLOR_PALETTE.green,      // actively crafting
     INGREDIENT_SHORTAGE: COLOR_PALETTE.yellow, // waiting for ingredients
-    OUTPUT_FULL: COLOR_PALETTE.lightGrey, // output blocked
+    OUTPUT_FULL: COLOR_PALETTE.reddishPurple, // output blocked
 };
 
 // Detailed status colors for drills
