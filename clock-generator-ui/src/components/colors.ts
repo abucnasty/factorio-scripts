@@ -6,7 +6,7 @@
 import type { StatusCategory } from 'clock-generator/browser';
 
 // Colorblind-friendly palette (Wong, 2011)
-export const COLOR_PALETTE = {
+export const COLOR_BLIND_PALETTE = {
     blue: "#0072B2",
     orange: "#E69F00",
     yellow: "#F0E442",
@@ -19,35 +19,37 @@ export const COLOR_PALETTE = {
     white: "#FFFFFF",
 } as const;
 
+export const COLOR_BLIND_PALETTE_ALL: string[] = Object.values(COLOR_BLIND_PALETTE);
+
 // Status category colors (colorblind-friendly)
 export const CATEGORY_COLORS: Record<StatusCategory, string> = {
-    ACTIVE: COLOR_PALETTE.green,       // actively working
-    WAITING: COLOR_PALETTE.yellow,     // waiting for something
-    BLOCKED: COLOR_PALETTE.reddishPurple,     // blocked/cannot proceed
-    DISABLED: COLOR_PALETTE.darkGrey,  // disabled by control
-    IDLE: COLOR_PALETTE.lightGrey,     // nothing to do
+    ACTIVE: COLOR_BLIND_PALETTE.green,       // actively working
+    WAITING: COLOR_BLIND_PALETTE.yellow,     // waiting for something
+    BLOCKED: COLOR_BLIND_PALETTE.reddishPurple,     // blocked/cannot proceed
+    DISABLED: COLOR_BLIND_PALETTE.darkGrey,  // disabled by control
+    IDLE: COLOR_BLIND_PALETTE.lightGrey,     // nothing to do
 };
 
 // Detailed status colors for inserters
 export const INSERTER_STATUS_COLORS: Record<string, string> = {
-    PICKUP: COLOR_PALETTE.green,        // picking up items
-    DROP: COLOR_PALETTE.skyBlue,       // dropping items
-    SWING: COLOR_PALETTE.blue,        // in motion
-    IDLE: COLOR_PALETTE.lightGrey,     // waiting
-    DISABLED: COLOR_PALETTE.darkGrey,  // disabled
+    PICKUP: COLOR_BLIND_PALETTE.green,        // picking up items
+    DROP: COLOR_BLIND_PALETTE.skyBlue,       // dropping items
+    SWING: COLOR_BLIND_PALETTE.blue,        // in motion
+    IDLE: COLOR_BLIND_PALETTE.lightGrey,     // waiting
+    DISABLED: COLOR_BLIND_PALETTE.darkGrey,  // disabled
 };
 
 // Detailed status colors for machines
 export const MACHINE_STATUS_COLORS: Record<string, string> = {
-    WORKING: COLOR_PALETTE.green,      // actively crafting
-    INGREDIENT_SHORTAGE: COLOR_PALETTE.yellow, // waiting for ingredients
-    OUTPUT_FULL: COLOR_PALETTE.reddishPurple, // output blocked
+    WORKING: COLOR_BLIND_PALETTE.green,      // actively crafting
+    INGREDIENT_SHORTAGE: COLOR_BLIND_PALETTE.yellow, // waiting for ingredients
+    OUTPUT_FULL: COLOR_BLIND_PALETTE.reddishPurple, // output blocked
 };
 
 // Detailed status colors for drills
 export const DRILL_STATUS_COLORS: Record<string, string> = {
-    WORKING: COLOR_PALETTE.green,      // actively mining
-    DISABLED: COLOR_PALETTE.darkGrey,  // disabled
+    WORKING: COLOR_BLIND_PALETTE.green,      // actively mining
+    DISABLED: COLOR_BLIND_PALETTE.darkGrey,  // disabled
 };
 
 /**
@@ -65,7 +67,7 @@ export function getStatusColor(
         case 'drill':
             return DRILL_STATUS_COLORS[status] ?? DRILL_STATUS_COLORS.WORKING;
         default:
-            return COLOR_PALETTE.blue;
+            return COLOR_BLIND_PALETTE.blue;
     }
 }
 
