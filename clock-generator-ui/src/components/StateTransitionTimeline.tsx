@@ -1,10 +1,12 @@
-import { Close, Fullscreen, FilterList, Sort, Visibility } from '@mui/icons-material';
+import { Close, Fullscreen, FilterList, Sort, Visibility, Palette } from '@mui/icons-material';
 import {
     Box,
+    Button,
     Checkbox,
     Dialog,
     DialogContent,
     DialogTitle,
+    Divider,
     FormControlLabel,
     IconButton,
     Menu,
@@ -50,15 +52,31 @@ interface EntityFilters {
     drill: boolean;
 }
 
+// All possible detailed statuses by entity type
+const ALL_INSERTER_STATUSES = Object.keys(INSERTER_STATUS_COLORS);
+const ALL_MACHINE_STATUSES = Object.keys(MACHINE_STATUS_COLORS);
+const ALL_DRILL_STATUSES = Object.keys(DRILL_STATUS_COLORS);
+const ALL_CATEGORIES: StatusCategory[] = ['ACTIVE', 'WAITING', 'BLOCKED', 'DISABLED', 'IDLE'];
+
+interface StatusFilters {
+    // Detailed mode filters
+    inserterStatuses: Set<string>;
+    machineStatuses: Set<string>;
+    drillStatuses: Set<string>;
+    // Simplified mode filters
+    categories: Set<StatusCategory>;
+}
+
 interface StatusBarProps {
     transition: SerializableStateTransition;
     totalDuration: number;
     rowHeight: number;
     entityType: 'inserter' | 'machine' | 'drill';
     viewMode: ViewMode;
+    isFiltered?: boolean;
 }
 
-function StatusBar({ transition, totalDuration, rowHeight, entityType, viewMode }: StatusBarProps) {
+function StatusBar({ transition, totalDuration, rowHeight, entityType, viewMode, isFiltered = false }: StatusBarProps) {
     const startPercent = (transition.tick / totalDuration) * 100;
     const widthPercent = (transition.duration_ticks / totalDuration) * 100;
     
@@ -103,9 +121,10 @@ function StatusBar({ transition, totalDuration, rowHeight, entityType, viewMode 
                     bgcolor: color,
                     borderRadius: 0.5,
                     cursor: 'pointer',
+                    opacity: isFiltered ? 0.15 : 1,
                     transition: 'opacity 0.2s, transform 0.1s',
                     '&:hover': {
-                        opacity: 0.8,
+                        opacity: isFiltered ? 0.25 : 0.8,
                         transform: 'scaleY(1.1)',
                         zIndex: 1,
                     },
@@ -120,9 +139,10 @@ interface EntityRowProps {
     totalDuration: number;
     rowHeight: number;
     viewMode: ViewMode;
+    statusFilters: StatusFilters;
 }
 
-function EntityRow({ entity, totalDuration, rowHeight, viewMode }: EntityRowProps) {
+function EntityRow({ entity, totalDuration, rowHeight, viewMode, statusFilters }: EntityRowProps) {
     const transitionCount = entity.transitions.length;
 
     // Get icon name based on entity type
@@ -138,6 +158,23 @@ function EntityRow({ entity, totalDuration, rowHeight, viewMode }: EntityRowProp
         : entity.entity_type === 'drill'
         ? 'warning.main'
         : 'info.main';
+
+    // Determine if a transition is filtered out
+    const isTransitionFiltered = (transition: SerializableStateTransition): boolean => {
+        if (viewMode === 'simplified') {
+            const category = statusToCategory(entity.entity_type, transition.to_status);
+            return !statusFilters.categories.has(category);
+        } else {
+            // Detailed mode
+            if (entity.entity_type === 'inserter') {
+                return !statusFilters.inserterStatuses.has(transition.to_status);
+            } else if (entity.entity_type === 'machine') {
+                return !statusFilters.machineStatuses.has(transition.to_status);
+            } else {
+                return !statusFilters.drillStatuses.has(transition.to_status);
+            }
+        }
+    };
 
     return (
         <Box sx={{ display: 'flex', alignItems: 'center', height: rowHeight, mb: 0.5 }}>
@@ -222,6 +259,7 @@ function EntityRow({ entity, totalDuration, rowHeight, viewMode }: EntityRowProp
                         rowHeight={rowHeight}
                         entityType={entity.entity_type}
                         viewMode={viewMode}
+                        isFiltered={isTransitionFiltered(transition)}
                     />
                 ))}
             </Box>
@@ -232,38 +270,55 @@ function EntityRow({ entity, totalDuration, rowHeight, viewMode }: EntityRowProp
 interface LegendProps {
     viewMode: ViewMode;
     filters: EntityFilters;
+    statusFilters: StatusFilters;
 }
 
-function Legend({ viewMode, filters }: LegendProps) {
-    const items: { label: string; color: string }[] = [];
+function Legend({ viewMode, filters, statusFilters }: LegendProps) {
+    const items: { label: string; color: string; active: boolean }[] = [];
 
     if (viewMode === 'simplified') {
         // Category legend
         Object.entries(CATEGORY_COLORS).forEach(([category, color]) => {
-            items.push({ label: getCategoryLabel(category as StatusCategory), color });
+            items.push({ 
+                label: getCategoryLabel(category as StatusCategory), 
+                color,
+                active: statusFilters.categories.has(category as StatusCategory),
+            });
         });
     } else {
         // Detailed status legend - show relevant statuses based on filters
         if (filters.machine) {
             Object.entries(MACHINE_STATUS_COLORS).forEach(([status, color]) => {
-                items.push({ label: `Machine: ${getStatusLabel(status)}`, color });
+                items.push({ 
+                    label: `Machine: ${getStatusLabel(status)}`, 
+                    color,
+                    active: statusFilters.machineStatuses.has(status),
+                });
             });
         }
         if (filters.inserter) {
             Object.entries(INSERTER_STATUS_COLORS).forEach(([status, color]) => {
-                items.push({ label: `Inserter: ${getStatusLabel(status)}`, color });
+                items.push({ 
+                    label: `Inserter: ${getStatusLabel(status)}`, 
+                    color,
+                    active: statusFilters.inserterStatuses.has(status),
+                });
             });
         }
         if (filters.drill) {
             Object.entries(DRILL_STATUS_COLORS).forEach(([status, color]) => {
-                items.push({ label: `Drill: ${getStatusLabel(status)}`, color });
+                items.push({ 
+                    label: `Drill: ${getStatusLabel(status)}`, 
+                    color,
+                    active: statusFilters.drillStatuses.has(status),
+                });
             });
         }
     }
 
     return (
         <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 2 }}>
-            {items.map(({ label, color }) => (
+            {items.map(({ label, color, active }) => (
                 <Box
                     key={label}
                     sx={{
@@ -274,6 +329,7 @@ function Legend({ viewMode, filters }: LegendProps) {
                         py: 0.25,
                         bgcolor: 'action.hover',
                         borderRadius: 1,
+                        opacity: active ? 1 : 0.4,
                     }}
                 >
                     <Box
@@ -300,7 +356,14 @@ export function StateTransitionTimeline({ stateTransitionHistory }: StateTransit
         machine: true,
         drill: true,
     });
+    const [statusFilters, setStatusFilters] = useState<StatusFilters>({
+        inserterStatuses: new Set(ALL_INSERTER_STATUSES),
+        machineStatuses: new Set(ALL_MACHINE_STATUSES),
+        drillStatuses: new Set(ALL_DRILL_STATUSES),
+        categories: new Set(ALL_CATEGORIES),
+    });
     const [filterAnchorEl, setFilterAnchorEl] = useState<null | HTMLElement>(null);
+    const [statusFilterAnchorEl, setStatusFilterAnchorEl] = useState<null | HTMLElement>(null);
 
     const rowHeight = 24;
     const totalDuration = stateTransitionHistory.total_duration_ticks;
@@ -355,6 +418,57 @@ export function StateTransitionTimeline({ stateTransitionHistory }: StateTransit
 
     const handleFilterChange = (entityType: keyof EntityFilters) => {
         setFilters(prev => ({ ...prev, [entityType]: !prev[entityType] }));
+    };
+
+    const handleStatusFilterClick = (event: React.MouseEvent<HTMLElement>) => {
+        setStatusFilterAnchorEl(event.currentTarget);
+    };
+
+    const handleStatusFilterClose = () => {
+        setStatusFilterAnchorEl(null);
+    };
+
+    const handleStatusFilterChange = (entityType: 'inserter' | 'machine' | 'drill', status: string) => {
+        setStatusFilters(prev => {
+            const key = `${entityType}Statuses` as 'inserterStatuses' | 'machineStatuses' | 'drillStatuses';
+            const newSet = new Set(prev[key]);
+            if (newSet.has(status)) {
+                newSet.delete(status);
+            } else {
+                newSet.add(status);
+            }
+            return { ...prev, [key]: newSet };
+        });
+    };
+
+    const handleCategoryFilterChange = (category: StatusCategory) => {
+        setStatusFilters(prev => {
+            const newSet = new Set(prev.categories);
+            if (newSet.has(category)) {
+                newSet.delete(category);
+            } else {
+                newSet.add(category);
+            }
+            return { ...prev, categories: newSet };
+        });
+    };
+
+    const handleSelectAllStatuses = () => {
+        setStatusFilters({
+            inserterStatuses: new Set(ALL_INSERTER_STATUSES),
+            machineStatuses: new Set(ALL_MACHINE_STATUSES),
+            drillStatuses: new Set(ALL_DRILL_STATUSES),
+            categories: new Set(ALL_CATEGORIES),
+        });
+    };
+
+    const handleClearAllStatuses = () => {
+        setStatusFilters({
+            inserterStatuses: new Set(),
+            machineStatuses: new Set(),
+            drillStatuses: new Set(),
+            categories: new Set(),
+        });
     };
 
     const timelineContent = (isFullscreen: boolean) => (
@@ -421,10 +535,125 @@ export function StateTransitionTimeline({ stateTransitionHistory }: StateTransit
                         </MenuItem>
                     </Menu>
                 </Box>
+
+                {/* Status Filter */}
+                <Box>
+                    <Tooltip title="Filter by status">
+                        <IconButton onClick={handleStatusFilterClick} size="small">
+                            <Palette />
+                        </IconButton>
+                    </Tooltip>
+                    <Menu
+                        anchorEl={statusFilterAnchorEl}
+                        open={Boolean(statusFilterAnchorEl)}
+                        onClose={handleStatusFilterClose}
+                        PaperProps={{ sx: { maxHeight: 400 } }}
+                    >
+                        {/* Select All / Clear All */}
+                        <Box sx={{ px: 2, py: 1, display: 'flex', gap: 1 }}>
+                            <Button size="small" onClick={handleSelectAllStatuses}>All</Button>
+                            <Button size="small" onClick={handleClearAllStatuses}>None</Button>
+                        </Box>
+                        <Divider />
+
+                        {viewMode === 'simplified' ? (
+                            // Category filters
+                            ALL_CATEGORIES.map(category => (
+                                <MenuItem key={category} onClick={() => handleCategoryFilterChange(category)}>
+                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                        <Checkbox checked={statusFilters.categories.has(category)} size="small" />
+                                        <Box
+                                            sx={{
+                                                width: 12,
+                                                height: 12,
+                                                bgcolor: getCategoryColor(category),
+                                                borderRadius: 0.25,
+                                            }}
+                                        />
+                                        <Typography variant="body2">{getCategoryLabel(category)}</Typography>
+                                    </Box>
+                                </MenuItem>
+                            ))
+                        ) : (
+                            // Detailed status filters
+                            <>
+                                {filters.machine && (
+                                    <>
+                                        <Typography variant="caption" sx={{ px: 2, py: 0.5, color: 'text.secondary', display: 'block' }}>
+                                            Machine Statuses
+                                        </Typography>
+                                        {ALL_MACHINE_STATUSES.map(status => (
+                                            <MenuItem key={`machine-${status}`} onClick={() => handleStatusFilterChange('machine', status)}>
+                                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                                    <Checkbox checked={statusFilters.machineStatuses.has(status)} size="small" />
+                                                    <Box
+                                                        sx={{
+                                                            width: 12,
+                                                            height: 12,
+                                                            bgcolor: getStatusColor('machine', status),
+                                                            borderRadius: 0.25,
+                                                        }}
+                                                    />
+                                                    <Typography variant="body2">{getStatusLabel(status)}</Typography>
+                                                </Box>
+                                            </MenuItem>
+                                        ))}
+                                    </>
+                                )}
+                                {filters.inserter && (
+                                    <>
+                                        <Typography variant="caption" sx={{ px: 2, py: 0.5, color: 'text.secondary', display: 'block' }}>
+                                            Inserter Statuses
+                                        </Typography>
+                                        {ALL_INSERTER_STATUSES.map(status => (
+                                            <MenuItem key={`inserter-${status}`} onClick={() => handleStatusFilterChange('inserter', status)}>
+                                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                                    <Checkbox checked={statusFilters.inserterStatuses.has(status)} size="small" />
+                                                    <Box
+                                                        sx={{
+                                                            width: 12,
+                                                            height: 12,
+                                                            bgcolor: getStatusColor('inserter', status),
+                                                            borderRadius: 0.25,
+                                                        }}
+                                                    />
+                                                    <Typography variant="body2">{getStatusLabel(status)}</Typography>
+                                                </Box>
+                                            </MenuItem>
+                                        ))}
+                                    </>
+                                )}
+                                {filters.drill && (
+                                    <>
+                                        <Typography variant="caption" sx={{ px: 2, py: 0.5, color: 'text.secondary', display: 'block' }}>
+                                            Drill Statuses
+                                        </Typography>
+                                        {ALL_DRILL_STATUSES.map(status => (
+                                            <MenuItem key={`drill-${status}`} onClick={() => handleStatusFilterChange('drill', status)}>
+                                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                                    <Checkbox checked={statusFilters.drillStatuses.has(status)} size="small" />
+                                                    <Box
+                                                        sx={{
+                                                            width: 12,
+                                                            height: 12,
+                                                            bgcolor: getStatusColor('drill', status),
+                                                            borderRadius: 0.25,
+                                                        }}
+                                                    />
+                                                    <Typography variant="body2">{getStatusLabel(status)}</Typography>
+                                                </Box>
+                                            </MenuItem>
+                                        ))}
+                                    </>
+                                )}
+                            </>
+                        )}
+                    </Menu>
+                </Box>
             </Box>
 
             {/* Legend */}
-            <Legend viewMode={viewMode} filters={filters} />
+            <Legend viewMode={viewMode} filters={filters} statusFilters={statusFilters} />
 
             {/* Tick markers */}
             <Box sx={{ display: 'flex', mb: 0.5 }}>
@@ -464,6 +693,7 @@ export function StateTransitionTimeline({ stateTransitionHistory }: StateTransit
                                     totalDuration={totalDuration}
                                     rowHeight={isFullscreen ? 32 : rowHeight}
                                     viewMode={viewMode}
+                                    statusFilters={statusFilters}
                                 />
                             ))}
                         </Box>
@@ -482,6 +712,7 @@ export function StateTransitionTimeline({ stateTransitionHistory }: StateTransit
                                     totalDuration={totalDuration}
                                     rowHeight={isFullscreen ? 32 : rowHeight}
                                     viewMode={viewMode}
+                                    statusFilters={statusFilters}
                                 />
                             ))}
                         </Box>
@@ -500,6 +731,7 @@ export function StateTransitionTimeline({ stateTransitionHistory }: StateTransit
                                     totalDuration={totalDuration}
                                     rowHeight={isFullscreen ? 32 : rowHeight}
                                     viewMode={viewMode}
+                                    statusFilters={statusFilters}
                                 />
                             ))}
                         </Box>
@@ -515,6 +747,7 @@ export function StateTransitionTimeline({ stateTransitionHistory }: StateTransit
                             totalDuration={totalDuration}
                             rowHeight={isFullscreen ? 32 : rowHeight}
                             viewMode={viewMode}
+                            statusFilters={statusFilters}
                         />
                     ))}
                 </Box>
