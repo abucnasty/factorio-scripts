@@ -104,6 +104,9 @@ interface EntityRowProps {
 function EntityRow({ entity, totalDuration, rowHeight, colorMap }: EntityRowProps) {
     // Collect unique items transferred by this entity
     const transferredItems = Array.from(new Set(entity.transfers.map(t => t.item_name))).sort();
+    
+    // Calculate total amount transferred
+    const totalAmount = entity.transfers.reduce((sum, t) => sum + t.amount, 0);
 
     return (
         <Box sx={{ display: 'flex', alignItems: 'center', height: rowHeight, mb: 0.5 }}>
@@ -123,6 +126,9 @@ function EntityRow({ entity, totalDuration, rowHeight, colorMap }: EntityRowProp
                                     To: {entity.sink.label}
                                 </Typography>
                             )}
+                            <Typography variant="caption" display="block">
+                                Total transferred: {totalAmount}
+                            </Typography>
                         </Box>
                     }
                     arrow
@@ -142,6 +148,20 @@ function EntityRow({ entity, totalDuration, rowHeight, colorMap }: EntityRowProp
                             }}
                         >
                             {entity.label}
+                        </Typography>
+                        {/* Show total amount transferred */}
+                        <Typography
+                            variant="caption"
+                            sx={{
+                                fontSize: '0.65rem',
+                                color: 'text.secondary',
+                                bgcolor: 'action.selected',
+                                px: 0.5,
+                                borderRadius: 0.5,
+                                fontWeight: 'medium',
+                            }}
+                        >
+                            {totalAmount}
                         </Typography>
                         {/* Show item icons for transferred items */}
                         <Box sx={{ display: 'flex', gap: 0.25, ml: 0.5 }}>
