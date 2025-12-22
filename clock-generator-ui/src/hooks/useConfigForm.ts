@@ -11,11 +11,33 @@ export interface MachineFormData {
     type?: 'machine' | 'furnace';
 }
 
+// Enable control override types
+export type EnableControlMode = 'AUTO' | 'ALWAYS' | 'NEVER' | 'CLOCKED';
+
+export interface EnableControlRange {
+    start: number;
+    end: number;
+}
+
+export interface EnableControlOverride {
+    mode: EnableControlMode;
+    ranges?: EnableControlRange[];
+    period_duration_ticks?: number;
+}
+
+export interface InserterOverrides {
+    animation?: {
+        pickup_duration_ticks?: number;
+    };
+    enable_control?: EnableControlOverride;
+}
+
 export interface InserterFormData {
     source: { type: 'machine' | 'belt'; id: number };
     sink: { type: 'machine' | 'belt'; id: number };
     stack_size: number;
     filters?: string[];
+    overrides?: InserterOverrides;
 }
 
 export interface BeltLaneFormData {
@@ -29,12 +51,17 @@ export interface BeltFormData {
     lanes: [BeltLaneFormData] | [BeltLaneFormData, BeltLaneFormData];
 }
 
+export interface DrillOverrides {
+    enable_control?: EnableControlOverride;
+}
+
 export interface DrillFormData {
     id: number;
     type: 'electric-mining-drill' | 'burner-mining-drill' | 'big-mining-drill';
     mined_item_name: string;
     speed_bonus: number;
     target: { type: 'machine'; id: number };
+    overrides?: DrillOverrides;
 }
 
 export interface ConfigFormData {
@@ -375,6 +402,16 @@ export function useConfigForm(): UseConfigFormResult {
         });
     }, []);
 
+    // Helper to convert imported enable control override to form data
+    const mapEnableControlOverride = (ec: { mode: string; ranges?: { start: number; end: number }[]; period_duration_ticks?: number }): EnableControlOverride => {
+        const base: EnableControlOverride = { mode: ec.mode as EnableControlMode };
+        if (ec.mode === 'CLOCKED') {
+            base.ranges = ec.ranges?.map(r => ({ start: r.start, end: r.end }));
+            base.period_duration_ticks = ec.period_duration_ticks;
+        }
+        return base;
+    };
+
     // Import/Export
     const importConfig = useCallback((imported: Config) => {
         const formData: ConfigFormData = {
@@ -391,6 +428,12 @@ export function useConfigForm(): UseConfigFormResult {
                 sink: ins.sink,
                 stack_size: ins.stack_size,
                 filters: ins.filters,
+                overrides: ins.overrides ? {
+                    animation: ins.overrides.animation,
+                    enable_control: ins.overrides.enable_control 
+                        ? mapEnableControlOverride(ins.overrides.enable_control)
+                        : undefined,
+                } : undefined,
             })),
             belts: imported.belts.map((b) => ({
                 id: b.id,
@@ -406,6 +449,9 @@ export function useConfigForm(): UseConfigFormResult {
                         mined_item_name: d.mined_item_name,
                         speed_bonus: d.speed_bonus,
                         target: d.target,
+                        overrides: d.overrides?.enable_control ? {
+                            enable_control: mapEnableControlOverride(d.overrides.enable_control),
+                        } : undefined,
                     })),
                 }
                 : undefined,

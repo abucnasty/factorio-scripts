@@ -200,12 +200,16 @@ export function generateClockForConfig(
     const new_simulation_context = cloneSimulationContextWithInterceptors(simulation_context, {
         drill: (drill_state) => {
             if (configurable_enable_control_factory.hasOverride(drill_state.entity_id)) {
+                const override_mode = configurable_enable_control_factory.getOverrideOrThrow(drill_state.entity_id).mode;
+                logger.log(`Using configurable enable control override for drill ${drill_state.entity_id.id} with mode ${override_mode}`);
                 return configurable_enable_control_factory.createForEntityId(drill_state.entity_id);
             }
             return enable_control_factory.createForEntityId(drill_state.entity_id);
         },
         inserter: (inserter_state) => {
             if (configurable_enable_control_factory.hasOverride(inserter_state.entity_id)) {
+                const override_mode = configurable_enable_control_factory.getOverrideOrThrow(inserter_state.entity_id).mode;
+                logger.log(`Using configurable enable control override for inserter ${inserter_state.entity_id.id} with mode ${override_mode}`);
                 return configurable_enable_control_factory.createForEntityId(inserter_state.entity_id);
             }
             return enable_control_factory.createForEntityId(inserter_state.entity_id);

@@ -1,4 +1,4 @@
-import { Add, Close, Delete } from '@mui/icons-material';
+import { Add, Close, Delete, Settings } from '@mui/icons-material';
 import {
     Autocomplete,
     Box,
@@ -7,10 +7,12 @@ import {
     Paper,
     Popover,
     TextField,
+    Tooltip,
     Typography,
 } from '@mui/material';
 import { useMemo, useState } from 'react';
-import type { BeltFormData, InserterFormData, MachineFormData } from '../hooks/useConfigForm';
+import type { BeltFormData, EnableControlOverride, InserterFormData, MachineFormData } from '../hooks/useConfigForm';
+import { EnableControlModal } from './EnableControlModal';
 import type { RecipeInfo } from '../hooks/useSimulationWorker';
 import { FactorioIcon } from './FactorioIcon';
 
@@ -46,6 +48,7 @@ export function InsertersForm({
 }: InsertersFormProps) {
     const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
     const [activeSlot, setActiveSlot] = useState<{ inserterIndex: number; slotIndex: number } | null>(null);
+    const [enableControlModalInserterIndex, setEnableControlModalInserterIndex] = useState<number | null>(null);
 
     // Build entity options for the dropdown
     const entityOptions = useMemo<EntityOption[]>(() => {
@@ -479,6 +482,16 @@ export function InsertersForm({
                         })()}
                     </Box>
 
+                    {/* Enable Control Settings */}
+                    <Tooltip title="Configure Enable Control">
+                        <IconButton 
+                            onClick={() => setEnableControlModalInserterIndex(index)}
+                            color={inserter.overrides?.enable_control?.mode && inserter.overrides.enable_control.mode !== 'AUTO' ? 'primary' : 'default'}
+                        >
+                            <Settings />
+                        </IconButton>
+                    </Tooltip>
+
                     <IconButton onClick={() => onRemove(index)} color="error">
                         <Delete />
                     </IconButton>
@@ -542,6 +555,27 @@ export function InsertersForm({
                     />
                 </Box>
             </Popover>
+
+            {/* Enable Control Modal */}
+            <EnableControlModal
+                open={enableControlModalInserterIndex !== null}
+                onClose={() => setEnableControlModalInserterIndex(null)}
+                entityType="inserter"
+                entityLabel={enableControlModalInserterIndex !== null ? `Inserter ${enableControlModalInserterIndex + 1}` : ''}
+                currentOverride={enableControlModalInserterIndex !== null ? inserters[enableControlModalInserterIndex]?.overrides?.enable_control : undefined}
+                onSave={(override: EnableControlOverride | undefined) => {
+                    if (enableControlModalInserterIndex !== null) {
+                        const inserter = inserters[enableControlModalInserterIndex];
+                        onUpdate(enableControlModalInserterIndex, {
+                            overrides: {
+                                ...inserter.overrides,
+                                enable_control: override,
+                            },
+                        });
+                    }
+                    setEnableControlModalInserterIndex(null);
+                }}
+            />
         </Paper>
     );
 }

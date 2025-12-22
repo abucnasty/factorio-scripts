@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react';
-import type { Config, DebugSteps, LogMessage, FactorioData, SerializableTransferHistory, EnrichedRecipe } from 'clock-generator/browser';
+import type { Config, DebugSteps, LogMessage, FactorioData, SerializableTransferHistory } from 'clock-generator/browser';
 
 export interface RecipeInfo {
     ingredients: string[];

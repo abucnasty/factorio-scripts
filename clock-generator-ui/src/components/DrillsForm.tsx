@@ -1,4 +1,4 @@
-import { Add, Delete, ExpandMore } from '@mui/icons-material';
+import { Add, Delete, ExpandMore, Settings } from '@mui/icons-material';
 import {
     Accordion,
     AccordionDetails,
@@ -12,9 +12,12 @@ import {
     MenuItem,
     Select,
     TextField,
+    Tooltip,
     Typography,
 } from '@mui/material';
-import type { DrillFormData } from '../hooks/useConfigForm';
+import { useState } from 'react';
+import type { DrillFormData, EnableControlOverride } from '../hooks/useConfigForm';
+import { EnableControlModal } from './EnableControlModal';
 import { FactorioIcon } from './FactorioIcon';
 
 const DRILL_TYPES = [
@@ -50,6 +53,8 @@ export function DrillsForm({
     onUpdate,
     onRemove,
 }: DrillsFormProps) {
+    const [enableControlModalDrillIndex, setEnableControlModalDrillIndex] = useState<number | null>(null);
+
     return (
         <Accordion defaultExpanded={enabled}>
             <AccordionSummary expandIcon={<ExpandMore />}>
@@ -234,6 +239,15 @@ export function DrillsForm({
                                         ))}
                                     </Select>
                                 </FormControl>
+                                {/* Enable Control Settings */}
+                                <Tooltip title="Configure Enable Control">
+                                    <IconButton
+                                        onClick={() => setEnableControlModalDrillIndex(index)}
+                                        color={drill.overrides?.enable_control?.mode && drill.overrides.enable_control.mode !== 'AUTO' ? 'primary' : 'default'}
+                                    >
+                                        <Settings />
+                                    </IconButton>
+                                </Tooltip>
                                 <IconButton onClick={() => onRemove(index)} color="error">
                                     <Delete />
                                 </IconButton>
@@ -255,6 +269,27 @@ export function DrillsForm({
                         Mining drills are disabled. Enable them if your setup includes ore mining.
                     </Typography>
                 )}
+
+                {/* Enable Control Modal */}
+                <EnableControlModal
+                    open={enableControlModalDrillIndex !== null}
+                    onClose={() => setEnableControlModalDrillIndex(null)}
+                    entityType="drill"
+                    entityLabel={enableControlModalDrillIndex !== null ? `Drill ${drills[enableControlModalDrillIndex]?.id}` : ''}
+                    currentOverride={enableControlModalDrillIndex !== null ? drills[enableControlModalDrillIndex]?.overrides?.enable_control : undefined}
+                    onSave={(override: EnableControlOverride | undefined) => {
+                        if (enableControlModalDrillIndex !== null) {
+                            const drill = drills[enableControlModalDrillIndex];
+                            onUpdate(enableControlModalDrillIndex, {
+                                overrides: {
+                                    ...drill.overrides,
+                                    enable_control: override,
+                                },
+                            });
+                        }
+                        setEnableControlModalDrillIndex(null);
+                    }}
+                />
             </AccordionDetails>
         </Accordion>
     );

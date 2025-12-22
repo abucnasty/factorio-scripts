@@ -35,6 +35,15 @@ export class ConfigurableEnableControlFactory {
         return override !== undefined && override.mode !== "AUTO";
     }
 
+    public getOverrideOrThrow(entity_id: EntityId): EnableControlOverrideConfig {
+        const override = this.override_map.get(entity_id.id);
+        assert(
+            override !== undefined,
+            `No enable control override configured for entity ${entity_id.id}`
+        );
+        return override;
+    }
+
     /**
      * Create an EnableControl for the given entity ID based on its configured override.
      * 
