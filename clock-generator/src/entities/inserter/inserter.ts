@@ -37,7 +37,7 @@ export class InserterFactory {
             config.sink.type,
             config.stack_size,
             config.filters ?? [],
-            config.overrides ?? {}
+            config.overrides?.animation ?? {}
         )
 
         const source = config.source

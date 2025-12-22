@@ -36,6 +36,67 @@ export const TargetProductionRateConfigSchema = z.object({
 export type TargetProductionRateConfig = z.infer<typeof TargetProductionRateConfigSchema>;
 
 // ============================================================================
+// Enable Control Override Configuration
+// ============================================================================
+
+/**
+ * Mode for enable control override.
+ * - AUTO: Use automatic control logic (default)
+ * - ALWAYS: Always enabled
+ * - NEVER: Never enabled
+ * - CLOCKED: Use custom clocked ranges
+ */
+export const EnableControlModeSchema = z.enum(["AUTO", "ALWAYS", "NEVER", "CLOCKED"]);
+
+export type EnableControlMode = z.infer<typeof EnableControlModeSchema>;
+
+/**
+ * Range for clocked enable control.
+ */
+export const EnableControlRangeSchema = z.object({
+    start: z.number().int().min(0),
+    end: z.number().int().positive()
+});
+
+export type EnableControlRange = z.infer<typeof EnableControlRangeSchema>;
+
+/**
+ * Base schema for enable control override with mode discriminator.
+ */
+const EnableControlOverrideAutoSchema = z.object({
+    mode: z.literal("AUTO")
+});
+
+const EnableControlOverrideAlwaysSchema = z.object({
+    mode: z.literal("ALWAYS")
+});
+
+const EnableControlOverrideNeverSchema = z.object({
+    mode: z.literal("NEVER")
+});
+
+const EnableControlOverrideClockedSchema = z.object({
+    mode: z.literal("CLOCKED"),
+    /**
+     * The tick ranges during which the entity is enabled.
+     */
+    ranges: z.array(EnableControlRangeSchema).min(1),
+    /**
+     * Optional period duration in ticks. If not specified, falls back to crafting cycle duration.
+     */
+    period_duration_ticks: z.number().int().positive().optional()
+});
+
+export const EnableControlOverrideConfigSchema = z.discriminatedUnion("mode", [
+    EnableControlOverrideAutoSchema,
+    EnableControlOverrideAlwaysSchema,
+    EnableControlOverrideNeverSchema,
+    EnableControlOverrideClockedSchema
+]);
+
+export type EnableControlOverrideConfig = z.infer<typeof EnableControlOverrideConfigSchema>;
+
+// ============================================================================
 // Mining Drill Configuration
 // ============================================================================
 
@@ -52,6 +113,15 @@ export const DrillTargetMachineConfigSchema = z.object({
 
 export type DrillTargetMachineConfig = z.infer<typeof DrillTargetMachineConfigSchema>;
 
+/**
+ * Overrides configuration for mining drills.
+ */
+export const MiningDrillOverridesConfigSchema = z.object({
+    enable_control: EnableControlOverrideConfigSchema.optional()
+});
+
+export type MiningDrillOverridesConfig = z.infer<typeof MiningDrillOverridesConfigSchema>;
+
 export const MiningDrillConfigSchema = z.object({
     id: z.number().int().positive(),
     type: MiningDrillTypeSchema,
@@ -61,7 +131,8 @@ export const MiningDrillConfigSchema = z.object({
      * `/c game.print(game.player.selected.speed_bonus)`
      */
     speed_bonus: z.number(),
-    target: DrillTargetMachineConfigSchema
+    target: DrillTargetMachineConfigSchema,
+    overrides: MiningDrillOverridesConfigSchema.optional()
 });
 
 export type MiningDrillConfig = z.infer<typeof MiningDrillConfigSchema>;
@@ -102,6 +173,17 @@ export const InserterAnimationOverrideConfigSchema = z.object({
 
 export type InserterAnimationOverrideConfig = z.infer<typeof InserterAnimationOverrideConfigSchema>;
 
+/**
+ * Overrides configuration for inserters.
+ * Contains animation overrides and enable control overrides.
+ */
+export const InserterOverridesConfigSchema = z.object({
+    animation: InserterAnimationOverrideConfigSchema.optional(),
+    enable_control: EnableControlOverrideConfigSchema.optional()
+});
+
+export type InserterOverridesConfig = z.infer<typeof InserterOverridesConfigSchema>;
+
 export const InserterConfigSchema = z.object({
     source: z.discriminatedUnion("type", [
         InserterBeltConfigSchema,
@@ -113,7 +195,7 @@ export const InserterConfigSchema = z.object({
     ]),
     stack_size: z.number().int().positive(),
     filters: z.array(z.string()).optional(),
-    overrides: InserterAnimationOverrideConfigSchema.optional()
+    overrides: InserterOverridesConfigSchema.optional()
 });
 
 export type InserterConfig = z.infer<typeof InserterConfigSchema>;

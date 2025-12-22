@@ -1,5 +1,6 @@
 import assert from "../common/assert";
 import { Config } from '../config';
+import { EnableControlOverrideConfig } from '../config/schema';
 import { DebugPluginFactory } from './sequence/debug/debug-plugin-factory';
 import { DebugSettingsProvider, MutableDebugSettingsProvider } from './sequence/debug/debug-settings-provider';
 import { cloneSimulationContextWithInterceptors, SimulationContext } from './sequence/simulation-context';
@@ -10,12 +11,13 @@ import { EntityState, MachineState } from "../state";
 import { fraction } from "fractionability";
 import { createSignalPerInserterBlueprint } from "./blueprint";
 import { FactorioBlueprint } from "../blueprints/blueprint";
-import { TickProvider } from "../control-logic";
+import { ResettableRegistry, TickProvider } from "../control-logic";
 import { EntityTransferCountMap } from "./sequence/cycle/swing-counts";
 import { InventoryTransferHistory } from "./sequence/inventory-transfer-history";
 import { InserterInventoryHistoryPlugin } from "../control-logic/inserter/plugins/inserter-inventory-transfer-plugin";
 import { DrillInventoryTransferPlugin } from "../control-logic/drill/plugins/drill-inventory-transfer-plugin";
 import { EnableControlFactory } from "./sequence/interceptors/inserter-enable-control-factory";
+import { ConfigurableEnableControlFactory, EntityEnableControlOverrideMap } from "./sequence/interceptors/configurable-enable-control-factory";
 import { CraftingCyclePlan } from "./sequence/cycle/crafting-cycle";
 import { PrepareStep } from "./runner/steps/prepare-step";
 import { WarmupStep } from "./runner/steps/warmup-step";
@@ -171,19 +173,41 @@ export function generateClockForConfig(
     const recipe_lcm = config.overrides?.lcm ?? EntityTransferCountMap.lcm(swing_counts);
     logger.log(`Simulation context ingredient LCM: ${recipe_lcm}`);
 
-    // Create enable control factory
+    // Create resettable registry for centralized reset management
+    const resettable_registry = new ResettableRegistry();
+
+    // Build enable control override map from config
+    const enable_control_override_map = buildEnableControlOverrideMap(config);
+
+    // Create configurable enable control factory for user overrides
+    const configurable_enable_control_factory = new ConfigurableEnableControlFactory(
+        enable_control_override_map,
+        relative_tick_provider,
+        crafting_cycle_plan,
+        resettable_registry
+    );
+
+    // Create automatic enable control factory
     const enable_control_factory = new EnableControlFactory(
         simulation_context.state_registry,
         crafting_cycle_plan,
-        relative_tick_provider
+        relative_tick_provider,
+        resettable_registry
     );
 
     // Clone simulation context with interceptors
+    // Route to configurable factory if override mode is not AUTO, otherwise use automatic factory
     const new_simulation_context = cloneSimulationContextWithInterceptors(simulation_context, {
         drill: (drill_state) => {
+            if (configurable_enable_control_factory.hasOverride(drill_state.entity_id)) {
+                return configurable_enable_control_factory.createForEntityId(drill_state.entity_id);
+            }
             return enable_control_factory.createForEntityId(drill_state.entity_id);
         },
         inserter: (inserter_state) => {
+            if (configurable_enable_control_factory.hasOverride(inserter_state.entity_id)) {
+                return configurable_enable_control_factory.createForEntityId(inserter_state.entity_id);
+            }
             return enable_control_factory.createForEntityId(inserter_state.entity_id);
         }
     });
@@ -199,7 +223,7 @@ export function generateClockForConfig(
     // Step 2: Warm up
     logger.log("Warming up simulation...");
     logger.log("Executing Warmup Step");
-    enable_control_factory.getResettableLogic().forEach(it => it.reset());
+    resettable_registry.resetAll();
     if (debug_steps[RunnerStepType.WARM_UP]) {
         debug.enable();
     } else {
@@ -216,7 +240,7 @@ export function generateClockForConfig(
     logger.log("Executing Simulate Step");
     inventory_transfer_history.clear();
     relative_tick = simulation_context.tick_provider.getCurrentTick();
-    enable_control_factory.getResettableLogic().forEach(it => it.reset());
+    resettable_registry.resetAll();
     
     const simulate_step = new SimulateStep(new_simulation_context, duration);
     if (debug_steps[RunnerStepType.SIMULATE]) {
@@ -296,4 +320,36 @@ function computeCraftingCyclePlan(
         max_swings_possible,
         config.overrides ?? {}
     );
+}
+
+/**
+ * Builds a map of entity ID string to EnableControlOverrideConfig from the configuration.
+ * 
+ * Inserters use 1-based array index as entity ID with format "inserter:N".
+ * Drills use their explicit `id` field with format "drill:N".
+ */
+function buildEnableControlOverrideMap(config: Config): EntityEnableControlOverrideMap {
+    const map: EntityEnableControlOverrideMap = new Map();
+
+    // Process inserter overrides (1-based array index as entity ID)
+    config.inserters.forEach((inserter_config, index) => {
+        const entity_id = `inserter:${index + 1}`; // 1-based index with type prefix
+        const enable_control_override = inserter_config.overrides?.enable_control;
+        if (enable_control_override !== undefined) {
+            map.set(entity_id, enable_control_override);
+        }
+    });
+
+    // Process drill overrides (explicit id field)
+    if (config.drills !== undefined) {
+        config.drills.configs.forEach((drill_config) => {
+            const entity_id = `drill:${drill_config.id}`; // Explicit id with type prefix
+            const enable_control_override = drill_config.overrides?.enable_control;
+            if (enable_control_override !== undefined) {
+                map.set(entity_id, enable_control_override);
+            }
+        });
+    }
+
+    return map;
 }

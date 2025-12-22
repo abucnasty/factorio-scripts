@@ -1,7 +1,7 @@
 import assert from "../../../common/assert";
 import { EntityId, Inserter, InserterStackSize, Machine, MiningDrill, miningDrillMaxInsertion } from "../../../entities";
 import { EntityTransferCountMap } from "../cycle/swing-counts";
-import { AlwaysEnabledControl, EnableControl, Resettable, TickProvider } from "../../../control-logic";
+import { AlwaysEnabledControl, EnableControl, ResettableRegistry, TickProvider } from "../../../control-logic";
 import { assertIsInserterState, assertIsMachineState, BeltState, EntityState, InserterState, MachineState, ReadableEntityStateRegistry } from "../../../state";
 import { ItemName } from "../../../data";
 import { computeSimulationMode, SimulationMode, simulationModeForInput } from "../simulation-mode";
@@ -15,21 +15,16 @@ export class EnableControlFactory {
     private readonly terminal_inserter_state: InserterState;
     private readonly entity_transfer_map: EntityTransferCountMap
 
-    private readonly resettable_logic: Resettable[] = [];
-
     constructor(
         private readonly entity_state_registry: ReadableEntityStateRegistry,
         private readonly crafting_cycle_plan: CraftingCyclePlan,
         private readonly tick_provider: TickProvider,
+        private readonly resettable_registry: ResettableRegistry,
     ) {
         this.target_output_item_name = this.crafting_cycle_plan.production_rate.machine_production_rate.item;
         this.entity_transfer_map = this.crafting_cycle_plan.entity_transfer_map;
         this.terminal_machine_state = this.findFinalMachineOrThrow();
         this.terminal_inserter_state = this.findFinalInserterOrThrow();
-    }
-
-    public getResettableLogic(): readonly Resettable[] {
-        return this.resettable_logic;
     }
 
     public createForEntityId(entity_id: EntityId): EnableControl {
@@ -411,7 +406,7 @@ export class EnableControlFactory {
             enabledRanges: [...enable_ranges],
             tickProvider: this.tick_provider,
         })
-        this.resettable_logic.push(clocked_control);
+        this.resettable_registry.register(clocked_control);
 
         return clocked_control
     }

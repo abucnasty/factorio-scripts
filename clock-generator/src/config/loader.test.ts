@@ -103,7 +103,9 @@ describe("parseConfig", () => {
                         stack_size = 4
                         filters = ["iron-plate", "copper-plate"]
                         overrides {
-                            pickup_duration_ticks = 10
+                            animation {
+                                pickup_duration_ticks = 10
+                            }
                         }
                     }
                 ]
@@ -115,7 +117,7 @@ describe("parseConfig", () => {
             expect(config.inserters[0].source).toEqual({ type: "machine", id: 1 });
             expect(config.inserters[0].sink).toEqual({ type: "machine", id: 2 });
             expect(config.inserters[0].filters).toEqual(["iron-plate", "copper-plate"]);
-            expect(config.inserters[0].overrides?.pickup_duration_ticks).toBe(10);
+            expect(config.inserters[0].overrides?.animation?.pickup_duration_ticks).toBe(10);
         });
 
         it("should parse a config with belts (single lane)", async () => {
@@ -232,6 +234,229 @@ describe("parseConfig", () => {
 
             expect(config.overrides?.lcm).toBe(120);
             expect(config.overrides?.terminal_swing_count).toBe(10);
+        });
+
+        it("should parse inserter enable_control override with AUTO mode", async () => {
+            const hocon = `
+                target_output { recipe = "test", items_per_second = 1, machines = 1 }
+                machines = []
+                inserters = [
+                    {
+                        source { type = "belt", id = 1 }
+                        sink { type = "machine", id = 1 }
+                        stack_size = 4
+                        overrides {
+                            enable_control { mode = "AUTO" }
+                        }
+                    }
+                ]
+                belts = []
+            `;
+
+            const config = await parseConfig(hocon);
+
+            expect(config.inserters[0].overrides?.enable_control).toBeDefined();
+            expect(config.inserters[0].overrides?.enable_control?.mode).toBe("AUTO");
+        });
+
+        it("should parse inserter enable_control override with ALWAYS mode", async () => {
+            const hocon = `
+                target_output { recipe = "test", items_per_second = 1, machines = 1 }
+                machines = []
+                inserters = [
+                    {
+                        source { type = "belt", id = 1 }
+                        sink { type = "machine", id = 1 }
+                        stack_size = 4
+                        overrides {
+                            enable_control { mode = "ALWAYS" }
+                        }
+                    }
+                ]
+                belts = []
+            `;
+
+            const config = await parseConfig(hocon);
+
+            expect(config.inserters[0].overrides?.enable_control?.mode).toBe("ALWAYS");
+        });
+
+        it("should parse inserter enable_control override with NEVER mode", async () => {
+            const hocon = `
+                target_output { recipe = "test", items_per_second = 1, machines = 1 }
+                machines = []
+                inserters = [
+                    {
+                        source { type = "belt", id = 1 }
+                        sink { type = "machine", id = 1 }
+                        stack_size = 4
+                        overrides {
+                            enable_control { mode = "NEVER" }
+                        }
+                    }
+                ]
+                belts = []
+            `;
+
+            const config = await parseConfig(hocon);
+
+            expect(config.inserters[0].overrides?.enable_control?.mode).toBe("NEVER");
+        });
+
+        it("should parse inserter enable_control override with CLOCKED mode", async () => {
+            const hocon = `
+                target_output { recipe = "test", items_per_second = 1, machines = 1 }
+                machines = []
+                inserters = [
+                    {
+                        source { type = "belt", id = 1 }
+                        sink { type = "machine", id = 1 }
+                        stack_size = 4
+                        overrides {
+                            enable_control {
+                                mode = "CLOCKED"
+                                ranges = [
+                                    { start = 0, end = 100 },
+                                    { start = 200, end = 300 }
+                                ]
+                                period_duration_ticks = 500
+                            }
+                        }
+                    }
+                ]
+                belts = []
+            `;
+
+            const config = await parseConfig(hocon);
+
+            const enableControl = config.inserters[0].overrides?.enable_control;
+            expect(enableControl?.mode).toBe("CLOCKED");
+            if (enableControl?.mode === "CLOCKED") {
+                expect(enableControl.ranges).toHaveLength(2);
+                expect(enableControl.ranges[0]).toEqual({ start: 0, end: 100 });
+                expect(enableControl.ranges[1]).toEqual({ start: 200, end: 300 });
+                expect(enableControl.period_duration_ticks).toBe(500);
+            }
+        });
+
+        it("should parse inserter enable_control CLOCKED mode without optional period_duration_ticks", async () => {
+            const hocon = `
+                target_output { recipe = "test", items_per_second = 1, machines = 1 }
+                machines = []
+                inserters = [
+                    {
+                        source { type = "belt", id = 1 }
+                        sink { type = "machine", id = 1 }
+                        stack_size = 4
+                        overrides {
+                            enable_control {
+                                mode = "CLOCKED"
+                                ranges = [{ start = 0, end = 50 }]
+                            }
+                        }
+                    }
+                ]
+                belts = []
+            `;
+
+            const config = await parseConfig(hocon);
+
+            const enableControl = config.inserters[0].overrides?.enable_control;
+            expect(enableControl?.mode).toBe("CLOCKED");
+            if (enableControl?.mode === "CLOCKED") {
+                expect(enableControl.ranges).toHaveLength(1);
+                expect(enableControl.period_duration_ticks).toBeUndefined();
+            }
+        });
+
+        it("should parse inserter with both animation and enable_control overrides", async () => {
+            const hocon = `
+                target_output { recipe = "test", items_per_second = 1, machines = 1 }
+                machines = []
+                inserters = [
+                    {
+                        source { type = "belt", id = 1 }
+                        sink { type = "machine", id = 1 }
+                        stack_size = 4
+                        overrides {
+                            animation {
+                                pickup_duration_ticks = 15
+                            }
+                            enable_control { mode = "ALWAYS" }
+                        }
+                    }
+                ]
+                belts = []
+            `;
+
+            const config = await parseConfig(hocon);
+
+            expect(config.inserters[0].overrides?.animation?.pickup_duration_ticks).toBe(15);
+            expect(config.inserters[0].overrides?.enable_control?.mode).toBe("ALWAYS");
+        });
+
+        it("should parse drill enable_control override", async () => {
+            const hocon = `
+                target_output { recipe = "test", items_per_second = 1, machines = 1 }
+                machines = []
+                inserters = []
+                belts = []
+                drills {
+                    mining_productivity_level = 50
+                    configs = [
+                        {
+                            id = 1
+                            type = "electric-mining-drill"
+                            mined_item_name = "iron-ore"
+                            speed_bonus = 0.5
+                            target { type = "machine", id = 1 }
+                            overrides {
+                                enable_control { mode = "ALWAYS" }
+                            }
+                        }
+                    ]
+                }
+            `;
+
+            const config = await parseConfig(hocon);
+
+            expect(config.drills?.configs[0].overrides?.enable_control?.mode).toBe("ALWAYS");
+        });
+
+        it("should parse drill enable_control override with CLOCKED mode", async () => {
+            const hocon = `
+                target_output { recipe = "test", items_per_second = 1, machines = 1 }
+                machines = []
+                inserters = []
+                belts = []
+                drills {
+                    mining_productivity_level = 50
+                    configs = [
+                        {
+                            id = 1
+                            type = "electric-mining-drill"
+                            mined_item_name = "iron-ore"
+                            speed_bonus = 0.5
+                            target { type = "machine", id = 1 }
+                            overrides {
+                                enable_control {
+                                    mode = "CLOCKED"
+                                    ranges = [{ start = 10, end = 60 }]
+                                }
+                            }
+                        }
+                    ]
+                }
+            `;
+
+            const config = await parseConfig(hocon);
+
+            const enableControl = config.drills?.configs[0].overrides?.enable_control;
+            expect(enableControl?.mode).toBe("CLOCKED");
+            if (enableControl?.mode === "CLOCKED") {
+                expect(enableControl.ranges).toHaveLength(1);
+                expect(enableControl.ranges[0]).toEqual({ start: 10, end: 60 });
+            }
         });
 
         it("should parse all belt types", async () => {
