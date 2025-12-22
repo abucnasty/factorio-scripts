@@ -53,7 +53,7 @@ export function InsertersForm({
     // Build entity options for the dropdown
     const entityOptions = useMemo<EntityOption[]>(() => {
         const options: EntityOption[] = [];
-        
+
         // Add machines
         machines.forEach((machine) => {
             options.push({
@@ -64,7 +64,7 @@ export function InsertersForm({
                 sublabel: machine.recipe || 'No recipe',
             });
         });
-        
+
         // Add belts
         belts.forEach((belt) => {
             const ingredientIcons = belt.lanes.map(lane => lane.ingredient).filter(Boolean);
@@ -76,7 +76,7 @@ export function InsertersForm({
                 ingredientIcons: ingredientIcons.length > 0 ? ingredientIcons : undefined,
             });
         });
-        
+
         return options;
     }, [machines, belts]);
 
@@ -185,9 +185,6 @@ export function InsertersForm({
                 >
                     {/* Source */}
                     <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
-                        <Typography variant="body2" color="text.secondary">
-                            From:
-                        </Typography>
                         <Autocomplete
                             size="small"
                             sx={{ minWidth: 250 }}
@@ -205,7 +202,7 @@ export function InsertersForm({
                                 if (option.ingredientIcons) return option.label;
                                 return option.label;
                             }}
-                            isOptionEqualToValue={(option, value) => 
+                            isOptionEqualToValue={(option, value) =>
                                 option.type === value.type && option.id === value.id
                             }
                             renderInput={(params) => {
@@ -270,16 +267,15 @@ export function InsertersForm({
                             disableClearable
                         />
                     </Box>
+                    <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+                        <Typography variant="body2" color="text.secondary">
+                            →
+                        </Typography>
+                    </Box>
 
-                    <Typography variant="body2" color="text.secondary">
-                        →
-                    </Typography>
 
                     {/* Sink */}
                     <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
-                        <Typography variant="body2" color="text.secondary">
-                            To:
-                        </Typography>
                         <Autocomplete
                             size="small"
                             sx={{ minWidth: 250 }}
@@ -484,7 +480,7 @@ export function InsertersForm({
 
                     {/* Enable Control Settings */}
                     <Tooltip title="Configure Enable Control">
-                        <IconButton 
+                        <IconButton
                             onClick={() => setEnableControlModalInserterIndex(index)}
                             color={inserter.overrides?.enable_control?.mode && inserter.overrides.enable_control.mode !== 'AUTO' ? 'primary' : 'default'}
                         >
