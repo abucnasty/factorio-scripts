@@ -250,7 +250,7 @@ function computeLastSwingOffsetDuration(
          * These most likely only work with legendary stack inserters at stack size 16 but ¯\_(ツ)_/¯
          */
         if (amount_per_craft_int < inserter_stack_size) {
-            const max_buffer = 6
+            const max_buffer = 7
             const buffer = Math.max(0, max_buffer - amount_per_craft_int)
             return Duration.ofTicks(buffer)
         }
