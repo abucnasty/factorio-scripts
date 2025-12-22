@@ -11,6 +11,7 @@ import {
 } from '@mui/material';
 import { useMemo, useState } from 'react';
 import type { BeltFormData, InserterFormData, MachineFormData } from '../hooks/useConfigForm';
+import type { RecipeInfo } from '../hooks/useSimulationWorker';
 import { FactorioIcon } from './FactorioIcon';
 
 interface EntityOption {
@@ -27,6 +28,7 @@ interface InsertersFormProps {
     machines: MachineFormData[];
     belts: BeltFormData[];
     itemNames: string[];
+    getRecipeInfo: (recipeName: string) => RecipeInfo | null;
     onAdd: () => void;
     onUpdate: (index: number, updates: Partial<InserterFormData>) => void;
     onRemove: (index: number) => void;
@@ -37,6 +39,7 @@ export function InsertersForm({
     machines,
     belts,
     itemNames,
+    getRecipeInfo,
     onAdd,
     onUpdate,
     onRemove,
@@ -77,6 +80,48 @@ export function InsertersForm({
     // Find entity option by type and id
     const findEntityOption = (type: 'machine' | 'belt', id: number): EntityOption | undefined => {
         return entityOptions.find(opt => opt.type === type && opt.id === id);
+    };
+
+    // Compute inferred filters when explicit filters are not set
+    const getInferredFilters = (inserter: InserterFormData): string[] => {
+        // Get source items (what the source can provide)
+        let sourceItems: string[] = [];
+        if (inserter.source.type === 'machine') {
+            const machine = machines.find(m => m.id === inserter.source.id);
+            if (machine?.recipe) {
+                const recipeInfo = getRecipeInfo(machine.recipe);
+                if (recipeInfo) {
+                    sourceItems = recipeInfo.results; // Machine outputs its recipe results
+                }
+            }
+        } else {
+            // Belt source - get ingredients from lanes
+            const belt = belts.find(b => b.id === inserter.source.id);
+            if (belt) {
+                sourceItems = belt.lanes.map(lane => lane.ingredient).filter(Boolean);
+            }
+        }
+
+        // Get sink requirements (what the sink needs)
+        let sinkNeeds: string[] = [];
+        if (inserter.sink.type === 'machine') {
+            const machine = machines.find(m => m.id === inserter.sink.id);
+            if (machine?.recipe) {
+                const recipeInfo = getRecipeInfo(machine.recipe);
+                if (recipeInfo) {
+                    sinkNeeds = recipeInfo.ingredients; // Machine needs its recipe ingredients
+                }
+            }
+        } else {
+            // Belt sink - accept anything from source
+            sinkNeeds = sourceItems;
+        }
+
+        // Return intersection of source items and sink needs
+        if (sinkNeeds.length === 0) {
+            return sourceItems;
+        }
+        return sourceItems.filter(item => sinkNeeds.includes(item));
     };
 
     const handleSlotClick = (event: React.MouseEvent<HTMLElement>, inserterIndex: number, slotIndex: number) => {
@@ -332,58 +377,106 @@ export function InsertersForm({
                         <Typography variant="body2" color="text.secondary" sx={{ mr: 1 }}>
                             Filters:
                         </Typography>
-                        {[0, 1, 2, 3, 4].map((slotIndex) => {
-                            const filterItem = inserter.filters?.[slotIndex];
-                            return (
-                                <Box
-                                    key={slotIndex}
-                                    onClick={(e) => handleSlotClick(e, index, slotIndex)}
-                                    sx={{
-                                        width: 36,
-                                        height: 36,
-                                        border: '2px solid',
-                                        borderColor: filterItem ? 'primary.main' : 'divider',
-                                        borderRadius: 1,
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
-                                        cursor: 'pointer',
-                                        bgcolor: 'background.paper',
-                                        position: 'relative',
-                                        '&:hover': {
-                                            borderColor: 'primary.light',
-                                            bgcolor: 'action.hover',
-                                        },
-                                    }}
-                                >
-                                    {filterItem ? (
-                                        <>
-                                            <FactorioIcon name={filterItem} size={28} />
-                                            <IconButton
-                                                size="small"
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    handleRemoveFilter(index, slotIndex);
-                                                }}
-                                                sx={{
-                                                    position: 'absolute',
-                                                    top: -8,
-                                                    right: -8,
-                                                    width: 16,
-                                                    height: 16,
-                                                    bgcolor: 'error.main',
-                                                    '&:hover': { bgcolor: 'error.dark' },
-                                                }}
-                                            >
-                                                <Close sx={{ fontSize: 12, color: 'white' }} />
-                                            </IconButton>
-                                        </>
-                                    ) : (
-                                        <Add sx={{ fontSize: 16, color: 'text.disabled' }} />
-                                    )}
-                                </Box>
-                            );
-                        })}
+                        {(() => {
+                            const hasExplicitFilters = inserter.filters && inserter.filters.length > 0;
+                            const inferredFilters = !hasExplicitFilters ? getInferredFilters(inserter) : [];
+                            const isInferred = !hasExplicitFilters && inferredFilters.length > 0;
+
+                            // Show inferred filters as a compact display if there are any
+                            if (isInferred && inferredFilters.length > 0) {
+                                return (
+                                    <>
+                                        <Box
+                                            sx={{
+                                                display: 'flex',
+                                                gap: 0.5,
+                                                alignItems: 'center',
+                                                px: 1,
+                                                py: 0.5,
+                                                border: '2px dashed',
+                                                borderColor: 'divider',
+                                                borderRadius: 1,
+                                                bgcolor: 'action.hover',
+                                                opacity: 0.7,
+                                            }}
+                                        >
+                                            {inferredFilters.slice(0, 5).map((item, i) => (
+                                                <FactorioIcon key={i} name={item} size={24} />
+                                            ))}
+                                            {inferredFilters.length > 5 && (
+                                                <Typography variant="caption" color="text.secondary">
+                                                    +{inferredFilters.length - 5}
+                                                </Typography>
+                                            )}
+                                        </Box>
+                                        <Typography variant="caption" color="text.secondary" sx={{ ml: 1 }}>
+                                            (auto)
+                                        </Typography>
+                                        <IconButton
+                                            size="small"
+                                            onClick={(e) => handleSlotClick(e, index, 0)}
+                                            sx={{ ml: 0.5 }}
+                                        >
+                                            <Add sx={{ fontSize: 16 }} />
+                                        </IconButton>
+                                    </>
+                                );
+                            }
+
+                            // Show explicit filter slots or empty slots
+                            return [0, 1, 2, 3, 4].map((slotIndex) => {
+                                const filterItem = inserter.filters?.[slotIndex];
+                                return (
+                                    <Box
+                                        key={slotIndex}
+                                        onClick={(e) => handleSlotClick(e, index, slotIndex)}
+                                        sx={{
+                                            width: 36,
+                                            height: 36,
+                                            border: '2px solid',
+                                            borderColor: filterItem ? 'primary.main' : 'divider',
+                                            borderRadius: 1,
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            cursor: 'pointer',
+                                            bgcolor: 'background.paper',
+                                            position: 'relative',
+                                            '&:hover': {
+                                                borderColor: 'primary.light',
+                                                bgcolor: 'action.hover',
+                                            },
+                                        }}
+                                    >
+                                        {filterItem ? (
+                                            <>
+                                                <FactorioIcon name={filterItem} size={28} />
+                                                <IconButton
+                                                    size="small"
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        handleRemoveFilter(index, slotIndex);
+                                                    }}
+                                                    sx={{
+                                                        position: 'absolute',
+                                                        top: -8,
+                                                        right: -8,
+                                                        width: 16,
+                                                        height: 16,
+                                                        bgcolor: 'error.main',
+                                                        '&:hover': { bgcolor: 'error.dark' },
+                                                    }}
+                                                >
+                                                    <Close sx={{ fontSize: 12, color: 'white' }} />
+                                                </IconButton>
+                                            </>
+                                        ) : (
+                                            <Add sx={{ fontSize: 16, color: 'text.disabled' }} />
+                                        )}
+                                    </Box>
+                                );
+                            });
+                        })()}
                     </Box>
 
                     <IconButton onClick={() => onRemove(index)} color="error">

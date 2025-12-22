@@ -1,5 +1,10 @@
 import { useCallback, useState } from 'react';
-import type { Config, DebugSteps, LogMessage, FactorioData, SerializableTransferHistory } from 'clock-generator/browser';
+import type { Config, DebugSteps, LogMessage, FactorioData, SerializableTransferHistory, EnrichedRecipe } from 'clock-generator/browser';
+
+export interface RecipeInfo {
+    ingredients: string[];
+    results: string[];
+}
 
 export interface UseSimulationWorkerResult {
     isInitialized: boolean;
@@ -14,6 +19,7 @@ export interface UseSimulationWorkerResult {
     initialize: () => void;
     runSimulation: (config: Config, debugSteps: DebugSteps) => void;
     clearLogs: () => void;
+    getRecipeInfo: (recipeName: string) => RecipeInfo | null;
 }
 
 // Dynamic imports for the clock-generator library
@@ -114,6 +120,19 @@ export function useSimulationWorker(): UseSimulationWorkerResult {
         setLogs([]);
     }, []);
 
+    const getRecipeInfo = useCallback((recipeName: string): RecipeInfo | null => {
+        if (!FactorioDataService) return null;
+        try {
+            const recipe = FactorioDataService.findRecipeOrThrow(recipeName);
+            return {
+                ingredients: recipe.ingredients.map(ing => ing.name),
+                results: recipe.results.map(res => res.name),
+            };
+        } catch {
+            return null;
+        }
+    }, []);
+
     return {
         isInitialized,
         isRunning,
@@ -127,5 +146,6 @@ export function useSimulationWorker(): UseSimulationWorkerResult {
         initialize,
         runSimulation,
         clearLogs,
+        getRecipeInfo,
     };
 }

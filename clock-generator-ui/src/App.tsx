@@ -71,6 +71,7 @@ function App() {
         initialize,
         runSimulation,
         clearLogs,
+        getRecipeInfo,
     } = useSimulationWorker();
 
     const {
@@ -209,6 +210,7 @@ function App() {
                                 machines={config.machines}
                                 belts={config.belts}
                                 itemNames={itemNames}
+                                getRecipeInfo={getRecipeInfo}
                                 onAdd={addInserter}
                                 onUpdate={updateInserter}
                                 onRemove={removeInserter}
