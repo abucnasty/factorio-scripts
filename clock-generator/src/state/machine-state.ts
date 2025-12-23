@@ -2,7 +2,6 @@ import { InventoryState, WritableInventoryState } from "./inventory-state";
 import { ProgressState } from "./progress-state";
 import { EntityId, Machine } from "../entities";
 import { EntityState } from "./entity-state";
-import assert from "../common/assert";
 import { Logger, defaultLogger } from "../common/logger";
 
 export const MachineStatus = {

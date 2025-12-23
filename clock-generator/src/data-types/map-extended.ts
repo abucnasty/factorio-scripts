@@ -12,6 +12,14 @@ export class MapExtended<K, V> extends Map<K, V> {
         return value;
     }
 
+    public getOrDefault(key: K, defaultValue: V): V {
+        const value = this.get(key);
+        if (value === undefined) {
+            return defaultValue;
+        }
+        return value;
+    }
+
     public clone(): MapExtended<K, V> {
         return new MapExtended<K, V>(Array.from(this.entries()));
     }
