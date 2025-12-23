@@ -1,9 +1,7 @@
 import { describe, test, expect } from "vitest"
-import { mock } from 'vitest-mock-extended';
 import { MachineStateMachine } from "./machine-state-machine";
 import { MachineState, MachineStatus } from "../../state";
 import { Machine, MachineMetadata, MachineType, RecipeMetadata } from "../../entities";
-import { ControlLogic } from "../control-logic";
 import { DebugPluginFactory, DebugSettingsProvider } from "../../crafting/sequence";
 import { TickProvider } from "../current-tick-provider";
 import { CompositeControlLogic } from "../composite-control-logic";
@@ -23,7 +21,7 @@ const createMachine = (recipeName: string, metadata: Partial<MachineMetadata> = 
 const executeControlLogicForTicks = (state_machine: MachineStateMachine, ticks: number, debug: boolean = false) => {
     const tick_provider = TickProvider.mutable()
     if (debug) {
-        const settings_provider = DebugSettingsProvider.immutable({ 
+        const settings_provider = DebugSettingsProvider.immutable({
             enabled: true,
             plugin_settings: {
                 craft_event: {
@@ -31,7 +29,7 @@ const executeControlLogicForTicks = (state_machine: MachineStateMachine, ticks: 
                     print_craft_progress: true,
                 }
             }
-         })
+        })
         const debug_plugin_factory = new DebugPluginFactory(
             tick_provider,
             settings_provider
@@ -129,4 +127,52 @@ describe("Machine State Machine", () => {
             expect(machine_state.bonusProgress.progress).toBe(bonus_progress);
         }
     )
+
+    test("furnace stops crafting when output reaches max stack size", () => {
+        const machine_state = MachineState.forMachine(
+            createMachine("stone-brick", {
+                crafting_speed: 91.899995803833,
+                productivity: 50,
+                type: MachineType.FURNACE
+            })
+        )
+        const state_machine = MachineStateMachine.create({
+            machine_state: machine_state,
+            initial_mode_status: MachineStatus.INGREDIENT_SHORTAGE,
+        })
+
+        machine_state.inventoryState.addQuantity("stone", 1_000_000);
+
+        // Run for enough ticks to craft all possible items
+        executeControlLogicForTicks(state_machine, 200);
+
+        const produced_stone_bricks = machine_state.inventoryState.getQuantity("stone-brick");
+        expect(produced_stone_bricks).toBe(100);
+
+        expect(state_machine.current_mode.status).toBe(MachineStatus.OUTPUT_FULL);
+    });
+
+    test("assembly machine stops crafting when output reaches max stack size", () => {
+        const machine_state = MachineState.forMachine(
+            createMachine("automation-science-pack", {
+                crafting_speed: 60,
+                productivity: 100,
+                type: MachineType.MACHINE
+            })
+        )
+        const state_machine = MachineStateMachine.create({
+            machine_state: machine_state,
+            initial_mode_status: MachineStatus.INGREDIENT_SHORTAGE,
+        })
+
+        machine_state.inventoryState.addQuantity("copper-plate", 1_000_000);
+        machine_state.inventoryState.addQuantity("iron-gear-wheel", 1_000_000);
+
+        executeControlLogicForTicks(state_machine, 550);
+
+        const produced_automation_science_packs = machine_state.inventoryState.getQuantity("automation-science-pack");
+        expect(produced_automation_science_packs).toBe(200);
+
+        expect(state_machine.current_mode.status).toBe(MachineStatus.OUTPUT_FULL);
+    });
 });

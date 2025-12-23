@@ -1,3 +1,5 @@
+import { MapExtended } from "../data-types";
+import { EntityType } from "../entities";
 import { DrillStatus, InserterStatus, MachineStatus } from "./index";
 
 /**
@@ -19,86 +21,41 @@ export const StatusCategory = {
 
 export type StatusCategory = typeof StatusCategory[keyof typeof StatusCategory];
 
-/**
- * Map an InserterStatus to a StatusCategory
- */
-export function inserterStatusToCategory(status: InserterStatus): StatusCategory {
-    switch (status) {
-        case InserterStatus.PICKUP:
-        case InserterStatus.DROP_OFF:
-        case InserterStatus.SWING:
-            return StatusCategory.ACTIVE;
-        case InserterStatus.IDLE:
-            return StatusCategory.IDLE;
-        case InserterStatus.DISABLED:
-            return StatusCategory.DISABLED;
-        default:
-            return StatusCategory.IDLE;
-    }
-}
+const INSERTER_STATUS_MAP: MapExtended<InserterStatus, StatusCategory> = new MapExtended([
+    [InserterStatus.PICKUP, StatusCategory.ACTIVE],
+    [InserterStatus.DROP_OFF, StatusCategory.ACTIVE],
+    [InserterStatus.SWING, StatusCategory.ACTIVE],
+    [InserterStatus.IDLE, StatusCategory.IDLE],
+    [InserterStatus.DISABLED, StatusCategory.DISABLED],
+])
 
-/**
- * Map a MachineStatus to a StatusCategory
- */
-export function machineStatusToCategory(status: MachineStatus): StatusCategory {
-    switch (status) {
-        case MachineStatus.WORKING:
-            return StatusCategory.ACTIVE;
-        case MachineStatus.INGREDIENT_SHORTAGE:
-            return StatusCategory.WAITING;
-        case MachineStatus.OUTPUT_FULL:
-            return StatusCategory.BLOCKED;
-        default:
-            return StatusCategory.IDLE;
-    }
-}
+const MACHINE_STATUS_MAP: MapExtended<MachineStatus, StatusCategory> = new MapExtended([
+    [MachineStatus.WORKING, StatusCategory.ACTIVE],
+    [MachineStatus.INGREDIENT_SHORTAGE, StatusCategory.WAITING],
+    [MachineStatus.OUTPUT_FULL, StatusCategory.BLOCKED]
+]);
 
-/**
- * Map a DrillStatus to a StatusCategory
- */
-export function drillStatusToCategory(status: DrillStatus): StatusCategory {
-    switch (status) {
-        case DrillStatus.WORKING:
-            return StatusCategory.ACTIVE;
-        case DrillStatus.DISABLED:
-            return StatusCategory.DISABLED;
-        default:
-            return StatusCategory.IDLE;
-    }
-}
+const DRILL_STATUS_MAP: MapExtended<DrillStatus, StatusCategory> = new MapExtended([
+    [DrillStatus.WORKING, StatusCategory.ACTIVE],
+    [DrillStatus.DISABLED, StatusCategory.DISABLED],
+]);
 
 /**
  * Map any entity status string to a StatusCategory based on entity type
  */
 export function statusToCategory(
-    entityType: 'inserter' | 'machine' | 'drill',
+    entityType: EntityType,
     status: string
 ): StatusCategory {
     switch (entityType) {
-        case 'inserter':
-            return inserterStatusToCategory(status as InserterStatus);
-        case 'machine':
-            return machineStatusToCategory(status as MachineStatus);
-        case 'drill':
-            return drillStatusToCategory(status as DrillStatus);
+        case EntityType.INSERTER:
+            return INSERTER_STATUS_MAP.getOrThrow(status as InserterStatus);
+        case EntityType.MACHINE:
+            return MACHINE_STATUS_MAP.getOrThrow(status as MachineStatus);
+        case EntityType.DRILL:
+            return DRILL_STATUS_MAP.getOrThrow(status as DrillStatus);
         default:
-            return StatusCategory.IDLE;
-    }
-}
-
-/**
- * Get all possible statuses for an entity type
- */
-export function getStatusesForEntityType(entityType: 'inserter' | 'machine' | 'drill'): string[] {
-    switch (entityType) {
-        case 'inserter':
-            return Object.values(InserterStatus);
-        case 'machine':
-            return Object.values(MachineStatus);
-        case 'drill':
-            return Object.values(DrillStatus);
-        default:
-            return [];
+            throw new Error(`Unknown entity type: ${entityType}`);
     }
 }
 

@@ -165,10 +165,14 @@ export {
 
 export {
     StatusCategory,
-    inserterStatusToCategory,
-    machineStatusToCategory,
-    drillStatusToCategory,
     statusToCategory,
-    getStatusesForEntityType,
     getAllStatusCategories,
 } from './state/status-category';
+
+// ============================================================================
+// Entity Types and Categories
+// ============================================================================
+
+export {
+    EntityType,
+} from './entities/entity-type';

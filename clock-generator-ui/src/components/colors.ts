@@ -3,7 +3,7 @@
  * Uses a colorblind-friendly palette based on Wong (2011).
  */
 
-import type { StatusCategory } from 'clock-generator/browser';
+import { StatusCategory, InserterStatus, MachineStatus, DrillStatus, EntityType } from 'clock-generator/browser';
 
 // Colorblind-friendly palette (Wong, 2011)
 export const COLOR_BLIND_PALETTE = {
@@ -23,49 +23,49 @@ export const COLOR_BLIND_PALETTE_ALL: string[] = Object.values(COLOR_BLIND_PALET
 
 // Status category colors (colorblind-friendly)
 export const CATEGORY_COLORS: Record<StatusCategory, string> = {
-    ACTIVE: COLOR_BLIND_PALETTE.green,       // actively working
-    WAITING: COLOR_BLIND_PALETTE.yellow,     // waiting for something
-    BLOCKED: COLOR_BLIND_PALETTE.reddishPurple,     // blocked/cannot proceed
-    DISABLED: COLOR_BLIND_PALETTE.darkGrey,  // disabled by control
-    IDLE: COLOR_BLIND_PALETTE.lightGrey,     // nothing to do
+    [StatusCategory.ACTIVE]: COLOR_BLIND_PALETTE.green,       // actively working
+    [StatusCategory.WAITING]: COLOR_BLIND_PALETTE.yellow,     // waiting for something
+    [StatusCategory.BLOCKED]: COLOR_BLIND_PALETTE.reddishPurple,     // blocked/cannot proceed
+    [StatusCategory.DISABLED]: COLOR_BLIND_PALETTE.darkGrey,  // disabled by control
+    [StatusCategory.IDLE]: COLOR_BLIND_PALETTE.lightGrey,     // nothing to do
 };
 
 // Detailed status colors for inserters
-export const INSERTER_STATUS_COLORS: Record<string, string> = {
-    PICKUP: COLOR_BLIND_PALETTE.green,        // picking up items
-    DROP: COLOR_BLIND_PALETTE.skyBlue,       // dropping items
-    SWING: COLOR_BLIND_PALETTE.blue,        // in motion
-    IDLE: COLOR_BLIND_PALETTE.lightGrey,     // waiting
-    DISABLED: COLOR_BLIND_PALETTE.darkGrey,  // disabled
+export const INSERTER_STATUS_COLORS: Record<InserterStatus, string> = {
+    [InserterStatus.PICKUP]: COLOR_BLIND_PALETTE.green,        // picking up items
+    [InserterStatus.DROP_OFF]: COLOR_BLIND_PALETTE.skyBlue,       // dropping items
+    [InserterStatus.SWING]: COLOR_BLIND_PALETTE.blue,        // in motion
+    [InserterStatus.IDLE]: COLOR_BLIND_PALETTE.lightGrey,     // waiting
+    [InserterStatus.DISABLED]: COLOR_BLIND_PALETTE.darkGrey,  // disabled
 };
 
 // Detailed status colors for machines
-export const MACHINE_STATUS_COLORS: Record<string, string> = {
-    WORKING: COLOR_BLIND_PALETTE.green,      // actively crafting
-    INGREDIENT_SHORTAGE: COLOR_BLIND_PALETTE.yellow, // waiting for ingredients
-    OUTPUT_FULL: COLOR_BLIND_PALETTE.reddishPurple, // output blocked
+export const MACHINE_STATUS_COLORS: Record<MachineStatus, string> = {
+    [MachineStatus.WORKING]: COLOR_BLIND_PALETTE.green,      // actively crafting
+    [MachineStatus.INGREDIENT_SHORTAGE]: COLOR_BLIND_PALETTE.yellow, // waiting for ingredients
+    [MachineStatus.OUTPUT_FULL]: COLOR_BLIND_PALETTE.reddishPurple, // output blocked
 };
 
 // Detailed status colors for drills
-export const DRILL_STATUS_COLORS: Record<string, string> = {
-    WORKING: COLOR_BLIND_PALETTE.green,      // actively mining
-    DISABLED: COLOR_BLIND_PALETTE.darkGrey,  // disabled
+export const DRILL_STATUS_COLORS: Record<DrillStatus, string> = {
+    [DrillStatus.WORKING]: COLOR_BLIND_PALETTE.green,      // actively mining
+    [DrillStatus.DISABLED]: COLOR_BLIND_PALETTE.darkGrey,  // disabled
 };
 
 /**
  * Get color for a specific status based on entity type (detailed view)
  */
 export function getStatusColor(
-    entityType: 'inserter' | 'machine' | 'drill',
+    entityType: EntityType,
     status: string
 ): string {
     switch (entityType) {
-        case 'inserter':
-            return INSERTER_STATUS_COLORS[status] ?? INSERTER_STATUS_COLORS.IDLE;
-        case 'machine':
-            return MACHINE_STATUS_COLORS[status] ?? MACHINE_STATUS_COLORS.WORKING;
-        case 'drill':
-            return DRILL_STATUS_COLORS[status] ?? DRILL_STATUS_COLORS.WORKING;
+        case EntityType.INSERTER:
+            return INSERTER_STATUS_COLORS[status as InserterStatus] ?? INSERTER_STATUS_COLORS.IDLE;
+        case EntityType.MACHINE:
+            return MACHINE_STATUS_COLORS[status as MachineStatus] ?? MACHINE_STATUS_COLORS.WORKING;
+        case EntityType.DRILL:
+            return DRILL_STATUS_COLORS[status as DrillStatus] ?? DRILL_STATUS_COLORS.WORKING;
         default:
             return COLOR_BLIND_PALETTE.blue;
     }
@@ -82,17 +82,17 @@ export function getCategoryColor(category: StatusCategory): string {
  * Get all status colors for an entity type
  */
 export function getStatusColorsForEntityType(
-    entityType: 'inserter' | 'machine' | 'drill'
+    entityType: EntityType
 ): Record<string, string> {
     switch (entityType) {
-        case 'inserter':
+        case EntityType.INSERTER:
             return INSERTER_STATUS_COLORS;
-        case 'machine':
+        case EntityType.MACHINE:
             return MACHINE_STATUS_COLORS;
-        case 'drill':
+        case EntityType.DRILL:
             return DRILL_STATUS_COLORS;
         default:
-            return {};
+            throw new Error(`Unknown entity type: ${entityType}`);
     }
 }
 
