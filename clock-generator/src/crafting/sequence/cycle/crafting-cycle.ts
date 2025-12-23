@@ -57,9 +57,19 @@ function createPlan(
         );
     }
 
+    // Calculate the single swing period based on the actual machine production rate.
+    // With multiple output machines, each machine produces at its own rate, and we need
+    // the cycle duration to be based on how long it takes ONE machine to produce a stack.
+    // 
+    // The target_production_rate.machine_production_rate is the target for the whole setup,
+    // so we need to divide by the number of output machines to get the per-machine rate.
+    const num_output_machines = output_machines.length;
+    const per_machine_rate = target_production_rate.machine_production_rate.amount_per_tick
+        .divide(num_output_machines);
+    
     const single_swing_period_duration = Duration.ofTicks(
         fraction(output_stack_size)
-            .divide(target_production_rate.machine_production_rate.amount_per_tick)
+            .divide(per_machine_rate)
             .toDecimal()
     )
 
