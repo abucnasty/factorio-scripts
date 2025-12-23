@@ -68,7 +68,8 @@ export interface ConfigFormData {
     target_output: {
         recipe: string;
         items_per_second: number;
-        machines: number;
+        /** Number of duplicate setups being modeled (multiplier for ratio calculations) */
+        copies: number;
     };
     machines: MachineFormData[];
     inserters: InserterFormData[];
@@ -87,7 +88,7 @@ const createDefaultConfig = (): ConfigFormData => ({
     target_output: {
         recipe: '',
         items_per_second: 1,
-        machines: 1,
+        copies: 1,
     },
     machines: [
         {

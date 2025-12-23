@@ -20,7 +20,8 @@ export interface EntityTransferCount {
 
 export class EntityTransferCountMap extends MapExtended<EntityId, EntityTransferCount> {
 
-    public static create = computeInserterSwingCounts
+    public static create = computeInserterSwingCountsForMultipleMachines
+    public static createForSingleMachine = computeInserterSwingCounts
     public static lcm = computeLCM
     public static print = printInserterSwingCounts
     public static divide = divideTransfers
@@ -32,6 +33,96 @@ export class EntityTransferCountMap extends MapExtended<EntityId, EntityTransfer
     constructor(entries?: readonly (readonly [EntityId, EntityTransferCount])[] | null) {
         super(entries);
     }
+}
+
+/**
+ * Computes swing counts for multiple output machines producing the same item.
+ * Each output machine is assumed to handle an equal share of the total production.
+ * Each output machine must have its own dedicated output inserter.
+ * 
+ * @param output_machines - Array of machines that produce the target output item
+ * @param entity_registry - Registry containing all entities
+ * @param output_swing_count_per_machine - The number of swings for each output inserter (per machine)
+ * @param output_stack_size - The stack size of the output inserters
+ * @returns Combined map of entity IDs to their swing count information
+ * @throws Error if any output machine lacks a dedicated output inserter
+ */
+function computeInserterSwingCountsForMultipleMachines(
+    output_machines: Machine[],
+    entity_registry: ReadableEntityRegistry,
+    output_swing_count_per_machine: Fraction,
+    output_stack_size: number
+): EntityTransferCountMap {
+    assert(output_machines.length > 0, "At least one output machine is required");
+    
+    // Validate that each output machine has exactly one dedicated output inserter
+    const output_inserters_by_machine = new Map<string, Inserter[]>();
+    for (const machine of output_machines) {
+        const inserters = entity_registry.getAll()
+            .filter(Entity.isInserter)
+            .filter(inserter => inserter.source.entity_id.id === machine.entity_id.id);
+        output_inserters_by_machine.set(machine.entity_id.id, inserters);
+    }
+    
+    // Check for machines without dedicated inserters
+    for (const machine of output_machines) {
+        const inserters = output_inserters_by_machine.get(machine.entity_id.id) ?? [];
+        assert(
+            inserters.length === 1,
+            `Output machine ${machine.entity_id.id} must have exactly one dedicated output inserter, ` +
+            `but found ${inserters.length}. Each output machine requires its own output inserter.`
+        );
+    }
+    
+    // If only one output machine, use the original function directly
+    if (output_machines.length === 1) {
+        return computeInserterSwingCounts(
+            output_machines[0],
+            entity_registry,
+            output_swing_count_per_machine,
+            output_stack_size
+        );
+    }
+    
+    // For multiple output machines, compute swing counts for each and merge
+    const combined_result = new EntityTransferCountMap();
+    
+    for (const machine of output_machines) {
+        const machine_swing_counts = computeInserterSwingCounts(
+            machine,
+            entity_registry,
+            output_swing_count_per_machine,
+            output_stack_size,
+            new EntityTransferCountMap()
+        );
+        
+        // Merge into combined result
+        for (const [entity_id, transfer_count] of machine_swing_counts.entries()) {
+            const existing = combined_result.get(entity_id);
+            if (existing) {
+                // If entity already exists (shared upstream entity), add the transfer counts
+                const merged_item_transfers: ItemTransfer[] = [...existing.item_transfers];
+                for (const new_transfer of transfer_count.item_transfers) {
+                    const existing_item = merged_item_transfers.find(it => it.item_name === new_transfer.item_name);
+                    if (existing_item) {
+                        existing_item.transfer_count = existing_item.transfer_count.add(new_transfer.transfer_count);
+                    } else {
+                        merged_item_transfers.push({ ...new_transfer });
+                    }
+                }
+                combined_result.set(entity_id, {
+                    entity: existing.entity,
+                    item_transfers: merged_item_transfers,
+                    total_transfer_count: existing.total_transfer_count.add(transfer_count.total_transfer_count),
+                    stack_size: existing.stack_size
+                });
+            } else {
+                combined_result.set(entity_id, transfer_count);
+            }
+        }
+    }
+    
+    return combined_result;
 }
 
 /**
@@ -52,6 +143,8 @@ export class EntityTransferCountMap extends MapExtended<EntityId, EntityTransfer
  * @param output_swing_count - The number of swings for the output inserter
  * @param output_stack_size - The stack size of the output inserter
  * @param existing_results - Accumulated results from recursive calls (used internally)
+ * @param known_output_inserter - Optional: the specific output inserter to use (for recursive calls 
+ *                                where we already know which inserter triggered the recursion)
  * @returns Map of inserter entity IDs to their swing count information
  */
 function computeInserterSwingCounts(
@@ -59,13 +152,15 @@ function computeInserterSwingCounts(
     entity_registry: ReadableEntityRegistry,
     output_swing_count: Fraction,
     output_stack_size: number,
-    existing_results: EntityTransferCountMap = new EntityTransferCountMap()
+    existing_results: EntityTransferCountMap = new EntityTransferCountMap(),
+    known_output_inserter?: Inserter
 ): EntityTransferCountMap {
     const result: EntityTransferCountMap = existing_results;
 
     const base_production_amount: Fraction = output_swing_count.multiply(output_stack_size);
 
-    const output_inserter = entity_registry.getAll()
+    // Use the known output inserter if provided, otherwise find the first one
+    const output_inserter = known_output_inserter ?? entity_registry.getAll()
         .filter(Entity.isInserter)
         .find(inserter => inserter.source.entity_id.id === machine.entity_id.id);
 
@@ -161,12 +256,16 @@ function computeInserterSwingCounts(
             if (source_entity && Entity.isMachine(source_entity)) {
                 // Recursively compute swing counts for the source machine
                 // Use total transfer count for upstream calculation
+                // Pass the current inserter as the known output inserter for the source machine
+                // This prevents the recursive call from finding the wrong output inserter
+                // when a machine has multiple output inserters going to different downstream machines
                 computeInserterSwingCounts(
                     source_entity,
                     entity_registry,
                     total_transfer_count,
                     inserter.metadata.stack_size,
-                    result
+                    result,
+                    inserter  // Pass the inserter that triggered this recursion
                 );
             }
         }

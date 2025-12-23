@@ -11,7 +11,7 @@ describe("parseConfig", () => {
                 target_output {
                     recipe = "electronic-circuit"
                     items_per_second = 1.5
-                    machines = 2
+                    copies = 2
                 }
                 machines = []
                 inserters = []
@@ -22,7 +22,7 @@ describe("parseConfig", () => {
 
             expect(config.target_output.recipe).toBe("electronic-circuit");
             expect(config.target_output.items_per_second).toBe(1.5);
-            expect(config.target_output.machines).toBe(2);
+            expect(config.target_output.copies).toBe(2);
             expect(config.machines).toEqual([]);
             expect(config.inserters).toEqual([]);
             expect(config.belts).toEqual([]);
@@ -35,7 +35,7 @@ describe("parseConfig", () => {
                 target_output {
                     recipe = "iron-gear-wheel"
                     items_per_second = 2.0
-                    machines = 1
+                    copies = 1
                 }
                 machines = [
                     {
@@ -67,7 +67,7 @@ describe("parseConfig", () => {
                 target_output {
                     recipe = "electronic-circuit"
                     items_per_second = 1
-                    machines = 1
+                    copies = 1
                 }
                 machines = []
                 inserters = [
@@ -93,7 +93,7 @@ describe("parseConfig", () => {
                 target_output {
                     recipe = "electronic-circuit"
                     items_per_second = 1
-                    machines = 1
+                    copies = 1
                 }
                 machines = []
                 inserters = [
@@ -125,7 +125,7 @@ describe("parseConfig", () => {
                 target_output {
                     recipe = "electronic-circuit"
                     items_per_second = 1
-                    machines = 1
+                    copies = 1
                 }
                 machines = []
                 inserters = []
@@ -154,7 +154,7 @@ describe("parseConfig", () => {
                 target_output {
                     recipe = "electronic-circuit"
                     items_per_second = 1
-                    machines = 1
+                    copies = 1
                 }
                 machines = []
                 inserters = []
@@ -181,7 +181,7 @@ describe("parseConfig", () => {
                 target_output {
                     recipe = "iron-plate"
                     items_per_second = 1
-                    machines = 1
+                    copies = 1
                 }
                 machines = []
                 inserters = []
@@ -219,7 +219,7 @@ describe("parseConfig", () => {
                 target_output {
                     recipe = "electronic-circuit"
                     items_per_second = 1
-                    machines = 1
+                    copies = 1
                 }
                 machines = []
                 inserters = []
@@ -238,7 +238,7 @@ describe("parseConfig", () => {
 
         it("should parse inserter enable_control override with AUTO mode", async () => {
             const hocon = `
-                target_output { recipe = "test", items_per_second = 1, machines = 1 }
+                target_output { recipe = "test", items_per_second = 1, copies = 1 }
                 machines = []
                 inserters = [
                     {
@@ -261,7 +261,7 @@ describe("parseConfig", () => {
 
         it("should parse inserter enable_control override with ALWAYS mode", async () => {
             const hocon = `
-                target_output { recipe = "test", items_per_second = 1, machines = 1 }
+                target_output { recipe = "test", items_per_second = 1, copies = 1 }
                 machines = []
                 inserters = [
                     {
@@ -283,7 +283,7 @@ describe("parseConfig", () => {
 
         it("should parse inserter enable_control override with NEVER mode", async () => {
             const hocon = `
-                target_output { recipe = "test", items_per_second = 1, machines = 1 }
+                target_output { recipe = "test", items_per_second = 1, copies = 1 }
                 machines = []
                 inserters = [
                     {
@@ -305,7 +305,7 @@ describe("parseConfig", () => {
 
         it("should parse inserter enable_control override with CLOCKED mode", async () => {
             const hocon = `
-                target_output { recipe = "test", items_per_second = 1, machines = 1 }
+                target_output { recipe = "test", items_per_second = 1, copies = 1 }
                 machines = []
                 inserters = [
                     {
@@ -341,7 +341,7 @@ describe("parseConfig", () => {
 
         it("should parse inserter enable_control CLOCKED mode without optional period_duration_ticks", async () => {
             const hocon = `
-                target_output { recipe = "test", items_per_second = 1, machines = 1 }
+                target_output { recipe = "test", items_per_second = 1, copies = 1 }
                 machines = []
                 inserters = [
                     {
@@ -371,7 +371,7 @@ describe("parseConfig", () => {
 
         it("should parse inserter with both animation and enable_control overrides", async () => {
             const hocon = `
-                target_output { recipe = "test", items_per_second = 1, machines = 1 }
+                target_output { recipe = "test", items_per_second = 1, copies = 1 }
                 machines = []
                 inserters = [
                     {
@@ -397,7 +397,7 @@ describe("parseConfig", () => {
 
         it("should parse drill enable_control override", async () => {
             const hocon = `
-                target_output { recipe = "test", items_per_second = 1, machines = 1 }
+                target_output { recipe = "test", items_per_second = 1, copies = 1 }
                 machines = []
                 inserters = []
                 belts = []
@@ -425,7 +425,7 @@ describe("parseConfig", () => {
 
         it("should parse drill enable_control override with CLOCKED mode", async () => {
             const hocon = `
-                target_output { recipe = "test", items_per_second = 1, machines = 1 }
+                target_output { recipe = "test", items_per_second = 1, copies = 1 }
                 machines = []
                 inserters = []
                 belts = []
@@ -464,7 +464,7 @@ describe("parseConfig", () => {
 
             for (const beltType of beltTypes) {
                 const hocon = `
-                    target_output { recipe = "test", items_per_second = 1, machines = 1 }
+                    target_output { recipe = "test", items_per_second = 1, copies = 1 }
                     machines = []
                     inserters = []
                     belts = [{ id = 1, type = "${beltType}", lanes = [{ ingredient = "iron-plate", stack_size = 1 }] }]
@@ -479,7 +479,7 @@ describe("parseConfig", () => {
             const drillTypes = Object.values(MiningDrillType);
             for (const drillType of drillTypes) {
                 const hocon = `
-                    target_output { recipe = "test", items_per_second = 1, machines = 1 }
+                    target_output { recipe = "test", items_per_second = 1, copies = 1 }
                     machines = []
                     inserters = []
                     belts = []
@@ -521,7 +521,7 @@ describe("parseConfig", () => {
                 target_output {
                     recipe = "electronic-circuit"
                     items_per_second = "not a number"
-                    machines = 1
+                    copies = 1
                 }
                 machines = []
                 inserters = []
@@ -533,7 +533,7 @@ describe("parseConfig", () => {
 
         it("should throw ConfigValidationError for invalid belt type", async () => {
             const hocon = `
-                target_output { recipe = "test", items_per_second = 1, machines = 1 }
+                target_output { recipe = "test", items_per_second = 1, copies = 1 }
                 machines = []
                 inserters = []
                 belts = [{ id = 1, type = "invalid-belt-type", lanes = [{ ingredient = "iron-plate", stack_size = 1 }] }]
@@ -544,7 +544,7 @@ describe("parseConfig", () => {
 
         it("should throw ConfigValidationError for invalid drill type", async () => {
             const hocon = `
-                target_output { recipe = "test", items_per_second = 1, machines = 1 }
+                target_output { recipe = "test", items_per_second = 1, copies = 1 }
                 machines = []
                 inserters = []
                 belts = []
@@ -565,7 +565,7 @@ describe("parseConfig", () => {
 
         it("should throw ConfigValidationError for invalid inserter source type", async () => {
             const hocon = `
-                target_output { recipe = "test", items_per_second = 1, machines = 1 }
+                target_output { recipe = "test", items_per_second = 1, copies = 1 }
                 machines = []
                 inserters = [{ source { type = "invalid", id = 1 }, sink { type = "machine", id = 1 }, stack_size = 1 }]
                 belts = []
@@ -579,7 +579,7 @@ describe("parseConfig", () => {
                 target_output {
                     recipe = "electronic-circuit"
                     items_per_second = -1
-                    machines = 1
+                    copies = 1
                 }
                 machines = []
                 inserters = []
@@ -623,7 +623,7 @@ describe("parseConfig", () => {
     describe("edge cases", () => {
         it("should handle empty arrays", async () => {
             const hocon = `
-                target_output { recipe = "test", items_per_second = 1, machines = 1 }
+                target_output { recipe = "test", items_per_second = 1, copies = 1 }
                 machines = []
                 inserters = []
                 belts = []
@@ -637,7 +637,7 @@ describe("parseConfig", () => {
 
         it("should handle optional fields being omitted", async () => {
             const hocon = `
-                target_output { recipe = "test", items_per_second = 1, machines = 1 }
+                target_output { recipe = "test", items_per_second = 1, copies = 1 }
                 machines = [{ id = 1, recipe = "test", productivity = 0, crafting_speed = 1 }]
                 inserters = []
                 belts = []
@@ -651,7 +651,7 @@ describe("parseConfig", () => {
 
         it("should handle zero values where allowed", async () => {
             const hocon = `
-                target_output { recipe = "test", items_per_second = 1, machines = 1 }
+                target_output { recipe = "test", items_per_second = 1, copies = 1 }
                 machines = [{ id = 1, recipe = "test", productivity = 0, crafting_speed = 1 }]
                 inserters = []
                 belts = []
@@ -679,7 +679,7 @@ describe("parseConfig", () => {
                 target_output { 
                     recipe = \${common_recipe}
                     items_per_second = 1
-                    machines = 1
+                    copies = 1
                 }
                 machines = []
                 inserters = []
@@ -696,7 +696,7 @@ describe("parseConfig", () => {
                 target_output {
                     recipe = "electronic-circuit" // inline comment
                     items_per_second = 1
-                    machines = 1
+                    copies = 1
                 }
                 machines = []
                 inserters = []
@@ -712,7 +712,7 @@ describe("parseConfig", () => {
 describe("parseConfigSafe", () => {
     it("should return success result for valid config", async () => {
         const hocon = `
-            target_output { recipe = "test", items_per_second = 1, machines = 1 }
+            target_output { recipe = "test", items_per_second = 1, copies = 1 }
             machines = []
             inserters = []
             belts = []
@@ -745,7 +745,7 @@ describe("parseConfigSafe", () => {
 describe("ConfigValidationError", () => {
     it("should format single error nicely", async () => {
         const hocon = `
-            target_output { recipe = 123, items_per_second = 1, machines = 1 }
+            target_output { recipe = 123, items_per_second = 1, copies = 1 }
             machines = []
             inserters = []
             belts = []

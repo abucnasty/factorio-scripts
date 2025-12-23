@@ -7,7 +7,7 @@ import { Duration } from '../data-types';
 import { assertIsMachine, Inserter, Machine, ReadableEntityRegistry } from '../entities';
 import { TargetProductionRate } from "./target-production-rate";
 import { EntityState, MachineState } from "../state";
-import { fraction } from "fractionability";
+import Fraction, { fraction } from "fractionability";
 import { createSignalPerInserterBlueprint } from "./blueprint";
 import { FactorioBlueprint } from "../blueprints/blueprint";
 import { ResettableRegistry, TickProvider } from "../control-logic";
@@ -123,28 +123,33 @@ export function generateClockForConfig(
     // Compute crafting cycle plan
     const target_production_rate = TargetProductionRate.fromConfig(config.target_output);
 
-    const output_machine_state_machine = simulation_context.machines.find(
+    // Find all output machines (machines that produce the target output item)
+    const output_machine_state_machines = simulation_context.machines.filter(
         it => it.machine_state.machine.output.item_name === target_production_rate.machine_production_rate.item
     );
     assert(
-        output_machine_state_machine !== undefined,
+        output_machine_state_machines.length > 0,
         `No machine with output item ${target_production_rate.machine_production_rate.item} found`
     );
 
-    const output_inserter = simulation_context.state_registry
-        .getAllStates()
-        .filter(EntityState.isInserter)
-        .find(it => it.inserter.source.entity_id.id === output_machine_state_machine.machine_state.entity_id.id);
-    assert(
-        output_inserter !== undefined,
-        `No inserter with source machine ${output_machine_state_machine.machine_state.entity_id} found`
-    );
+    // Find output inserters for each output machine
+    const output_inserters = output_machine_state_machines.map(machine_state_machine => {
+        const inserter = simulation_context.state_registry
+            .getAllStates()
+            .filter(EntityState.isInserter)
+            .find(it => it.inserter.source.entity_id.id === machine_state_machine.machine_state.entity_id.id);
+        assert(
+            inserter !== undefined,
+            `No inserter with source machine ${machine_state_machine.machine_state.entity_id} found`
+        );
+        return inserter;
+    });
 
     const crafting_cycle_plan = computeCraftingCyclePlan(
         target_production_rate,
-        output_machine_state_machine.machine_state,
+        output_machine_state_machines.map(it => it.machine_state),
         simulation_context.entity_registry,
-        output_inserter.inserter,
+        output_inserters.map(it => it.inserter),
         config,
         logger
     );
@@ -250,15 +255,17 @@ export function generateClockForConfig(
     const offset_history = InventoryTransferHistory.correctNegativeOffsets(merged_ranges);
     const trimmed_history = InventoryTransferHistory.trimEndsToAvoidBackSwingWakeLists(
         offset_history,
-        simulation_context.entity_registry
+        simulation_context.entity_registry,
+        crafting_cycle_plan.entity_transfer_map,
     );
     const final_history = trimmed_history;
 
     InventoryTransferHistory.print(final_history, logger);
 
-    // Create blueprint
+    // Create blueprint - use target output item name (same for all output machines)
+    const target_output_item_name = target_production_rate.machine_production_rate.item;
     const blueprint = createSignalPerInserterBlueprint(
-        output_machine_state_machine.machine_state.machine.output.item_name,
+        target_output_item_name,
         crafting_cycle_plan,
         duration,
         InventoryTransferHistory.removeDuplicateEntities(final_history),
@@ -291,23 +298,46 @@ export function generateClockForConfig(
 
 /**
  * Helper function to compute the crafting cycle plan.
- * This function assumes the machine has finished crafting while not having any items pulled out of its inventory.
+ * This function assumes all machines have finished crafting while not having any items pulled out of their inventories.
+ * 
+ * For multiple output machines, the max swings possible is computed as the minimum across all machines
+ * to ensure all machines can complete the required swings.
  */
 function computeCraftingCyclePlan(
     target_production_rate: TargetProductionRate,
-    output_machine_state: MachineState,
+    output_machine_states: MachineState[],
     entity_registry: ReadableEntityRegistry,
-    output_inserter: Inserter,
+    output_inserters: Inserter[],
     config: Config,
     logger: Logger
 ): CraftingCyclePlan {
+    assert(
+        output_machine_states.length > 0,
+        "At least one output machine is required"
+    );
+    assert(
+        output_machine_states.length === output_inserters.length,
+        `Mismatch between output machines (${output_machine_states.length}) and output inserters (${output_inserters.length})`
+    );
 
-    const output_machine = output_machine_state.machine;
-    const output_item_name = output_machine.output.item_name;
-    const output_crafted = output_machine_state.craftCount * output_machine.output.amount_per_craft.toDecimal();
-    logger.log(`Output machine ${output_machine.entity_id} crafted ${output_crafted} ${output_item_name}`);
+    const output_item_name = output_machine_states[0].machine.output.item_name;
     
-    let max_swings_possible = fraction(output_crafted).divide(output_inserter.metadata.stack_size);
+    // Compute max swings possible for each output machine and use the minimum
+    let max_swings_possible: Fraction | null = null;
+    
+    for (let i = 0; i < output_machine_states.length; i++) {
+        const machine_state = output_machine_states[i];
+        const inserter = output_inserters[i];
+        const output_machine = machine_state.machine;
+        const output_crafted = machine_state.craftCount * output_machine.output.amount_per_craft.toDecimal();
+        logger.log(`Output machine ${output_machine.entity_id.id} crafted ${output_crafted} ${output_item_name}`);
+        
+        const machine_max_swings = fraction(output_crafted).divide(inserter.metadata.stack_size);
+        
+        if (max_swings_possible === null || machine_max_swings.toDecimal() < max_swings_possible.toDecimal()) {
+            max_swings_possible = machine_max_swings;
+        }
+    }
 
     if (config.overrides?.terminal_swing_count !== undefined) {
         max_swings_possible = fraction(config.overrides.terminal_swing_count);
@@ -317,7 +347,7 @@ function computeCraftingCyclePlan(
     return CraftingCyclePlan.create(
         target_production_rate,
         entity_registry,
-        max_swings_possible,
+        max_swings_possible!,
         config.overrides ?? {}
     );
 }

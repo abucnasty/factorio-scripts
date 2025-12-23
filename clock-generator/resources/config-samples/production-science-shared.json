@@ -2,7 +2,7 @@
   "target_output": {
     "recipe": "production-science-pack",
     "items_per_second": 120,
-    "machines": 7
+    "copies": 7
   },
   "machines": [
     {

@@ -138,7 +138,7 @@ function App() {
             !isRunning &&
             config.target_output.recipe &&
             config.target_output.items_per_second > 0 &&
-            config.target_output.machines > 0 &&
+            config.target_output.copies > 0 &&
             config.machines.length > 0 &&
             config.machines.every((m) => m.recipe)
         );
@@ -192,11 +192,11 @@ function App() {
                             <TargetOutputForm
                                 recipe={config.target_output.recipe}
                                 itemsPerSecond={config.target_output.items_per_second}
-                                machines={config.target_output.machines}
+                                copies={config.target_output.copies}
                                 recipeNames={recipeNames}
                                 onRecipeChange={(recipe) => updateTargetOutput('recipe', recipe)}
                                 onItemsPerSecondChange={(value) => updateTargetOutput('items_per_second', value)}
-                                onMachinesChange={(value) => updateTargetOutput('machines', value)}
+                                onCopiesChange={(value) => updateTargetOutput('copies', value)}
                             />
 
                             <MachinesForm

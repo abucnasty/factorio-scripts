@@ -29,25 +29,51 @@ function createPlan(
         .filter(Entity.isMachine)
         .filter(it => it.output.item_name === target_production_rate.machine_production_rate.item)
 
-    const output_machine = output_machines[0]; // TODO: support multiple output machines
-    assert(output_machine, `No machine found that produces item ${target_production_rate.machine_production_rate.item}`);
+    assert(
+        output_machines.length > 0, 
+        `No machine found that produces item ${target_production_rate.machine_production_rate.item}`
+    );
 
-    const output_inserter = entity_registry
-        .getAll()
-        .filter(Entity.isInserter)
-        .find(inserter => inserter.source.entity_id.id === output_machine.entity_id.id);
-    assert(output_inserter, `No inserter found that feeds into machine ${output_machine.entity_id}`);
+    // Find output inserters for each output machine
+    const output_inserters = output_machines.map(machine => {
+        const inserter = entity_registry
+            .getAll()
+            .filter(Entity.isInserter)
+            .find(inserter => inserter.source.entity_id.id === machine.entity_id.id);
+        assert(
+            inserter !== undefined, 
+            `No inserter found that takes output from machine ${machine.entity_id.id}`
+        );
+        return inserter;
+    });
 
+    // All output inserters should have the same stack size for consistent cycle timing
+    const output_stack_size = output_inserters[0].metadata.stack_size;
+    for (const inserter of output_inserters) {
+        assert(
+            inserter.metadata.stack_size === output_stack_size,
+            `All output inserters must have the same stack size. ` +
+            `Expected ${output_stack_size} but found ${inserter.metadata.stack_size} on inserter for machine ${inserter.source.entity_id.id}`
+        );
+    }
 
+    // Calculate the single swing period based on the actual machine production rate.
+    // With multiple output machines, each machine produces at its own rate, and we need
+    // the cycle duration to be based on how long it takes ONE machine to produce a stack.
+    // 
+    // The target_production_rate.machine_production_rate is the target for the whole setup,
+    // so we need to divide by the number of output machines to get the per-machine rate.
+    const num_output_machines = output_machines.length;
+    const per_machine_rate = target_production_rate.machine_production_rate.amount_per_tick
+        .divide(num_output_machines);
+    
     const single_swing_period_duration = Duration.ofTicks(
-        fraction(output_inserter.metadata.stack_size)
-            .divide(target_production_rate.machine_production_rate.amount_per_tick)
+        fraction(output_stack_size)
+            .divide(per_machine_rate)
             .toDecimal()
     )
 
     let swings_per_single_cycle = 1;
-
-
 
     if (max_possible_swings.toDecimal() >= 2) {
         swings_per_single_cycle = Math.floor(max_possible_swings.toDecimal());
@@ -66,11 +92,13 @@ function createPlan(
 
     const final_period_duration = Duration.ofTicks(single_swing_period_duration.ticks * swings_per_single_cycle)
 
+    // Compute swing counts for all output machines
+    // Each output machine handles the same swing count per machine
     const swing_counts = EntityTransferCountMap.create(
-        output_machine,
+        output_machines,
         entity_registry,
         fraction(swings_per_single_cycle),
-        output_inserter.metadata.stack_size
+        output_stack_size
     )
 
     return {

@@ -5,7 +5,8 @@ import { TargetProductionRateConfig } from "../config";
 
 export interface TargetProductionRate {
     machine_production_rate: ProductionRate;
-    machine_count: number;
+    /** Number of duplicate setups being modeled (multiplier for ratio calculations) */
+    copies: number;
     total_production_rate: ProductionRate;
 }
 
@@ -18,11 +19,11 @@ function fromConfig(config: TargetProductionRateConfig): TargetProductionRate {
         .divide(TICKS_PER_SECOND)
 
     const target_output_per_machine_per_tick = target_output_per_tick
-        .divide(config.machines);
+        .divide(config.copies);
 
     return {
         machine_production_rate: ProductionRate.perTick(recipe, target_output_per_machine_per_tick),
-        machine_count: config.machines,
+        copies: config.copies,
         total_production_rate: ProductionRate.perTick(recipe, target_output_per_tick),
     };
 }

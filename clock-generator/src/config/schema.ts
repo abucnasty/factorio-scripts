@@ -27,10 +27,17 @@ export type MachineConfiguration = z.infer<typeof MachineConfigurationSchema>;
 // Target Production Rate Configuration
 // ============================================================================
 
+/**
+ * Schema for target production rate configuration.
+ * 
+ * @property recipe - The recipe name to produce
+ * @property items_per_second - Target production rate in items per second
+ * @property copies - Number of duplicate setups being modeled (multiplier for ratio calculations)
+ */
 export const TargetProductionRateConfigSchema = z.object({
     recipe: z.string(),
     items_per_second: z.number().positive(),
-    machines: z.number().int().positive()
+    copies: z.number().int().positive()
 });
 
 export type TargetProductionRateConfig = z.infer<typeof TargetProductionRateConfigSchema>;
