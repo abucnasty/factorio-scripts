@@ -3,23 +3,11 @@ import { Box, Dialog, DialogContent, DialogTitle, IconButton, Paper, Tooltip, Ty
 import { useState } from 'react';
 import type { SerializableEntityTransferHistory, SerializableTransferEntry, SerializableTransferHistory } from 'clock-generator/browser';
 import { FactorioIcon } from './FactorioIcon';
+import { COLOR_BLIND_PALETTE_ALL } from './colors';
 
 interface TransferHistoryVisualizationProps {
     transferHistory: SerializableTransferHistory;
 }
-
-// Color palette for items (colorblind-friendly)
-const COLOR_PALETTE = [
-    "#0072B2",   // blue
-    "#E69F00",   // orange
-    "#F0E442",   // yellow
-    "#009E73",   // green
-    "#56B4E9",   // sky blue
-    "#D55E00",   // vermillion
-    "#CC79A7",   // reddish purple
-    "#585858",   // dark grey
-    "#FFFFFF",   // white
-];
 
 /** Build a map of item names to colors, assigning each unique item a distinct color */
 function buildItemColorMap(entities: SerializableEntityTransferHistory[]): Map<string, string> {
@@ -33,7 +21,7 @@ function buildItemColorMap(entities: SerializableEntityTransferHistory[]): Map<s
     const colorMap = new Map<string, string>();
     const sortedItems = Array.from(itemSet).sort();
     sortedItems.forEach((item, index) => {
-        colorMap.set(item, COLOR_PALETTE[index % COLOR_PALETTE.length]);
+        colorMap.set(item, COLOR_BLIND_PALETTE_ALL[index % COLOR_BLIND_PALETTE_ALL.length]);
     });
     return colorMap;
 }
@@ -48,7 +36,7 @@ interface TransferBarProps {
 function TransferBar({ transfer, totalDuration, rowHeight, colorMap }: TransferBarProps) {
     const startPercent = (transfer.start_tick / totalDuration) * 100;
     const widthPercent = ((transfer.end_tick - transfer.start_tick) / totalDuration) * 100;
-    const color = colorMap.get(transfer.item_name) ?? COLOR_PALETTE[0];
+    const color = colorMap.get(transfer.item_name) ?? COLOR_BLIND_PALETTE_ALL[0];
 
     return (
         <Tooltip

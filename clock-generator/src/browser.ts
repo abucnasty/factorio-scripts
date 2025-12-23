@@ -130,3 +130,45 @@ export {
     SerializableEntityTransferHistory,
     serializeTransferHistory,
 } from './crafting/sequence/transfer-history-serializer';
+
+// ============================================================================
+// State Transition History (for visualization)
+// ============================================================================
+
+export {
+    SerializableStateTransitionHistory,
+    SerializableEntityStateTransitions,
+    SerializableStateTransition,
+    serializeStateTransitionHistory,
+} from './crafting/sequence/state-transition-serializer';
+
+export {
+    StateTransitionEntityType,
+    EntityStatus,
+} from './crafting/sequence/state-transition-history';
+
+// ============================================================================
+// Status Types and Categories
+// ============================================================================
+
+export {
+    InserterStatus,
+} from './state/inserter-state';
+
+export {
+    MachineStatus,
+} from './state/machine-state';
+
+export {
+    DrillStatus,
+} from './state/drill-state';
+
+export {
+    StatusCategory,
+    inserterStatusToCategory,
+    machineStatusToCategory,
+    drillStatusToCategory,
+    statusToCategory,
+    getStatusesForEntityType,
+    getAllStatusCategories,
+} from './state/status-category';
