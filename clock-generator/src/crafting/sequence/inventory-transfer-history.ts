@@ -180,10 +180,10 @@ function printInventoryTransfers(
     logger: Logger = defaultLogger,
     relative_tick_mod: number = 0
 ): void {
-    Array.from(history.getAllTransfers().values())
-        .sort((a, b) => a[0]?.tick_range.start_inclusive - b[0]?.tick_range.start_inclusive)
-        .forEach((transfers, entityId) => {
-            logger.log(`Transfer Ranges for ${entityId}`);
+    Array.from(history.entries_array())
+        .sort(([entity_id, transfers], [entity_id2, transfers2]) => transfers[0]?.tick_range.start_inclusive - transfers2[0]?.tick_range.start_inclusive)
+        .forEach(([entity_id, transfers]) => {
+            logger.log(`Transfer Ranges for ${entity_id}`);
             transfers
                 .sort((a, b) => a.tick_range.start_inclusive - b.tick_range.start_inclusive)
                 .forEach((transfer) => {
