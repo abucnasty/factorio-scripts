@@ -110,12 +110,6 @@ function loadConfigFromStorage(): ConfigFormData {
             const parsed = JSON.parse(stored);
             // Basic validation - check if it has the required fields
             if (parsed && parsed.target_output && parsed.machines) {
-                // Handle backward compatibility: machines -> copies in target_output
-                if (parsed.target_output.machines !== undefined && parsed.target_output.copies === undefined) {
-                    console.warn('[DEPRECATION] Migrating target_output.machines to target_output.copies');
-                    parsed.target_output.copies = parsed.target_output.machines;
-                    delete parsed.target_output.machines;
-                }
                 return parsed as ConfigFormData;
             }
         }
