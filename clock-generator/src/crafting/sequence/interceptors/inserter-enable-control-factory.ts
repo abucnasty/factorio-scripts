@@ -254,8 +254,6 @@ export class EnableControlFactory {
             source_state,
         )
 
-        console.log(`Inserter ${inserter_state.inserter.entity_id} enable range: [${enabled_range.start_inclusive} - ${enabled_range.end_inclusive}]`);
-
         const clocked_control = this.clockedForCycle(
             [
                 enabled_range
@@ -268,6 +266,7 @@ export class EnableControlFactory {
             this.entity_transfer_map.getOrThrow(inserter_state.inserter.entity_id),
         );
 
+        // For NORMAL mode, always add the inventory check
         if (mode === SimulationMode.NORMAL) {
             return EnableControl.all(
                 [
@@ -278,6 +277,12 @@ export class EnableControlFactory {
                     )
                 ]
             )
+        }
+
+        // For PREVENT_DESYNCS, use clocked control only (no inventory check)
+        // The clocked timing should be sufficient
+        if (mode === SimulationMode.PREVENT_DESYNCS) {
+            return clocked_control;
         }
 
         return clocked_control;
@@ -331,7 +336,6 @@ export class EnableControlFactory {
             const merged_ranges = OpenRange.reduceRanges(enabled_ranges);
             const sorted_ranges = merged_ranges.sort((a, b) => a.start_inclusive - b.start_inclusive);
 
-            console.log(`Inserter ${inserter_state.inserter.entity_id} enable ranges: ${sorted_ranges.map(r => `[${r.start_inclusive} - ${r.end_inclusive}]`).join(", ")}`);
             return sorted_ranges;
         }
 
@@ -362,7 +366,7 @@ export class EnableControlFactory {
 
             const merged_ranges = OpenRange.reduceRanges(enabled_ranges);
             const sorted_ranges = merged_ranges.sort((a, b) => a.start_inclusive - b.start_inclusive);
-            console.log(`Inserter ${inserter_state.inserter.entity_id} enable ranges: ${sorted_ranges.map(r => `[${r.start_inclusive} - ${r.end_inclusive}]`).join(", ")}`);
+
             return sorted_ranges;
         }
 
@@ -370,6 +374,85 @@ export class EnableControlFactory {
         return [
             OpenRange.fromStartAndDuration(0, this.crafting_cycle_plan.total_duration.ticks)
         ]
+    }
+
+    /**
+     * Calculates the tick at which the source machine will have produced a full stack of items.
+     * Used for the "buffer in hand" strategy where the inserter picks up items at the end
+     * of the cycle (when they're ready) and drops them at the start of the next cycle.
+     */
+    private ticksToProduceStack(
+        source_machine: Machine,
+        stack_size: number,
+    ): number {
+        const amount_per_craft = source_machine.output.amount_per_craft.toDecimal();
+        const ticks_per_craft = source_machine.crafting_rate.ticks_per_craft;
+
+        const crafts_for_stack = Math.ceil(stack_size / amount_per_craft);
+        const ticks_to_full_stack = Math.ceil(crafts_for_stack * ticks_per_craft);
+
+        return ticks_to_full_stack;
+    }
+
+    /**
+     * Determines if the machine is "slow" relative to the inserter's needs.
+     * A slow machine cannot produce items fast enough to sustain the inserter's
+     * pickup rate, meaning items won't be ready at the start of the cycle.
+     * 
+     * We compare: ticks_to_produce_first_stack vs enable_window_start
+     * If producing a full stack takes longer than the enable window allows,
+     * we need to use buffer-in-hand strategy.
+     */
+    private isSlowMachine(
+        source_machine: Machine,
+        inserter: Inserter,
+        total_transfer_count: number,
+    ): boolean {
+        const stack_size = inserter.metadata.stack_size;
+        const ticks_to_stack = this.ticksToProduceStack(source_machine, stack_size);
+        const cycle_duration = this.crafting_cycle_plan.total_duration.ticks;
+        
+        // Check if this is a fractional swing case (cycle produces less than a full stack).
+        // In fractional swing cases, the cycle duration is artificially shorter than what 
+        // the machine can produce, and we should NOT apply buffer-in-hand strategy.
+        // Instead, we let the inserter start at tick 0 and pick up whatever is available.
+        //
+        // We detect this by checking if ticks_to_stack significantly exceeds cycle_duration
+        // but the continuous rate shows we're producing items (not a truly slow machine).
+        // A truly slow machine has ticks_to_stack > cycle_duration * total_transfer_count.
+        // A fractional swing case has ticks_to_stack slightly > cycle_duration but the 
+        // items actually fit within the larger timing window.
+        const items_produced_per_cycle = (source_machine.output.amount_per_craft.toDecimal() / source_machine.crafting_rate.ticks_per_craft) * cycle_duration;
+        
+        // If the continuous rate produces at least a stack, but discrete timing takes
+        // slightly longer than the cycle, this is a fractional case - not slow machine.
+        // The key insight: if items_produced_per_cycle >= stack_size, the machine is 
+        // "fast enough" in continuous terms, just discrete timing doesn't align perfectly.
+        if (items_produced_per_cycle >= stack_size && ticks_to_stack <= cycle_duration * 1.2) {
+            // Fractional swing case or near-match - don't use buffer-in-hand
+            return false;
+        }
+        
+        if (items_produced_per_cycle < stack_size) {
+            // Fractional swing case - not a "slow machine", just an intentionally short cycle
+            return false;
+        }
+        
+        // A machine is "slow" if it can't produce a full stack within the cycle duration.
+        // This means the inserter would need to start late in the cycle (or wrap around)
+        // to pick up items, requiring the buffer-in-hand strategy.
+        //
+        // For single swing: slow if ticks_to_stack > cycle_duration
+        // For multiple swings: slow if total items needed > items produced per cycle
+        if (total_transfer_count <= 1) {
+            return ticks_to_stack > cycle_duration;
+        }
+        
+        // Multiple swings: slow if machine can't keep up with continuous pickup
+        const total_items_needed = stack_size * total_transfer_count;
+        
+        // Machine is slow if it can't produce enough items in one cycle
+        return items_produced_per_cycle < total_items_needed;
     }
 
     private computeEnableRangeFromMachine(
@@ -400,6 +483,46 @@ export class EnableControlFactory {
             const total_swing_duration = Duration.ofTicks(
                 (animation.total.ticks + 1) * total_transfer_count
             );
+            
+            // For slow machines, use "buffer in hand" strategy:
+            // The inserter starts when items will be ready for the first pickup.
+            // Subsequent swings happen as items continue to be produced.
+            // The enable window may wrap around the cycle boundary.
+            if (this.isSlowMachine(source_state.machine, inserter_state.inserter, total_transfer_count)) {
+                const cycle_duration = this.crafting_cycle_plan.total_duration.ticks;
+                const stack_size = inserter_state.inserter.metadata.stack_size;
+                const ticks_to_stack = this.ticksToProduceStack(source_state.machine, stack_size);
+                
+                // Calculate when the inserter should start (when first stack is ready)
+                // The inserter is already at the source after its previous swing, so when 
+                // enabled it will immediately go to IDLE and start PICKUP on the next tick.
+                // We add +1 buffer because the craft event and pickup happen on the same tick,
+                // and we need items to be in the output before pickup begins.
+                //
+                // If ticks_to_stack exceeds cycle_duration, wrap around to the start of the cycle.
+                // This handles the edge case where the machine can't produce a full stack in one cycle.
+                const raw_pickup_start = Math.max(0, ticks_to_stack + 1);
+                const pickup_start = raw_pickup_start % cycle_duration;
+                
+                // For multiple swings, we need continuous production.
+                // The machine produces items at rate: amount_per_craft / ticks_per_craft
+                // After picking up stack_size, it takes ticks_to_stack to replenish.
+                // So each swing needs ticks_to_stack + swing_duration to complete.
+                const ticks_per_swing_with_wait = Math.max(
+                    animation.total.ticks,
+                    ticks_to_stack
+                );
+                const extended_duration = Math.min(
+                    ticks_per_swing_with_wait * total_transfer_count + 4,
+                    cycle_duration // Cap at cycle duration to avoid exceeding bounds
+                );
+                
+                return OpenRange.fromStartAndDuration(
+                    pickup_start,
+                    extended_duration
+                )
+            }
+            
             return OpenRange.fromStartAndDuration(
                 0,
                 total_swing_duration.ticks + 4

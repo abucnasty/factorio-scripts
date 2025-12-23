@@ -174,5 +174,58 @@ describe("generateClockForConfig", () => {
 
         });
         
-    })
+    });
+
+    describe("CHEMICAL_SCIENCE_ENGINES config (multi-output machine)", async () => {
+
+        const config = await loadConfigFromFile(ConfigPaths.CHEMICAL_SCIENCE_ENGINES);
+        const result: BlueprintGenerationResult = generateClockForConfig(config);
+
+        // Get the actual EntityId instances from the map keys
+        const keys = Array.from(result.crafting_cycle_plan.entity_transfer_map.keys());
+        const output_inserter_1_id: EntityId = keys.find(k => k.id === EntityId.forInserter(1).id)!;
+        const output_inserter_2_id: EntityId = keys.find(k => k.id === EntityId.forInserter(2).id)!;
+
+        describe("crafting cycle plan properties", () => {
+            it("has engine-unit as the production rate item", () => {
+                expect(result.crafting_cycle_plan.production_rate.machine_production_rate.item).toBe("engine-unit");
+            });
+
+            it("total duration is 160 ticks (80 ticks per swing × 2 swings)", () => {
+                // With 2 output machines and target rate of 24 items/sec,
+                // each machine produces at 0.2 items/tick (24/60/2).
+                // A stack of 16 items takes 80 ticks per machine.
+                // With 2 swings per cycle, total duration = 160 ticks.
+                expect(result.crafting_cycle_plan.total_duration.ticks).toBe(160);
+            });
+
+            it("has 2 transfers for each output inserter", () => {
+                const transferCounts1 = result.crafting_cycle_plan.entity_transfer_map.getOrThrow(output_inserter_1_id);
+                const transferCounts2 = result.crafting_cycle_plan.entity_transfer_map.getOrThrow(output_inserter_2_id);
+
+                expect(transferCounts1.total_transfer_count.toDecimal()).toBe(2);
+                expect(transferCounts2.total_transfer_count.toDecimal()).toBe(2);
+            });
+        });
+
+        describe("copies parameter equivalence", () => {
+            it("doubling target rate with copies=2 produces same cycle duration", async () => {
+                // Load the config and modify it to double the rate with 2 copies
+                const modifiedConfig = { ...config };
+                modifiedConfig.target_output = {
+                    ...config.target_output,
+                    items_per_second: config.target_output.items_per_second * 2,
+                    copies: 2
+                };
+
+                const modifiedResult = generateClockForConfig(modifiedConfig);
+
+                // The cycle duration should be the same because:
+                // - Original: 24 items/sec, 1 copy → per-machine rate = 24/60/2 = 0.2 items/tick
+                // - Modified: 48 items/sec, 2 copies → per-machine rate = 48/60/2/2 = 0.2 items/tick
+                expect(modifiedResult.crafting_cycle_plan.total_duration.ticks)
+                    .toBe(result.crafting_cycle_plan.total_duration.ticks);
+            });
+        });
+    });
 });

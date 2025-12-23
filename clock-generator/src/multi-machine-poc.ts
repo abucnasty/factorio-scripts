@@ -26,9 +26,13 @@ async function saveAllHoconConfigsToJson() {
 }
 
 async function main() {
-    const config: Config = await loadConfigFromFile(
-        ConfigPaths.CHEMICAL_SCIENCE_ENGINES
-    );
+    // Accept config path from command line argument, default to CHEMICAL_SCIENCE_ENGINES
+    const configArg = process.argv.find(arg => arg.startsWith('--config='));
+    const configPath = configArg 
+        ? configArg.split('=')[1] 
+        : ConfigPaths.CHEMICAL_SCIENCE_ENGINES;
+    
+    const config: Config = await loadConfigFromFile(configPath);
     console.log("Loaded config:");
     console.log("----------------------");
     console.log(JSON.stringify(config));
@@ -48,7 +52,7 @@ async function main() {
         debug_steps: {
             [RunnerStepType.PREPARE]: false,
             [RunnerStepType.WARM_UP]: false,
-            [RunnerStepType.SIMULATE]: false
+            [RunnerStepType.SIMULATE]: true
         },
         debug: debug
     };

@@ -94,7 +94,11 @@
         "id": 2
       },
       "stack_size": 16,
-      "overrides": {}
+      "overrides": {
+        "enable_control": {
+          "mode": "ALWAYS"
+        }
+      }
     },
     {
       "source": {

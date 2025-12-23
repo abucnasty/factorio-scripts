@@ -28,6 +28,7 @@ export const ConfigPaths = {
     LOGISTIC_SCIENCE_INSERTER_CRAFTING: path.join(CONFIG_SAMPLES_DIR, 'logistic-science-inserter-crafting.conf'),
     PRODUCTION_SCIENCE: path.join(CONFIG_SAMPLES_DIR, 'production-science.conf'),
     PRODUCTION_SCIENCE_SHARED: path.join(CONFIG_SAMPLES_DIR, 'production-science-shared.conf'),
+    PRODUCTION_SCIENCE_SHARED_JSON: path.join(CONFIG_SAMPLES_DIR, 'production-science-shared.json'),
     PRODUCTIVITY_MODULE: path.join(CONFIG_SAMPLES_DIR, 'productivity-module.conf'),
     SAMPLE_CONFIG: path.join(CONFIG_SAMPLES_DIR, 'sample-config.conf'),
     STONE_BRICKS_DIRECT_INSERT: path.join(CONFIG_SAMPLES_DIR, 'stone-bricks-direct-insert.conf'),
