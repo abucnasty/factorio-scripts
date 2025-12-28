@@ -22,12 +22,13 @@ export function ConfigImportExport({
     }>({ open: false, message: '', severity: 'success' });
 
     const handleExport = useCallback(() => {
+        const target_recipe_name = config.target_output.recipe
         const jsonString = JSON.stringify(config, null, 2);
         const blob = new Blob([jsonString], { type: 'application/json' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `clock-config-${Date.now()}.json`;
+        a.download = `clock-config-${target_recipe_name}-${Date.now()}.json`;
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
