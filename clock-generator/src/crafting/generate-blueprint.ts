@@ -132,6 +132,17 @@ export function generateClockForConfig(
         `No machine with output item ${target_production_rate.machine_production_rate.item} found`
     );
 
+    // validate target production rate can be met
+    const total_output_capacity_per_second = output_machine_state_machines
+        .map(it => it.machine_state.machine.output.production_rate.amount_per_second)
+        .reduce((a, b) => a.add(b), fraction(0))
+        .multiply(fraction(config.target_output.copies));
+    assert(total_output_capacity_per_second.toDecimal() >= target_production_rate.total_production_rate.amount_per_second.toDecimal(),
+       "The current configuration cannot meet the target production rate. " +
+       `Total output capacity is ${total_output_capacity_per_second.toDecimal()} items/second, ` +
+       `but target production rate is ${target_production_rate.total_production_rate.amount_per_second.toDecimal()} items/second.`
+    )
+
     // Find output inserters for each output machine
     const output_inserters = output_machine_state_machines.map(machine_state_machine => {
         const inserter = simulation_context.state_registry

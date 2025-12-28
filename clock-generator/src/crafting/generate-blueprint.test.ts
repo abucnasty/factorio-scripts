@@ -228,4 +228,13 @@ describe("generateClockForConfig", () => {
             });
         });
     });
+    describe("config validation", () => {
+        it("throw error if the current configuration cannot meet the target production rate", async () => {
+            const config = await loadConfigFromFile(ConfigPaths.STONE_BRICKS_DIRECT_INSERT);
+            expect(config.target_output.items_per_second).toBe(120)
+            expect(() => generateClockForConfig(config)).not.toThrowError();
+            config.target_output.items_per_second = 240;
+            expect(() => generateClockForConfig(config)).toThrowError();
+        })
+    })
 });
