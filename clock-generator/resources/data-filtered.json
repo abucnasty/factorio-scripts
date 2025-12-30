@@ -63622,9 +63622,7 @@
       "name": "fluoroketone-hot-barrel",
       "type": "item",
       "stack_size": 10
-    }
-  },
-  "module": {
+    },
     "speed-module": {
       "name": "speed-module",
       "type": "item",
@@ -63719,9 +63717,7 @@
       "name": "ee-super-dirty-module",
       "type": "item",
       "stack_size": 50
-    }
-  },
-  "tool": {
+    },
     "automation-science-pack": {
       "name": "automation-science-pack",
       "type": "item",
@@ -63781,15 +63777,11 @@
       "name": "promethium-science-pack",
       "type": "item",
       "stack_size": 200
-    }
-  },
-  "straight-rail": {
+    },
     "straight-rail": {
       "name": "straight-rail",
       "type": "item"
-    }
-  },
-  "ammo": {
+    },
     "uranium-rounds-magazine": {
       "name": "uranium-rounds-magazine",
       "type": "item",
@@ -63874,9 +63866,7 @@
       "name": "tesla-ammo",
       "type": "item",
       "stack_size": 100
-    }
-  },
-  "capsule": {
+    },
     "raw-fish": {
       "name": "raw-fish",
       "type": "item",

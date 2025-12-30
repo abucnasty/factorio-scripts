@@ -1,42 +1,48 @@
 const fs = require("fs/promises");
 
-const category_allow_list = new Map([
-    ["recipe", identity],
-    ["mining-drill", identity],
-    ["resource", identity],
-    // items
-    ["item", mapAsItem],
-    ["module", mapAsItem],
-    ["tool", mapAsItem],
-    ["straight-rail", mapAsItem],
-    ["ammo", mapAsItem],
-    ["capsule", mapAsItem],
+const raw_list = new Set([
+    "recipe",
+    "mining-drill",
+    "resource",
 ])
 
-function main() {
-    fs.readFile("./data-raw-dump.json")
-        .then(data => JSON.parse(data.toString("utf-8")))
-        .then(rawData => {
-            const filtered = {}
+const item_categories = new Set([
+    "item",
+    "module",
+    "tool",
+    "straight-rail",
+    "ammo",
+    "capsule",
+])
 
-            for (const [category, mapFn] of category_allow_list) {
-                const category_record = {};
-                for (const [key, record] of Object.entries(rawData[category])) {
-                    category_record[key] = mapFn(record);
-                } 
+async function main() {
+    const data = await fs.readFile("./data-raw-dump.json")
+    const rawData = JSON.parse(data.toString("utf-8"))
 
-                filtered[category] = category_record;
-                
-            }
-
-            return fs.writeFile("./data-filtered.json", JSON.stringify(filtered, null, 2))
-        })
-        .then(() => console.log("Done"))
-        .catch(err => console.error(err))
+    try {
+        const filtered = mapRawDataToFilteredFactorioData(rawData)
+        await fs.writeFile("./data-filtered.json", JSON.stringify(filtered, null, 2))
+        console.log("Done")
+    } catch (err) {
+        console.error(err)
+    }
 }
 
-function identity(x) {
-    return x;
+function mapRawDataToFilteredFactorioData(rawData) {
+    const filtered = {}
+
+    for (const category of raw_list) {
+        filtered[category] = rawData[category];
+    }
+
+    filtered["item"] = {}
+
+    for (const category of item_categories) {
+        for (const [itemName, itemData] of Object.entries(rawData[category])) {
+            filtered["item"][itemName] = mapAsItem(itemData);
+        }
+    }
+    return filtered;
 }
 
 function mapAsItem(struct) {
