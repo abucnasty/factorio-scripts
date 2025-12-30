@@ -76537,5 +76537,1546 @@
       "default_import_location": "fulgora",
       "magazine_size": 10
     }
+  },
+  "capsule": {
+    "raw-fish": {
+      "type": "capsule",
+      "name": "raw-fish",
+      "icon": "__base__/graphics/icons/fish.png",
+      "subgroup": "raw-resource",
+      "capsule_action": {
+        "type": "use-on-self",
+        "attack_parameters": {
+          "type": "projectile",
+          "activation_type": "consume",
+          "ammo_category": "capsule",
+          "cooldown": 30,
+          "range": 0,
+          "ammo_type": {
+            "target_type": "position",
+            "action": {
+              "type": "direct",
+              "action_delivery": {
+                "type": "instant",
+                "target_effects": [
+                  {
+                    "type": "damage",
+                    "damage": {
+                      "type": "physical",
+                      "amount": -80
+                    },
+                    "use_substitute": false
+                  },
+                  {
+                    "type": "play-sound",
+                    "sound": [
+                      {
+                        "filename": "__base__/sound/eat-1.ogg",
+                        "volume": 0.6
+                      },
+                      {
+                        "filename": "__base__/sound/eat-2.ogg",
+                        "volume": 0.6
+                      },
+                      {
+                        "filename": "__base__/sound/eat-3.ogg",
+                        "volume": 0.6
+                      },
+                      {
+                        "filename": "__base__/sound/eat-4.ogg",
+                        "volume": 0.6
+                      },
+                      {
+                        "filename": "__base__/sound/eat-5.ogg",
+                        "volume": 0.6
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          }
+        }
+      },
+      "order": "h[raw-fish]",
+      "inventory_move_sound": {
+        "filename": "__base__/sound/item/raw-fish-inventory-move.ogg",
+        "volume": 0.7,
+        "aggregation": {
+          "max_count": 1,
+          "remove": true
+        }
+      },
+      "pick_sound": {
+        "filename": "__base__/sound/item/raw-fish-inventory-pickup.ogg",
+        "volume": 0.7,
+        "aggregation": {
+          "max_count": 1,
+          "remove": true
+        }
+      },
+      "drop_sound": {
+        "filename": "__base__/sound/item/raw-fish-inventory-move.ogg",
+        "volume": 0.7,
+        "aggregation": {
+          "max_count": 1,
+          "remove": true
+        }
+      },
+      "stack_size": 100,
+      "weight": 3333.3333333333335,
+      "send_to_orbit_mode": "manual",
+      "spoil_ticks": 453000,
+      "spoil_result": "spoilage"
+    },
+    "grenade": {
+      "type": "capsule",
+      "name": "grenade",
+      "icon": "__base__/graphics/icons/grenade.png",
+      "capsule_action": {
+        "type": "throw",
+        "attack_parameters": {
+          "type": "projectile",
+          "activation_type": "throw",
+          "ammo_category": "grenade",
+          "cooldown": 30,
+          "projectile_creation_distance": 0.6,
+          "range": 15,
+          "ammo_type": {
+            "target_type": "position",
+            "action": [
+              {
+                "type": "direct",
+                "action_delivery": {
+                  "type": "projectile",
+                  "projectile": "grenade",
+                  "starting_speed": 0.3
+                }
+              },
+              {
+                "type": "direct",
+                "action_delivery": {
+                  "type": "instant",
+                  "target_effects": [
+                    {
+                      "type": "play-sound",
+                      "sound": {
+                        "category": "weapon",
+                        "switch_vibration_data": {
+                          "filename": "__base__/sound/fight/throw-projectile.bnvib"
+                        },
+                        "variations": [
+                          {
+                            "filename": "__base__/sound/fight/throw-projectile-1.ogg",
+                            "volume": 0.4
+                          },
+                          {
+                            "filename": "__base__/sound/fight/throw-projectile-2.ogg",
+                            "volume": 0.4
+                          },
+                          {
+                            "filename": "__base__/sound/fight/throw-projectile-3.ogg",
+                            "volume": 0.4
+                          },
+                          {
+                            "filename": "__base__/sound/fight/throw-projectile-4.ogg",
+                            "volume": 0.4
+                          },
+                          {
+                            "filename": "__base__/sound/fight/throw-projectile-5.ogg",
+                            "volume": 0.4
+                          },
+                          {
+                            "filename": "__base__/sound/fight/throw-projectile-6.ogg",
+                            "volume": 0.4
+                          }
+                        ],
+                        "priority": 64
+                      }
+                    },
+                    {
+                      "type": "play-sound",
+                      "sound": {
+                        "category": "weapon",
+                        "variations": [
+                          {
+                            "filename": "__base__/sound/fight/throw-grenade-1.ogg",
+                            "volume": 0.4
+                          },
+                          {
+                            "filename": "__base__/sound/fight/throw-grenade-2.ogg",
+                            "volume": 0.4
+                          },
+                          {
+                            "filename": "__base__/sound/fight/throw-grenade-3.ogg",
+                            "volume": 0.4
+                          },
+                          {
+                            "filename": "__base__/sound/fight/throw-grenade-4.ogg",
+                            "volume": 0.4
+                          },
+                          {
+                            "filename": "__base__/sound/fight/throw-grenade-5.ogg",
+                            "volume": 0.4
+                          }
+                        ],
+                        "priority": 64
+                      }
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        }
+      },
+      "subgroup": "capsule",
+      "order": "a[grenade]-a[normal]",
+      "inventory_move_sound": {
+        "filename": "__base__/sound/item/grenade-inventory-move.ogg",
+        "volume": 1,
+        "aggregation": {
+          "max_count": 1,
+          "remove": true
+        }
+      },
+      "pick_sound": {
+        "filename": "__base__/sound/item/grenade-inventory-pickup.ogg",
+        "volume": 0.8,
+        "aggregation": {
+          "max_count": 1,
+          "remove": true
+        }
+      },
+      "drop_sound": {
+        "filename": "__base__/sound/item/grenade-inventory-move.ogg",
+        "volume": 1,
+        "aggregation": {
+          "max_count": 1,
+          "remove": true
+        }
+      },
+      "stack_size": 100,
+      "weight": 10000
+    },
+    "defender-capsule": {
+      "type": "capsule",
+      "name": "defender-capsule",
+      "icon": "__base__/graphics/icons/defender-capsule.png",
+      "capsule_action": {
+        "type": "throw",
+        "attack_parameters": {
+          "type": "projectile",
+          "activation_type": "throw",
+          "ammo_category": "capsule",
+          "cooldown": 15,
+          "projectile_creation_distance": 0.6,
+          "range": 20,
+          "ammo_type": {
+            "target_type": "position",
+            "action": [
+              {
+                "type": "direct",
+                "action_delivery": {
+                  "type": "projectile",
+                  "projectile": "defender-capsule",
+                  "starting_speed": 0.3
+                }
+              },
+              {
+                "type": "direct",
+                "action_delivery": {
+                  "type": "instant",
+                  "target_effects": [
+                    {
+                      "type": "play-sound",
+                      "sound": {
+                        "category": "weapon",
+                        "switch_vibration_data": {
+                          "filename": "__base__/sound/fight/throw-projectile.bnvib"
+                        },
+                        "variations": [
+                          {
+                            "filename": "__base__/sound/fight/throw-projectile-1.ogg",
+                            "volume": 0.4
+                          },
+                          {
+                            "filename": "__base__/sound/fight/throw-projectile-2.ogg",
+                            "volume": 0.4
+                          },
+                          {
+                            "filename": "__base__/sound/fight/throw-projectile-3.ogg",
+                            "volume": 0.4
+                          },
+                          {
+                            "filename": "__base__/sound/fight/throw-projectile-4.ogg",
+                            "volume": 0.4
+                          },
+                          {
+                            "filename": "__base__/sound/fight/throw-projectile-5.ogg",
+                            "volume": 0.4
+                          },
+                          {
+                            "filename": "__base__/sound/fight/throw-projectile-6.ogg",
+                            "volume": 0.4
+                          }
+                        ],
+                        "priority": 64
+                      }
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        }
+      },
+      "subgroup": "capsule",
+      "order": "d[defender]-b[capsule]",
+      "inventory_move_sound": {
+        "filename": "__base__/sound/item/robotic-inventory-move.ogg",
+        "volume": 0.8,
+        "aggregation": {
+          "max_count": 1,
+          "remove": true
+        }
+      },
+      "pick_sound": {
+        "filename": "__base__/sound/item/robotic-inventory-pickup.ogg",
+        "volume": 0.5,
+        "aggregation": {
+          "max_count": 1,
+          "remove": true
+        }
+      },
+      "drop_sound": {
+        "filename": "__base__/sound/item/robotic-inventory-move.ogg",
+        "volume": 0.8,
+        "aggregation": {
+          "max_count": 1,
+          "remove": true
+        }
+      },
+      "stack_size": 100,
+      "weight": 10000
+    },
+    "cluster-grenade": {
+      "type": "capsule",
+      "name": "cluster-grenade",
+      "icon": "__base__/graphics/icons/cluster-grenade.png",
+      "capsule_action": {
+        "type": "throw",
+        "attack_parameters": {
+          "type": "projectile",
+          "activation_type": "throw",
+          "ammo_category": "grenade",
+          "cooldown": 30,
+          "projectile_creation_distance": 0.6,
+          "range": 20,
+          "ammo_type": {
+            "target_type": "position",
+            "action": [
+              {
+                "type": "direct",
+                "action_delivery": {
+                  "type": "projectile",
+                  "projectile": "cluster-grenade",
+                  "starting_speed": 0.3
+                }
+              },
+              {
+                "type": "direct",
+                "action_delivery": {
+                  "type": "instant",
+                  "target_effects": [
+                    {
+                      "type": "play-sound",
+                      "sound": {
+                        "category": "weapon",
+                        "switch_vibration_data": {
+                          "filename": "__base__/sound/fight/throw-projectile.bnvib"
+                        },
+                        "variations": [
+                          {
+                            "filename": "__base__/sound/fight/throw-projectile-1.ogg",
+                            "volume": 0.4
+                          },
+                          {
+                            "filename": "__base__/sound/fight/throw-projectile-2.ogg",
+                            "volume": 0.4
+                          },
+                          {
+                            "filename": "__base__/sound/fight/throw-projectile-3.ogg",
+                            "volume": 0.4
+                          },
+                          {
+                            "filename": "__base__/sound/fight/throw-projectile-4.ogg",
+                            "volume": 0.4
+                          },
+                          {
+                            "filename": "__base__/sound/fight/throw-projectile-5.ogg",
+                            "volume": 0.4
+                          },
+                          {
+                            "filename": "__base__/sound/fight/throw-projectile-6.ogg",
+                            "volume": 0.4
+                          }
+                        ],
+                        "priority": 64
+                      }
+                    },
+                    {
+                      "type": "play-sound",
+                      "sound": {
+                        "category": "weapon",
+                        "variations": [
+                          {
+                            "filename": "__base__/sound/fight/throw-grenade-1.ogg",
+                            "volume": 0.4
+                          },
+                          {
+                            "filename": "__base__/sound/fight/throw-grenade-2.ogg",
+                            "volume": 0.4
+                          },
+                          {
+                            "filename": "__base__/sound/fight/throw-grenade-3.ogg",
+                            "volume": 0.4
+                          },
+                          {
+                            "filename": "__base__/sound/fight/throw-grenade-4.ogg",
+                            "volume": 0.4
+                          },
+                          {
+                            "filename": "__base__/sound/fight/throw-grenade-5.ogg",
+                            "volume": 0.4
+                          }
+                        ],
+                        "priority": 64
+                      }
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        }
+      },
+      "subgroup": "capsule",
+      "order": "a[grenade]-b[cluster]",
+      "inventory_move_sound": {
+        "filename": "__base__/sound/item/grenade-inventory-move.ogg",
+        "volume": 1,
+        "aggregation": {
+          "max_count": 1,
+          "remove": true
+        }
+      },
+      "pick_sound": {
+        "filename": "__base__/sound/item/grenade-inventory-pickup.ogg",
+        "volume": 0.8,
+        "aggregation": {
+          "max_count": 1,
+          "remove": true
+        }
+      },
+      "drop_sound": {
+        "filename": "__base__/sound/item/grenade-inventory-move.ogg",
+        "volume": 1,
+        "aggregation": {
+          "max_count": 1,
+          "remove": true
+        }
+      },
+      "stack_size": 100,
+      "weight": 40000
+    },
+    "poison-capsule": {
+      "type": "capsule",
+      "name": "poison-capsule",
+      "icon": "__base__/graphics/icons/poison-capsule.png",
+      "capsule_action": {
+        "type": "throw",
+        "attack_parameters": {
+          "type": "projectile",
+          "activation_type": "throw",
+          "ammo_category": "capsule",
+          "cooldown": 30,
+          "projectile_creation_distance": 0.6,
+          "range": 25,
+          "ammo_type": {
+            "target_type": "position",
+            "action": [
+              {
+                "type": "direct",
+                "action_delivery": {
+                  "type": "projectile",
+                  "projectile": "poison-capsule",
+                  "starting_speed": 0.3
+                }
+              },
+              {
+                "type": "direct",
+                "action_delivery": {
+                  "type": "instant",
+                  "target_effects": [
+                    {
+                      "type": "play-sound",
+                      "sound": {
+                        "category": "weapon",
+                        "switch_vibration_data": {
+                          "filename": "__base__/sound/fight/throw-projectile.bnvib"
+                        },
+                        "variations": [
+                          {
+                            "filename": "__base__/sound/fight/throw-projectile-1.ogg",
+                            "volume": 0.4
+                          },
+                          {
+                            "filename": "__base__/sound/fight/throw-projectile-2.ogg",
+                            "volume": 0.4
+                          },
+                          {
+                            "filename": "__base__/sound/fight/throw-projectile-3.ogg",
+                            "volume": 0.4
+                          },
+                          {
+                            "filename": "__base__/sound/fight/throw-projectile-4.ogg",
+                            "volume": 0.4
+                          },
+                          {
+                            "filename": "__base__/sound/fight/throw-projectile-5.ogg",
+                            "volume": 0.4
+                          },
+                          {
+                            "filename": "__base__/sound/fight/throw-projectile-6.ogg",
+                            "volume": 0.4
+                          }
+                        ],
+                        "priority": 64
+                      }
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        }
+      },
+      "subgroup": "capsule",
+      "order": "b[poison-capsule]",
+      "inventory_move_sound": {
+        "filename": "__base__/sound/item/grenade-inventory-move.ogg",
+        "volume": 1,
+        "aggregation": {
+          "max_count": 1,
+          "remove": true
+        }
+      },
+      "pick_sound": {
+        "filename": "__base__/sound/item/grenade-inventory-pickup.ogg",
+        "volume": 0.8,
+        "aggregation": {
+          "max_count": 1,
+          "remove": true
+        }
+      },
+      "drop_sound": {
+        "filename": "__base__/sound/item/grenade-inventory-move.ogg",
+        "volume": 1,
+        "aggregation": {
+          "max_count": 1,
+          "remove": true
+        }
+      },
+      "stack_size": 100,
+      "weight": 10000
+    },
+    "slowdown-capsule": {
+      "type": "capsule",
+      "name": "slowdown-capsule",
+      "icon": "__base__/graphics/icons/slowdown-capsule.png",
+      "capsule_action": {
+        "type": "throw",
+        "attack_parameters": {
+          "type": "projectile",
+          "activation_type": "throw",
+          "ammo_category": "capsule",
+          "cooldown": 30,
+          "projectile_creation_distance": 0.6,
+          "range": 25,
+          "ammo_type": {
+            "target_type": "position",
+            "action": [
+              {
+                "type": "direct",
+                "action_delivery": {
+                  "type": "projectile",
+                  "projectile": "slowdown-capsule",
+                  "starting_speed": 0.3
+                }
+              },
+              {
+                "type": "direct",
+                "action_delivery": {
+                  "type": "instant",
+                  "target_effects": [
+                    {
+                      "type": "play-sound",
+                      "sound": {
+                        "category": "weapon",
+                        "switch_vibration_data": {
+                          "filename": "__base__/sound/fight/throw-projectile.bnvib"
+                        },
+                        "variations": [
+                          {
+                            "filename": "__base__/sound/fight/throw-projectile-1.ogg",
+                            "volume": 0.4
+                          },
+                          {
+                            "filename": "__base__/sound/fight/throw-projectile-2.ogg",
+                            "volume": 0.4
+                          },
+                          {
+                            "filename": "__base__/sound/fight/throw-projectile-3.ogg",
+                            "volume": 0.4
+                          },
+                          {
+                            "filename": "__base__/sound/fight/throw-projectile-4.ogg",
+                            "volume": 0.4
+                          },
+                          {
+                            "filename": "__base__/sound/fight/throw-projectile-5.ogg",
+                            "volume": 0.4
+                          },
+                          {
+                            "filename": "__base__/sound/fight/throw-projectile-6.ogg",
+                            "volume": 0.4
+                          }
+                        ],
+                        "priority": 64
+                      }
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        }
+      },
+      "subgroup": "capsule",
+      "order": "c[slowdown-capsule]",
+      "inventory_move_sound": {
+        "filename": "__base__/sound/item/grenade-inventory-move.ogg",
+        "volume": 1,
+        "aggregation": {
+          "max_count": 1,
+          "remove": true
+        }
+      },
+      "pick_sound": {
+        "filename": "__base__/sound/item/grenade-inventory-pickup.ogg",
+        "volume": 0.8,
+        "aggregation": {
+          "max_count": 1,
+          "remove": true
+        }
+      },
+      "drop_sound": {
+        "filename": "__base__/sound/item/grenade-inventory-move.ogg",
+        "volume": 1,
+        "aggregation": {
+          "max_count": 1,
+          "remove": true
+        }
+      },
+      "stack_size": 100,
+      "weight": 10000
+    },
+    "distractor-capsule": {
+      "type": "capsule",
+      "name": "distractor-capsule",
+      "icon": "__base__/graphics/icons/distractor-capsule.png",
+      "capsule_action": {
+        "type": "throw",
+        "attack_parameters": {
+          "type": "projectile",
+          "activation_type": "throw",
+          "ammo_category": "capsule",
+          "cooldown": 30,
+          "projectile_creation_distance": 0.6,
+          "range": 25,
+          "ammo_type": {
+            "target_type": "position",
+            "action": [
+              {
+                "type": "direct",
+                "action_delivery": {
+                  "type": "projectile",
+                  "projectile": "distractor-capsule",
+                  "starting_speed": 0.3
+                }
+              },
+              {
+                "type": "direct",
+                "action_delivery": {
+                  "type": "instant",
+                  "target_effects": [
+                    {
+                      "type": "play-sound",
+                      "sound": {
+                        "category": "weapon",
+                        "switch_vibration_data": {
+                          "filename": "__base__/sound/fight/throw-projectile.bnvib"
+                        },
+                        "variations": [
+                          {
+                            "filename": "__base__/sound/fight/throw-projectile-1.ogg",
+                            "volume": 0.4
+                          },
+                          {
+                            "filename": "__base__/sound/fight/throw-projectile-2.ogg",
+                            "volume": 0.4
+                          },
+                          {
+                            "filename": "__base__/sound/fight/throw-projectile-3.ogg",
+                            "volume": 0.4
+                          },
+                          {
+                            "filename": "__base__/sound/fight/throw-projectile-4.ogg",
+                            "volume": 0.4
+                          },
+                          {
+                            "filename": "__base__/sound/fight/throw-projectile-5.ogg",
+                            "volume": 0.4
+                          },
+                          {
+                            "filename": "__base__/sound/fight/throw-projectile-6.ogg",
+                            "volume": 0.4
+                          }
+                        ],
+                        "priority": 64
+                      }
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        }
+      },
+      "subgroup": "capsule",
+      "order": "e[distractor]-b[capsule]",
+      "inventory_move_sound": {
+        "filename": "__base__/sound/item/robotic-inventory-move.ogg",
+        "volume": 0.8,
+        "aggregation": {
+          "max_count": 1,
+          "remove": true
+        }
+      },
+      "pick_sound": {
+        "filename": "__base__/sound/item/robotic-inventory-pickup.ogg",
+        "volume": 0.5,
+        "aggregation": {
+          "max_count": 1,
+          "remove": true
+        }
+      },
+      "drop_sound": {
+        "filename": "__base__/sound/item/robotic-inventory-move.ogg",
+        "volume": 0.8,
+        "aggregation": {
+          "max_count": 1,
+          "remove": true
+        }
+      },
+      "stack_size": 100,
+      "weight": 20000
+    },
+    "destroyer-capsule": {
+      "type": "capsule",
+      "name": "destroyer-capsule",
+      "icon": "__base__/graphics/icons/destroyer-capsule.png",
+      "capsule_action": {
+        "type": "throw",
+        "attack_parameters": {
+          "type": "projectile",
+          "activation_type": "throw",
+          "ammo_category": "capsule",
+          "cooldown": 30,
+          "projectile_creation_distance": 0.6,
+          "range": 25,
+          "ammo_type": {
+            "target_type": "position",
+            "action": [
+              {
+                "type": "direct",
+                "action_delivery": {
+                  "type": "projectile",
+                  "projectile": "destroyer-capsule",
+                  "starting_speed": 0.3
+                }
+              },
+              {
+                "type": "direct",
+                "action_delivery": {
+                  "type": "instant",
+                  "target_effects": [
+                    {
+                      "type": "play-sound",
+                      "sound": {
+                        "category": "weapon",
+                        "switch_vibration_data": {
+                          "filename": "__base__/sound/fight/throw-projectile.bnvib"
+                        },
+                        "variations": [
+                          {
+                            "filename": "__base__/sound/fight/throw-projectile-1.ogg",
+                            "volume": 0.4
+                          },
+                          {
+                            "filename": "__base__/sound/fight/throw-projectile-2.ogg",
+                            "volume": 0.4
+                          },
+                          {
+                            "filename": "__base__/sound/fight/throw-projectile-3.ogg",
+                            "volume": 0.4
+                          },
+                          {
+                            "filename": "__base__/sound/fight/throw-projectile-4.ogg",
+                            "volume": 0.4
+                          },
+                          {
+                            "filename": "__base__/sound/fight/throw-projectile-5.ogg",
+                            "volume": 0.4
+                          },
+                          {
+                            "filename": "__base__/sound/fight/throw-projectile-6.ogg",
+                            "volume": 0.4
+                          }
+                        ],
+                        "priority": 64
+                      }
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        }
+      },
+      "subgroup": "capsule",
+      "order": "f[destroyer]-b[capsule]",
+      "inventory_move_sound": {
+        "filename": "__base__/sound/item/robotic-inventory-move.ogg",
+        "volume": 0.8,
+        "aggregation": {
+          "max_count": 1,
+          "remove": true
+        }
+      },
+      "pick_sound": {
+        "filename": "__base__/sound/item/robotic-inventory-pickup.ogg",
+        "volume": 0.5,
+        "aggregation": {
+          "max_count": 1,
+          "remove": true
+        }
+      },
+      "drop_sound": {
+        "filename": "__base__/sound/item/robotic-inventory-move.ogg",
+        "volume": 0.8,
+        "aggregation": {
+          "max_count": 1,
+          "remove": true
+        }
+      },
+      "stack_size": 100,
+      "weight": 40000
+    },
+    "cliff-explosives": {
+      "type": "capsule",
+      "name": "cliff-explosives",
+      "icon": "__base__/graphics/icons/cliff-explosives.png",
+      "flags": [
+        "hide-from-bonus-gui"
+      ],
+      "capsule_action": {
+        "type": "destroy-cliffs",
+        "radius": 1.5,
+        "attack_parameters": {
+          "type": "projectile",
+          "activation_type": "throw",
+          "ammo_category": "grenade",
+          "cooldown": 30,
+          "projectile_creation_distance": 0.6,
+          "range": 10,
+          "ammo_type": {
+            "target_type": "position",
+            "action": {
+              "type": "direct",
+              "action_delivery": {
+                "type": "projectile",
+                "projectile": "cliff-explosives",
+                "starting_speed": 0.3
+              }
+            }
+          }
+        }
+      },
+      "subgroup": "terrain",
+      "order": "d[cliff-explosives]",
+      "inventory_move_sound": {
+        "filename": "__base__/sound/item/explosive-inventory-move.ogg",
+        "volume": 1,
+        "aggregation": {
+          "max_count": 1,
+          "remove": true
+        }
+      },
+      "pick_sound": {
+        "filename": "__base__/sound/item/explosive-inventory-pickup.ogg",
+        "volume": 0.8,
+        "aggregation": {
+          "max_count": 1,
+          "remove": true
+        }
+      },
+      "drop_sound": {
+        "filename": "__base__/sound/item/explosive-inventory-move.ogg",
+        "volume": 1,
+        "aggregation": {
+          "max_count": 1,
+          "remove": true
+        }
+      },
+      "stack_size": 20,
+      "default_import_location": "vulcanus"
+    },
+    "discharge-defense-remote": {
+      "type": "capsule",
+      "name": "discharge-defense-remote",
+      "icon": "__base__/graphics/icons/discharge-defense-equipment-controller.png",
+      "flags": [
+        "only-in-cursor",
+        "not-stackable",
+        "spawnable"
+      ],
+      "auto_recycle": false,
+      "capsule_action": {
+        "type": "equipment-remote",
+        "equipment": "discharge-defense-equipment"
+      },
+      "subgroup": "spawnables",
+      "order": "b[active-defense]-b[discharge-defense-equipment]-b[remote]",
+      "inventory_move_sound": {
+        "filename": "__base__/sound/item/electric-small-inventory-move.ogg",
+        "volume": 1,
+        "aggregation": {
+          "max_count": 1,
+          "remove": true
+        }
+      },
+      "pick_sound": {
+        "filename": "__base__/sound/item/electric-small-inventory-pickup.ogg",
+        "volume": 0.7,
+        "aggregation": {
+          "max_count": 1,
+          "remove": true
+        }
+      },
+      "drop_sound": {
+        "filename": "__base__/sound/item/electric-small-inventory-move.ogg",
+        "volume": 1,
+        "aggregation": {
+          "max_count": 1,
+          "remove": true
+        }
+      },
+      "stack_size": 1
+    },
+    "artillery-targeting-remote": {
+      "type": "capsule",
+      "name": "artillery-targeting-remote",
+      "icon": "__base__/graphics/icons/artillery-targeting-remote.png",
+      "flags": [
+        "only-in-cursor",
+        "not-stackable",
+        "spawnable"
+      ],
+      "auto_recycle": false,
+      "capsule_action": {
+        "type": "artillery-remote",
+        "flare": "artillery-flare"
+      },
+      "subgroup": "spawnables",
+      "order": "b[turret]-d[artillery-turret]-b[remote]",
+      "inventory_move_sound": {
+        "filename": "__base__/sound/item/artillery-remote-inventory-move.ogg",
+        "volume": 0.7,
+        "aggregation": {
+          "max_count": 1,
+          "remove": true
+        }
+      },
+      "pick_sound": {
+        "filename": "__base__/sound/item/mechanical-inventory-pickup.ogg",
+        "volume": 0.8,
+        "aggregation": {
+          "max_count": 1,
+          "remove": true
+        }
+      },
+      "drop_sound": {
+        "filename": "__base__/sound/item/artillery-remote-inventory-move.ogg",
+        "volume": 0.7,
+        "aggregation": {
+          "max_count": 1,
+          "remove": true
+        }
+      },
+      "stack_size": 1
+    },
+    "yumako": {
+      "type": "capsule",
+      "name": "yumako",
+      "icon": "__space-age__/graphics/icons/yumako.png",
+      "pictures": [
+        {
+          "size": 64,
+          "filename": "__space-age__/graphics/icons/yumako.png",
+          "scale": 0.5,
+          "mipmap_count": 4
+        },
+        {
+          "size": 64,
+          "filename": "__space-age__/graphics/icons/yumako-1.png",
+          "scale": 0.5,
+          "mipmap_count": 4
+        },
+        {
+          "size": 64,
+          "filename": "__space-age__/graphics/icons/yumako-2.png",
+          "scale": 0.5,
+          "mipmap_count": 4
+        },
+        {
+          "size": 64,
+          "filename": "__space-age__/graphics/icons/yumako-3.png",
+          "scale": 0.5,
+          "mipmap_count": 4
+        }
+      ],
+      "subgroup": "agriculture-processes",
+      "order": "b[agriculture]-a[yumako]",
+      "inventory_move_sound": {
+        "filename": "__space-age__/sound/item/agriculture-inventory-move.ogg",
+        "volume": 0.5,
+        "aggregation": {
+          "max_count": 1,
+          "remove": true
+        }
+      },
+      "pick_sound": {
+        "filename": "__space-age__/sound/item/agriculture-inventory-pickup.ogg",
+        "volume": 0.5,
+        "aggregation": {
+          "max_count": 1,
+          "remove": true
+        }
+      },
+      "drop_sound": {
+        "filename": "__space-age__/sound/item/agriculture-inventory-move.ogg",
+        "volume": 0.5,
+        "aggregation": {
+          "max_count": 1,
+          "remove": true
+        }
+      },
+      "fuel_category": "chemical",
+      "fuel_value": "2MJ",
+      "stack_size": 50,
+      "default_import_location": "gleba",
+      "weight": 1000,
+      "spoil_ticks": 216000,
+      "spoil_result": "spoilage",
+      "capsule_action": {
+        "type": "use-on-self",
+        "attack_parameters": {
+          "type": "projectile",
+          "activation_type": "consume",
+          "ammo_category": "capsule",
+          "cooldown": 960,
+          "range": 0,
+          "ammo_type": {
+            "target_type": "position",
+            "action": {
+              "type": "direct",
+              "action_delivery": {
+                "type": "instant",
+                "target_effects": [
+                  {
+                    "type": "damage",
+                    "damage": {
+                      "type": "physical",
+                      "amount": -80
+                    },
+                    "use_substitute": false
+                  },
+                  {
+                    "type": "create-sticker",
+                    "sticker": "yumako-regen-sticker",
+                    "show_in_tooltip": true
+                  },
+                  {
+                    "type": "create-sticker",
+                    "sticker": "yumako-regen-sticker-behind"
+                  },
+                  {
+                    "type": "play-sound",
+                    "sound": [
+                      {
+                        "filename": "__base__/sound/eat-1.ogg",
+                        "volume": 0.6
+                      },
+                      {
+                        "filename": "__base__/sound/eat-2.ogg",
+                        "volume": 0.6
+                      },
+                      {
+                        "filename": "__base__/sound/eat-3.ogg",
+                        "volume": 0.6
+                      },
+                      {
+                        "filename": "__base__/sound/eat-4.ogg",
+                        "volume": 0.6
+                      },
+                      {
+                        "filename": "__base__/sound/eat-5.ogg",
+                        "volume": 0.6
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "jellynut": {
+      "type": "capsule",
+      "name": "jellynut",
+      "icon": "__space-age__/graphics/icons/jellynut.png",
+      "pictures": [
+        {
+          "size": 64,
+          "filename": "__space-age__/graphics/icons/jellynut.png",
+          "scale": 0.5,
+          "mipmap_count": 4
+        },
+        {
+          "size": 64,
+          "filename": "__space-age__/graphics/icons/jellynut-1.png",
+          "scale": 0.5,
+          "mipmap_count": 4
+        },
+        {
+          "size": 64,
+          "filename": "__space-age__/graphics/icons/jellynut-2.png",
+          "scale": 0.5,
+          "mipmap_count": 4
+        },
+        {
+          "size": 64,
+          "filename": "__space-age__/graphics/icons/jellynut-3.png",
+          "scale": 0.5,
+          "mipmap_count": 4
+        }
+      ],
+      "subgroup": "agriculture-processes",
+      "order": "b[agriculture]-b[jellynut]",
+      "inventory_move_sound": {
+        "filename": "__space-age__/sound/item/agriculture-inventory-move.ogg",
+        "volume": 0.5,
+        "aggregation": {
+          "max_count": 1,
+          "remove": true
+        }
+      },
+      "pick_sound": {
+        "filename": "__space-age__/sound/item/agriculture-inventory-pickup.ogg",
+        "volume": 0.5,
+        "aggregation": {
+          "max_count": 1,
+          "remove": true
+        }
+      },
+      "drop_sound": {
+        "filename": "__space-age__/sound/item/agriculture-inventory-move.ogg",
+        "volume": 0.5,
+        "aggregation": {
+          "max_count": 1,
+          "remove": true
+        }
+      },
+      "stack_size": 50,
+      "default_import_location": "gleba",
+      "weight": 1000,
+      "spoil_ticks": 216000,
+      "fuel_category": "chemical",
+      "fuel_value": "10MJ",
+      "spoil_result": "spoilage",
+      "capsule_action": {
+        "type": "use-on-self",
+        "attack_parameters": {
+          "type": "projectile",
+          "activation_type": "consume",
+          "ammo_category": "capsule",
+          "cooldown": 960,
+          "range": 0,
+          "ammo_type": {
+            "target_type": "position",
+            "action": {
+              "type": "direct",
+              "action_delivery": {
+                "type": "instant",
+                "target_effects": [
+                  {
+                    "type": "create-sticker",
+                    "sticker": "jellynut-speed-sticker",
+                    "show_in_tooltip": true
+                  },
+                  {
+                    "type": "create-sticker",
+                    "sticker": "jellynut-speed-sticker-behind"
+                  },
+                  {
+                    "type": "play-sound",
+                    "sound": [
+                      {
+                        "filename": "__base__/sound/eat-1.ogg",
+                        "volume": 0.6
+                      },
+                      {
+                        "filename": "__base__/sound/eat-2.ogg",
+                        "volume": 0.6
+                      },
+                      {
+                        "filename": "__base__/sound/eat-3.ogg",
+                        "volume": 0.6
+                      },
+                      {
+                        "filename": "__base__/sound/eat-4.ogg",
+                        "volume": 0.6
+                      },
+                      {
+                        "filename": "__base__/sound/eat-5.ogg",
+                        "volume": 0.6
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "yumako-mash": {
+      "type": "capsule",
+      "name": "yumako-mash",
+      "icon": "__space-age__/graphics/icons/yumako-mash.png",
+      "subgroup": "agriculture-products",
+      "order": "a[organic-processing]-c[yumako-mash]",
+      "inventory_move_sound": {
+        "filename": "__space-age__/sound/item/agriculture-inventory-move.ogg",
+        "volume": 0.5,
+        "aggregation": {
+          "max_count": 1,
+          "remove": true
+        }
+      },
+      "pick_sound": {
+        "filename": "__space-age__/sound/item/agriculture-inventory-pickup.ogg",
+        "volume": 0.5,
+        "aggregation": {
+          "max_count": 1,
+          "remove": true
+        }
+      },
+      "drop_sound": {
+        "filename": "__space-age__/sound/item/agriculture-inventory-move.ogg",
+        "volume": 0.5,
+        "aggregation": {
+          "max_count": 1,
+          "remove": true
+        }
+      },
+      "fuel_category": "chemical",
+      "fuel_value": "1MJ",
+      "stack_size": 100,
+      "default_import_location": "gleba",
+      "spoil_ticks": 10800,
+      "spoil_result": "spoilage",
+      "weight": 500,
+      "capsule_action": {
+        "type": "use-on-self",
+        "attack_parameters": {
+          "type": "projectile",
+          "activation_type": "consume",
+          "ammo_category": "capsule",
+          "cooldown": 960,
+          "range": 0,
+          "ammo_type": {
+            "target_type": "position",
+            "action": {
+              "type": "direct",
+              "action_delivery": {
+                "type": "instant",
+                "target_effects": [
+                  {
+                    "type": "damage",
+                    "damage": {
+                      "type": "physical",
+                      "amount": -80
+                    },
+                    "use_substitute": false
+                  },
+                  {
+                    "type": "create-sticker",
+                    "sticker": "yumako-regen-sticker",
+                    "show_in_tooltip": true
+                  },
+                  {
+                    "type": "create-sticker",
+                    "sticker": "yumako-regen-sticker-behind"
+                  },
+                  {
+                    "type": "play-sound",
+                    "sound": [
+                      {
+                        "filename": "__base__/sound/eat-1.ogg",
+                        "volume": 0.6
+                      },
+                      {
+                        "filename": "__base__/sound/eat-2.ogg",
+                        "volume": 0.6
+                      },
+                      {
+                        "filename": "__base__/sound/eat-3.ogg",
+                        "volume": 0.6
+                      },
+                      {
+                        "filename": "__base__/sound/eat-4.ogg",
+                        "volume": 0.6
+                      },
+                      {
+                        "filename": "__base__/sound/eat-5.ogg",
+                        "volume": 0.6
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "jelly": {
+      "type": "capsule",
+      "name": "jelly",
+      "icon": "__space-age__/graphics/icons/jelly.png",
+      "subgroup": "agriculture-products",
+      "order": "a[organic-processing]-d[jelly]",
+      "inventory_move_sound": {
+        "filename": "__space-age__/sound/item/agriculture-inventory-move.ogg",
+        "volume": 0.5,
+        "aggregation": {
+          "max_count": 1,
+          "remove": true
+        }
+      },
+      "pick_sound": {
+        "filename": "__space-age__/sound/item/agriculture-inventory-pickup.ogg",
+        "volume": 0.5,
+        "aggregation": {
+          "max_count": 1,
+          "remove": true
+        }
+      },
+      "drop_sound": {
+        "filename": "__space-age__/sound/item/agriculture-inventory-move.ogg",
+        "volume": 0.5,
+        "aggregation": {
+          "max_count": 1,
+          "remove": true
+        }
+      },
+      "fuel_category": "chemical",
+      "fuel_value": "1MJ",
+      "stack_size": 100,
+      "default_import_location": "gleba",
+      "spoil_ticks": 14400,
+      "spoil_result": "spoilage",
+      "weight": 500,
+      "capsule_action": {
+        "type": "use-on-self",
+        "attack_parameters": {
+          "type": "projectile",
+          "activation_type": "consume",
+          "ammo_category": "capsule",
+          "cooldown": 960,
+          "range": 0,
+          "ammo_type": {
+            "target_type": "position",
+            "action": {
+              "type": "direct",
+              "action_delivery": {
+                "type": "instant",
+                "target_effects": [
+                  {
+                    "type": "create-sticker",
+                    "sticker": "jellynut-speed-sticker",
+                    "show_in_tooltip": true
+                  },
+                  {
+                    "type": "create-sticker",
+                    "sticker": "jellynut-speed-sticker-behind"
+                  },
+                  {
+                    "type": "play-sound",
+                    "sound": [
+                      {
+                        "filename": "__base__/sound/eat-1.ogg",
+                        "volume": 0.6
+                      },
+                      {
+                        "filename": "__base__/sound/eat-2.ogg",
+                        "volume": 0.6
+                      },
+                      {
+                        "filename": "__base__/sound/eat-3.ogg",
+                        "volume": 0.6
+                      },
+                      {
+                        "filename": "__base__/sound/eat-4.ogg",
+                        "volume": 0.6
+                      },
+                      {
+                        "filename": "__base__/sound/eat-5.ogg",
+                        "volume": 0.6
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "bioflux": {
+      "type": "capsule",
+      "name": "bioflux",
+      "icon": "__space-age__/graphics/icons/bioflux.png",
+      "subgroup": "agriculture-products",
+      "order": "a[organic-processing]-b[bioflux]",
+      "inventory_move_sound": {
+        "filename": "__space-age__/sound/item/agriculture-inventory-move.ogg",
+        "volume": 0.5,
+        "aggregation": {
+          "max_count": 1,
+          "remove": true
+        }
+      },
+      "pick_sound": {
+        "filename": "__space-age__/sound/item/agriculture-inventory-pickup.ogg",
+        "volume": 0.5,
+        "aggregation": {
+          "max_count": 1,
+          "remove": true
+        }
+      },
+      "drop_sound": {
+        "filename": "__space-age__/sound/item/agriculture-inventory-move.ogg",
+        "volume": 0.5,
+        "aggregation": {
+          "max_count": 1,
+          "remove": true
+        }
+      },
+      "fuel_category": "food",
+      "fuel_value": "6MJ",
+      "stack_size": 100,
+      "default_import_location": "gleba",
+      "spoil_ticks": 432000,
+      "spoil_result": "spoilage",
+      "weight": 1000,
+      "capsule_action": {
+        "type": "use-on-self",
+        "attack_parameters": {
+          "type": "projectile",
+          "activation_type": "consume",
+          "ammo_category": "capsule",
+          "cooldown": 960,
+          "range": 0,
+          "ammo_type": {
+            "target_type": "position",
+            "action": {
+              "type": "direct",
+              "action_delivery": {
+                "type": "instant",
+                "target_effects": [
+                  {
+                    "type": "damage",
+                    "damage": {
+                      "type": "physical",
+                      "amount": -80
+                    },
+                    "use_substitute": false
+                  },
+                  {
+                    "type": "create-sticker",
+                    "sticker": "bioflux-speed-regen-sticker",
+                    "show_in_tooltip": true
+                  },
+                  {
+                    "type": "create-sticker",
+                    "sticker": "bioflux-speed-regen-sticker-behind"
+                  },
+                  {
+                    "type": "play-sound",
+                    "sound": [
+                      {
+                        "filename": "__base__/sound/eat-1.ogg",
+                        "volume": 0.6
+                      },
+                      {
+                        "filename": "__base__/sound/eat-2.ogg",
+                        "volume": 0.6
+                      },
+                      {
+                        "filename": "__base__/sound/eat-3.ogg",
+                        "volume": 0.6
+                      },
+                      {
+                        "filename": "__base__/sound/eat-4.ogg",
+                        "volume": 0.6
+                      },
+                      {
+                        "filename": "__base__/sound/eat-5.ogg",
+                        "volume": 0.6
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    }
   }
 }
