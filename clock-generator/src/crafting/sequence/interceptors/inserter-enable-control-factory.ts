@@ -142,10 +142,24 @@ export class EnableControlFactory {
         );
 
         if (mode === SimulationMode.LOW_INSERTION_LIMITS) {
-            return this.sourceIsGreaterThanStackSize(
-                source_state,
-                inserter.metadata.stack_size,
+            if (sink_state.machine.output.outputBlock.quantity < inserter.metadata.stack_size) {
+                return EnableControl.always
+            }
+            return this.latchedUntilLessThanMinimum(
+                sink_state,
+                source_item_name,
+                buffer_multiplier
             )
+        }
+
+        if (source_state.machine.output.outputBlock.quantity < inserter.metadata.stack_size) {
+            return EnableControl.all([
+                this.latchedUntilLessThanMinimum(
+                    sink_state,
+                    source_item_name,
+                    buffer_multiplier
+                )
+            ])
         }
 
         return EnableControl.all(

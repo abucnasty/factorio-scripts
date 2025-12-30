@@ -197,4 +197,5 @@ export const EnableControl = {
     any: AnyEnableControl.create,
     latched: LatchedEnableControl.create,
     never: NeverEnabledControl,
+    always: AlwaysEnabledControl
 }
