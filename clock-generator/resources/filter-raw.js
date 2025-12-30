@@ -1,25 +1,57 @@
 const fs = require("fs/promises");
 
-const category_allow_list = new Set([
-    "item",
+const raw_list = new Set([
     "recipe",
-    "tool",
     "mining-drill",
     "resource",
-    "module",
-    "straight-rail",
 ])
 
-fs.readFile("./data-raw-dump.json")
-    .then(data => JSON.parse(data.toString("utf-8")))
-    .then(rawData => {
-        const filtered = {}
+const item_categories = new Set([
+    "item",
+    "module",
+    "tool",
+    "straight-rail",
+    "ammo",
+    "capsule",
+])
 
-        for(const category of category_allow_list) {
-            filtered[category] = rawData[category]
+async function main() {
+    const data = await fs.readFile("./data-raw-dump.json")
+    const rawData = JSON.parse(data.toString("utf-8"))
+
+    try {
+        const filtered = mapRawDataToFilteredFactorioData(rawData)
+        await fs.writeFile("./data-filtered.json", JSON.stringify(filtered, null, 2))
+        console.log("Done")
+    } catch (err) {
+        console.error(err)
+    }
+}
+
+function mapRawDataToFilteredFactorioData(rawData) {
+    const filtered = {}
+
+    for (const category of raw_list) {
+        filtered[category] = rawData[category];
+    }
+
+    filtered["item"] = {}
+
+    for (const category of item_categories) {
+        for (const [itemName, itemData] of Object.entries(rawData[category])) {
+            filtered["item"][itemName] = mapAsItem(itemData);
         }
+    }
+    return filtered;
+}
 
-        return fs.writeFile("./data-filtered.json", JSON.stringify(filtered, null, 2))
-    })
-    .then(() => console.log("Done"))
-    .catch(err => console.error(err))
+function mapAsItem(struct) {
+    return {
+        name: struct.name,
+        type: "item",
+        stack_size: struct.stack_size
+    }
+}
+
+
+main()

@@ -95,10 +95,7 @@ export class FactorioDataService {
     public static getAllItemNames(): string[] {
         const data = this.getData();
         return [
-            ...Object.keys(data.item),
-            ...Object.keys(data.tool),
-            ...Object.keys(data.module),
-            ...Object.keys(data["straight-rail"]),
+            ...Object.keys(data.item)
         ];
     }
 
@@ -161,16 +158,13 @@ export class FactorioDataService {
             return interceptor
         }
         const data = this.getData();
-        const item = data.item[itemName];
-        const tool = data.tool[itemName];
-        const module = data.module[itemName];
-        const straight_rail = data["straight-rail"][itemName];
+        const item = data.item[itemName] 
 
-        if(!item && !tool && !module && !straight_rail) {
+        if(!item) {
             throw new Error(`Item ${itemName} was not found`);
         }
 
-        const result = item ?? tool ?? module ?? straight_rail;
+        const result = { ...item };
 
         result.name = itemName;
         return result;

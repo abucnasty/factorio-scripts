@@ -49,9 +49,6 @@ export type Resource = {
 export interface FactorioData {
   "recipe": Record<RecipeName, Recipe>
   "item": Record<ItemName, Item>
-  "tool": Record<ItemName, Item>
-  "module": Record<ItemName, Item>
-  "straight-rail": Record<ItemName, Item>
   "mining-drill": Record<MiningDrillType, MiningDrillSpec>
   "resource": Record<ResourceName, Resource>
 }
