@@ -142,10 +142,24 @@ export class EnableControlFactory {
         );
 
         if (mode === SimulationMode.LOW_INSERTION_LIMITS) {
-            return this.sourceIsGreaterThanStackSize(
-                source_state,
-                inserter.metadata.stack_size,
+            if (sink_state.machine.output.outputBlock.quantity < inserter.metadata.stack_size) {
+                return EnableControl.always
+            }
+            return this.latchedUntilLessThanMinimum(
+                sink_state,
+                source_item_name,
+                buffer_multiplier
             )
+        }
+
+        if (source_state.machine.output.outputBlock.quantity < inserter.metadata.stack_size) {
+            return EnableControl.all([
+                this.latchedUntilLessThanMinimum(
+                    sink_state,
+                    source_item_name,
+                    buffer_multiplier
+                )
+            ])
         }
 
         return EnableControl.all(
@@ -558,7 +572,13 @@ export class EnableControlFactory {
         source: MachineState,
         stack_size: InserterStackSize
     ): EnableControl {
+        return this.sourceIsGreaterThan(source, stack_size);
+    }
 
+    private sourceIsGreaterThan(
+        source: MachineState,
+        minimum_quantity: number
+    ): EnableControl {
         const item_name = source.machine.output.item_name;
         const amount_per_craft = source.machine.output.amount_per_craft;
 
@@ -571,7 +591,7 @@ export class EnableControlFactory {
             const source_quantity_after_next_craft = Math.floor(
                 amount_per_craft.add(source_quantity).toDecimal()
             )
-            return source_quantity_after_next_craft >= stack_size
+            return source_quantity_after_next_craft >= minimum_quantity
         })
     }
 
