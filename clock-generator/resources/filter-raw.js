@@ -8,6 +8,7 @@ const category_allow_list = new Set([
     "resource",
     "module",
     "straight-rail",
+    "ammo"
 ])
 
 fs.readFile("./data-raw-dump.json")

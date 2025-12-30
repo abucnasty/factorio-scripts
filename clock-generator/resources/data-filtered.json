@@ -75426,5 +75426,1116 @@
         }
       ]
     }
+  },
+  "ammo": {
+    "uranium-rounds-magazine": {
+      "type": "ammo",
+      "name": "uranium-rounds-magazine",
+      "icon": "__base__/graphics/icons/uranium-rounds-magazine.png",
+      "pictures": {
+        "layers": [
+          {
+            "size": 64,
+            "filename": "__base__/graphics/icons/uranium-rounds-magazine.png",
+            "scale": 0.5,
+            "mipmap_count": 4
+          },
+          {
+            "draw_as_light": true,
+            "size": 64,
+            "filename": "__base__/graphics/icons/uranium-rounds-magazine-light.png",
+            "scale": 0.5
+          }
+        ]
+      },
+      "ammo_category": "bullet",
+      "ammo_type": {
+        "action": {
+          "type": "direct",
+          "action_delivery": {
+            "type": "instant",
+            "source_effects": {
+              "type": "create-explosion",
+              "entity_name": "explosion-gunshot"
+            },
+            "target_effects": [
+              {
+                "type": "create-entity",
+                "entity_name": "explosion-hit",
+                "offsets": [
+                  [
+                    0,
+                    1
+                  ]
+                ],
+                "offset_deviation": [
+                  [
+                    -0.5,
+                    -0.5
+                  ],
+                  [
+                    0.5,
+                    0.5
+                  ]
+                ]
+              },
+              {
+                "type": "damage",
+                "damage": {
+                  "amount": 24,
+                  "type": "physical"
+                }
+              },
+              {
+                "type": "activate-impact",
+                "deliver_category": "bullet"
+              }
+            ]
+          }
+        }
+      },
+      "magazine_size": 10,
+      "subgroup": "ammo",
+      "order": "a[basic-clips]-c[uranium-rounds-magazine]",
+      "inventory_move_sound": {
+        "filename": "__base__/sound/item/ammo-small-inventory-move.ogg",
+        "volume": 0.8,
+        "aggregation": {
+          "max_count": 1,
+          "remove": true
+        }
+      },
+      "pick_sound": {
+        "filename": "__base__/sound/item/ammo-small-inventory-pickup.ogg",
+        "volume": 0.7,
+        "aggregation": {
+          "max_count": 1,
+          "remove": true
+        }
+      },
+      "drop_sound": {
+        "filename": "__base__/sound/item/ammo-small-inventory-move.ogg",
+        "volume": 0.8,
+        "aggregation": {
+          "max_count": 1,
+          "remove": true
+        }
+      },
+      "stack_size": 100,
+      "weight": 40000
+    },
+    "flamethrower-ammo": {
+      "type": "ammo",
+      "name": "flamethrower-ammo",
+      "icon": "__base__/graphics/icons/flamethrower-ammo.png",
+      "ammo_category": "flamethrower",
+      "ammo_type": [
+        {
+          "source_type": "default",
+          "target_type": "position",
+          "clamp_position": true,
+          "action": {
+            "type": "direct",
+            "action_delivery": {
+              "type": "stream",
+              "stream": "handheld-flamethrower-fire-stream"
+            }
+          }
+        },
+        {
+          "source_type": "vehicle",
+          "consumption_modifier": 1.125,
+          "target_type": "position",
+          "clamp_position": true,
+          "action": {
+            "type": "direct",
+            "action_delivery": {
+              "type": "stream",
+              "stream": "tank-flamethrower-fire-stream"
+            }
+          }
+        }
+      ],
+      "magazine_size": 100,
+      "subgroup": "ammo",
+      "order": "e[flamethrower]",
+      "inventory_move_sound": {
+        "filename": "__base__/sound/item/mechanical-inventory-move.ogg",
+        "volume": 0.7,
+        "aggregation": {
+          "max_count": 1,
+          "remove": true
+        }
+      },
+      "pick_sound": {
+        "filename": "__base__/sound/item/mechanical-inventory-pickup.ogg",
+        "volume": 0.8,
+        "aggregation": {
+          "max_count": 1,
+          "remove": true
+        }
+      },
+      "drop_sound": {
+        "filename": "__base__/sound/item/mechanical-inventory-move.ogg",
+        "volume": 0.7,
+        "aggregation": {
+          "max_count": 1,
+          "remove": true
+        }
+      },
+      "stack_size": 100,
+      "weight": 10000
+    },
+    "rocket": {
+      "type": "ammo",
+      "name": "rocket",
+      "icon": "__base__/graphics/icons/rocket.png",
+      "ammo_category": "rocket",
+      "ammo_type": {
+        "action": {
+          "type": "direct",
+          "action_delivery": {
+            "type": "projectile",
+            "projectile": "rocket",
+            "starting_speed": 0.1,
+            "source_effects": {
+              "type": "create-entity",
+              "entity_name": "explosion-hit",
+              "only_when_visible": true
+            }
+          }
+        }
+      },
+      "subgroup": "ammo",
+      "order": "d[rocket-launcher]-a[basic]",
+      "inventory_move_sound": {
+        "filename": "__base__/sound/item/ammo-large-inventory-move.ogg",
+        "volume": 0.6,
+        "aggregation": {
+          "max_count": 1,
+          "remove": true
+        }
+      },
+      "pick_sound": {
+        "filename": "__base__/sound/item/ammo-large-inventory-pickup.ogg",
+        "volume": 0.7,
+        "aggregation": {
+          "max_count": 1,
+          "remove": true
+        }
+      },
+      "drop_sound": {
+        "filename": "__base__/sound/item/ammo-large-inventory-move.ogg",
+        "volume": 0.6,
+        "aggregation": {
+          "max_count": 1,
+          "remove": true
+        }
+      },
+      "stack_size": 100,
+      "weight": 40000
+    },
+    "explosive-rocket": {
+      "type": "ammo",
+      "name": "explosive-rocket",
+      "icon": "__base__/graphics/icons/explosive-rocket.png",
+      "ammo_category": "rocket",
+      "ammo_type": {
+        "action": {
+          "type": "direct",
+          "action_delivery": {
+            "type": "projectile",
+            "projectile": "explosive-rocket",
+            "starting_speed": 0.1,
+            "source_effects": {
+              "type": "create-entity",
+              "entity_name": "explosion-hit",
+              "only_when_visible": true
+            }
+          }
+        }
+      },
+      "subgroup": "ammo",
+      "order": "d[rocket-launcher]-b[explosive]",
+      "inventory_move_sound": {
+        "filename": "__base__/sound/item/ammo-large-inventory-move.ogg",
+        "volume": 0.6,
+        "aggregation": {
+          "max_count": 1,
+          "remove": true
+        }
+      },
+      "pick_sound": {
+        "filename": "__base__/sound/item/ammo-large-inventory-pickup.ogg",
+        "volume": 0.7,
+        "aggregation": {
+          "max_count": 1,
+          "remove": true
+        }
+      },
+      "drop_sound": {
+        "filename": "__base__/sound/item/ammo-large-inventory-move.ogg",
+        "volume": 0.6,
+        "aggregation": {
+          "max_count": 1,
+          "remove": true
+        }
+      },
+      "stack_size": 100,
+      "weight": 40000
+    },
+    "atomic-bomb": {
+      "type": "ammo",
+      "name": "atomic-bomb",
+      "icon": "__base__/graphics/icons/atomic-bomb.png",
+      "pictures": {
+        "layers": [
+          {
+            "size": 64,
+            "filename": "__base__/graphics/icons/atomic-bomb.png",
+            "scale": 0.5,
+            "mipmap_count": 4
+          },
+          {
+            "draw_as_light": true,
+            "size": 64,
+            "filename": "__base__/graphics/icons/atomic-bomb-light.png",
+            "scale": 0.5
+          }
+        ]
+      },
+      "ammo_category": "rocket",
+      "ammo_type": {
+        "range_modifier": 1.5,
+        "cooldown_modifier": 10,
+        "target_type": "position",
+        "action": {
+          "type": "direct",
+          "action_delivery": {
+            "type": "projectile",
+            "projectile": "atomic-rocket",
+            "starting_speed": 0.05,
+            "source_effects": {
+              "type": "create-entity",
+              "entity_name": "explosion-hit"
+            }
+          }
+        }
+      },
+      "subgroup": "ammo",
+      "order": "d[rocket-launcher]-d[atomic-bomb]",
+      "inventory_move_sound": {
+        "filename": "__base__/sound/item/atomic-bomb-inventory-move.ogg",
+        "volume": 0.6,
+        "aggregation": {
+          "max_count": 1,
+          "remove": true
+        }
+      },
+      "pick_sound": {
+        "filename": "__base__/sound/item/atomic-bomb-inventory-pickup.ogg",
+        "volume": 0.6,
+        "aggregation": {
+          "max_count": 1,
+          "remove": true
+        }
+      },
+      "drop_sound": {
+        "filename": "__base__/sound/item/atomic-bomb-inventory-move.ogg",
+        "volume": 0.6,
+        "aggregation": {
+          "max_count": 1,
+          "remove": true
+        }
+      },
+      "stack_size": 10,
+      "weight": 1500000
+    },
+    "piercing-shotgun-shell": {
+      "type": "ammo",
+      "name": "piercing-shotgun-shell",
+      "icon": "__base__/graphics/icons/piercing-shotgun-shell.png",
+      "ammo_category": "shotgun-shell",
+      "ammo_type": {
+        "target_type": "direction",
+        "clamp_position": true,
+        "action": [
+          {
+            "type": "direct",
+            "action_delivery": {
+              "type": "instant",
+              "source_effects": [
+                {
+                  "type": "create-explosion",
+                  "entity_name": "explosion-gunshot"
+                }
+              ]
+            }
+          },
+          {
+            "type": "direct",
+            "repeat_count": 16,
+            "action_delivery": {
+              "type": "projectile",
+              "projectile": "piercing-shotgun-pellet",
+              "starting_speed": 1,
+              "starting_speed_deviation": 0.1,
+              "direction_deviation": 0.3,
+              "range_deviation": 0.3,
+              "max_range": 15
+            }
+          }
+        ]
+      },
+      "magazine_size": 10,
+      "subgroup": "ammo",
+      "order": "b[shotgun]-b[piercing]",
+      "inventory_move_sound": {
+        "filename": "__base__/sound/item/ammo-small-inventory-move.ogg",
+        "volume": 0.8,
+        "aggregation": {
+          "max_count": 1,
+          "remove": true
+        }
+      },
+      "pick_sound": {
+        "filename": "__base__/sound/item/ammo-small-inventory-pickup.ogg",
+        "volume": 0.7,
+        "aggregation": {
+          "max_count": 1,
+          "remove": true
+        }
+      },
+      "drop_sound": {
+        "filename": "__base__/sound/item/ammo-small-inventory-move.ogg",
+        "volume": 0.8,
+        "aggregation": {
+          "max_count": 1,
+          "remove": true
+        }
+      },
+      "stack_size": 100,
+      "weight": 20000
+    },
+    "cannon-shell": {
+      "type": "ammo",
+      "name": "cannon-shell",
+      "icon": "__base__/graphics/icons/cannon-shell.png",
+      "ammo_category": "cannon-shell",
+      "ammo_type": {
+        "range_modifier": 1.25,
+        "target_type": "direction",
+        "action": {
+          "type": "direct",
+          "action_delivery": {
+            "type": "projectile",
+            "projectile": "cannon-projectile",
+            "starting_speed": 1,
+            "direction_deviation": 0.1,
+            "range_deviation": 0.1,
+            "max_range": 30,
+            "min_range": 5,
+            "source_effects": {
+              "type": "create-explosion",
+              "entity_name": "explosion-gunshot"
+            }
+          }
+        }
+      },
+      "subgroup": "ammo",
+      "order": "d[cannon-shell]-a[basic]",
+      "inventory_move_sound": {
+        "filename": "__base__/sound/item/ammo-large-inventory-move.ogg",
+        "volume": 0.6,
+        "aggregation": {
+          "max_count": 1,
+          "remove": true
+        }
+      },
+      "pick_sound": {
+        "filename": "__base__/sound/item/ammo-large-inventory-pickup.ogg",
+        "volume": 0.7,
+        "aggregation": {
+          "max_count": 1,
+          "remove": true
+        }
+      },
+      "drop_sound": {
+        "filename": "__base__/sound/item/ammo-large-inventory-move.ogg",
+        "volume": 0.6,
+        "aggregation": {
+          "max_count": 1,
+          "remove": true
+        }
+      },
+      "stack_size": 100,
+      "weight": 20000
+    },
+    "explosive-cannon-shell": {
+      "type": "ammo",
+      "name": "explosive-cannon-shell",
+      "icon": "__base__/graphics/icons/explosive-cannon-shell.png",
+      "ammo_category": "cannon-shell",
+      "ammo_type": {
+        "target_type": "direction",
+        "action": {
+          "type": "direct",
+          "action_delivery": {
+            "type": "projectile",
+            "projectile": "explosive-cannon-projectile",
+            "starting_speed": 1,
+            "direction_deviation": 0.1,
+            "range_deviation": 0.1,
+            "max_range": 30,
+            "min_range": 5,
+            "source_effects": {
+              "type": "create-explosion",
+              "entity_name": "explosion-gunshot"
+            }
+          }
+        }
+      },
+      "subgroup": "ammo",
+      "order": "d[cannon-shell]-c[explosive]",
+      "inventory_move_sound": {
+        "filename": "__base__/sound/item/ammo-large-inventory-move.ogg",
+        "volume": 0.6,
+        "aggregation": {
+          "max_count": 1,
+          "remove": true
+        }
+      },
+      "pick_sound": {
+        "filename": "__base__/sound/item/ammo-large-inventory-pickup.ogg",
+        "volume": 0.7,
+        "aggregation": {
+          "max_count": 1,
+          "remove": true
+        }
+      },
+      "drop_sound": {
+        "filename": "__base__/sound/item/ammo-large-inventory-move.ogg",
+        "volume": 0.6,
+        "aggregation": {
+          "max_count": 1,
+          "remove": true
+        }
+      },
+      "stack_size": 100,
+      "weight": 20000
+    },
+    "uranium-cannon-shell": {
+      "type": "ammo",
+      "name": "uranium-cannon-shell",
+      "icon": "__base__/graphics/icons/uranium-cannon-shell.png",
+      "pictures": {
+        "layers": [
+          {
+            "size": 64,
+            "filename": "__base__/graphics/icons/uranium-cannon-shell.png",
+            "scale": 0.5,
+            "mipmap_count": 4
+          },
+          {
+            "draw_as_light": true,
+            "size": 64,
+            "filename": "__base__/graphics/icons/uranium-cannon-shell-light.png",
+            "scale": 0.5
+          }
+        ]
+      },
+      "ammo_category": "cannon-shell",
+      "ammo_type": {
+        "range_modifier": 1.25,
+        "target_type": "direction",
+        "action": {
+          "type": "direct",
+          "action_delivery": {
+            "type": "projectile",
+            "projectile": "uranium-cannon-projectile",
+            "starting_speed": 1,
+            "direction_deviation": 0.1,
+            "range_deviation": 0.1,
+            "max_range": 30,
+            "min_range": 5,
+            "source_effects": {
+              "type": "create-explosion",
+              "entity_name": "explosion-gunshot"
+            }
+          }
+        }
+      },
+      "subgroup": "ammo",
+      "order": "d[cannon-shell]-c[uranium]",
+      "inventory_move_sound": {
+        "filename": "__base__/sound/item/ammo-large-inventory-move.ogg",
+        "volume": 0.6,
+        "aggregation": {
+          "max_count": 1,
+          "remove": true
+        }
+      },
+      "pick_sound": {
+        "filename": "__base__/sound/item/ammo-large-inventory-pickup.ogg",
+        "volume": 0.7,
+        "aggregation": {
+          "max_count": 1,
+          "remove": true
+        }
+      },
+      "drop_sound": {
+        "filename": "__base__/sound/item/ammo-large-inventory-move.ogg",
+        "volume": 0.6,
+        "aggregation": {
+          "max_count": 1,
+          "remove": true
+        }
+      },
+      "stack_size": 100,
+      "weight": 40000
+    },
+    "explosive-uranium-cannon-shell": {
+      "type": "ammo",
+      "name": "explosive-uranium-cannon-shell",
+      "icon": "__base__/graphics/icons/explosive-uranium-cannon-shell.png",
+      "pictures": {
+        "layers": [
+          {
+            "size": 64,
+            "filename": "__base__/graphics/icons/explosive-uranium-cannon-shell.png",
+            "scale": 0.5,
+            "mipmap_count": 4
+          },
+          {
+            "draw_as_light": true,
+            "size": 64,
+            "filename": "__base__/graphics/icons/uranium-cannon-shell-light.png",
+            "scale": 0.5
+          }
+        ]
+      },
+      "ammo_category": "cannon-shell",
+      "ammo_type": {
+        "target_type": "direction",
+        "action": {
+          "type": "direct",
+          "action_delivery": {
+            "type": "projectile",
+            "projectile": "explosive-uranium-cannon-projectile",
+            "starting_speed": 1,
+            "direction_deviation": 0.1,
+            "range_deviation": 0.1,
+            "max_range": 30,
+            "min_range": 5,
+            "source_effects": {
+              "type": "create-explosion",
+              "entity_name": "explosion-gunshot"
+            }
+          }
+        }
+      },
+      "subgroup": "ammo",
+      "order": "d[explosive-cannon-shell]-c[uranium]",
+      "inventory_move_sound": {
+        "filename": "__base__/sound/item/ammo-large-inventory-move.ogg",
+        "volume": 0.6,
+        "aggregation": {
+          "max_count": 1,
+          "remove": true
+        }
+      },
+      "pick_sound": {
+        "filename": "__base__/sound/item/ammo-large-inventory-pickup.ogg",
+        "volume": 0.7,
+        "aggregation": {
+          "max_count": 1,
+          "remove": true
+        }
+      },
+      "drop_sound": {
+        "filename": "__base__/sound/item/ammo-large-inventory-move.ogg",
+        "volume": 0.6,
+        "aggregation": {
+          "max_count": 1,
+          "remove": true
+        }
+      },
+      "stack_size": 100,
+      "weight": 40000
+    },
+    "artillery-shell": {
+      "type": "ammo",
+      "name": "artillery-shell",
+      "icon": "__base__/graphics/icons/artillery-shell.png",
+      "ammo_category": "artillery-shell",
+      "ammo_type": {
+        "target_type": "position",
+        "action": {
+          "type": "direct",
+          "action_delivery": {
+            "type": "artillery",
+            "projectile": "artillery-projectile",
+            "starting_speed": 1,
+            "direction_deviation": 0,
+            "range_deviation": 0,
+            "source_effects": {
+              "type": "create-explosion",
+              "entity_name": "artillery-cannon-muzzle-flash"
+            }
+          }
+        }
+      },
+      "subgroup": "ammo",
+      "order": "d[explosive-cannon-shell]-d[artillery]",
+      "inventory_move_sound": {
+        "filename": "__base__/sound/item/artillery-large-inventory-move.ogg",
+        "volume": 0.5,
+        "aggregation": {
+          "max_count": 1,
+          "remove": true
+        }
+      },
+      "pick_sound": {
+        "filename": "__base__/sound/item/artillery-large-inventory-pickup.ogg",
+        "volume": 0.4,
+        "aggregation": {
+          "max_count": 1,
+          "remove": true
+        }
+      },
+      "drop_sound": {
+        "filename": "__base__/sound/item/artillery-large-inventory-move.ogg",
+        "volume": 0.5,
+        "aggregation": {
+          "max_count": 1,
+          "remove": true
+        }
+      },
+      "stack_size": 1,
+      "weight": 100000
+    },
+    "firearm-magazine": {
+      "type": "ammo",
+      "name": "firearm-magazine",
+      "icon": "__base__/graphics/icons/firearm-magazine.png",
+      "ammo_category": "bullet",
+      "ammo_type": {
+        "action": [
+          {
+            "type": "direct",
+            "action_delivery": [
+              {
+                "type": "instant",
+                "source_effects": [
+                  {
+                    "type": "create-explosion",
+                    "entity_name": "explosion-gunshot",
+                    "only_when_visible": true
+                  }
+                ],
+                "target_effects": [
+                  {
+                    "type": "create-entity",
+                    "entity_name": "explosion-hit",
+                    "offsets": [
+                      [
+                        0,
+                        1
+                      ]
+                    ],
+                    "offset_deviation": [
+                      [
+                        -0.5,
+                        -0.5
+                      ],
+                      [
+                        0.5,
+                        0.5
+                      ]
+                    ],
+                    "only_when_visible": true
+                  },
+                  {
+                    "type": "damage",
+                    "damage": {
+                      "amount": 5,
+                      "type": "physical"
+                    }
+                  },
+                  {
+                    "type": "activate-impact",
+                    "deliver_category": "bullet"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "magazine_size": 10,
+      "subgroup": "ammo",
+      "order": "a[basic-clips]-a[firearm-magazine]",
+      "inventory_move_sound": {
+        "filename": "__base__/sound/item/ammo-small-inventory-move.ogg",
+        "volume": 0.8,
+        "aggregation": {
+          "max_count": 1,
+          "remove": true
+        }
+      },
+      "pick_sound": {
+        "filename": "__base__/sound/item/ammo-small-inventory-pickup.ogg",
+        "volume": 0.7,
+        "aggregation": {
+          "max_count": 1,
+          "remove": true
+        }
+      },
+      "drop_sound": {
+        "filename": "__base__/sound/item/ammo-small-inventory-move.ogg",
+        "volume": 0.8,
+        "aggregation": {
+          "max_count": 1,
+          "remove": true
+        }
+      },
+      "stack_size": 100,
+      "weight": 10000
+    },
+    "piercing-rounds-magazine": {
+      "type": "ammo",
+      "name": "piercing-rounds-magazine",
+      "icon": "__base__/graphics/icons/piercing-rounds-magazine.png",
+      "ammo_category": "bullet",
+      "ammo_type": {
+        "action": {
+          "type": "direct",
+          "action_delivery": {
+            "type": "instant",
+            "source_effects": {
+              "type": "create-explosion",
+              "entity_name": "explosion-gunshot",
+              "only_when_visible": true
+            },
+            "target_effects": [
+              {
+                "type": "create-entity",
+                "entity_name": "explosion-hit",
+                "offsets": [
+                  [
+                    0,
+                    1
+                  ]
+                ],
+                "offset_deviation": [
+                  [
+                    -0.5,
+                    -0.5
+                  ],
+                  [
+                    0.5,
+                    0.5
+                  ]
+                ],
+                "only_when_visible": true
+              },
+              {
+                "type": "damage",
+                "damage": {
+                  "amount": 8,
+                  "type": "physical"
+                }
+              },
+              {
+                "type": "activate-impact",
+                "deliver_category": "bullet"
+              }
+            ]
+          }
+        }
+      },
+      "magazine_size": 10,
+      "subgroup": "ammo",
+      "order": "a[basic-clips]-b[piercing-rounds-magazine]",
+      "inventory_move_sound": {
+        "filename": "__base__/sound/item/ammo-small-inventory-move.ogg",
+        "volume": 0.8,
+        "aggregation": {
+          "max_count": 1,
+          "remove": true
+        }
+      },
+      "pick_sound": {
+        "filename": "__base__/sound/item/ammo-small-inventory-pickup.ogg",
+        "volume": 0.7,
+        "aggregation": {
+          "max_count": 1,
+          "remove": true
+        }
+      },
+      "drop_sound": {
+        "filename": "__base__/sound/item/ammo-small-inventory-move.ogg",
+        "volume": 0.8,
+        "aggregation": {
+          "max_count": 1,
+          "remove": true
+        }
+      },
+      "stack_size": 100,
+      "weight": 20000
+    },
+    "shotgun-shell": {
+      "type": "ammo",
+      "name": "shotgun-shell",
+      "icon": "__base__/graphics/icons/shotgun-shell.png",
+      "ammo_category": "shotgun-shell",
+      "ammo_type": {
+        "target_type": "direction",
+        "clamp_position": true,
+        "action": [
+          {
+            "type": "direct",
+            "action_delivery": {
+              "type": "instant",
+              "source_effects": [
+                {
+                  "type": "create-explosion",
+                  "entity_name": "explosion-gunshot"
+                }
+              ]
+            }
+          },
+          {
+            "type": "direct",
+            "repeat_count": 12,
+            "action_delivery": {
+              "type": "projectile",
+              "projectile": "shotgun-pellet",
+              "starting_speed": 1,
+              "starting_speed_deviation": 0.1,
+              "direction_deviation": 0.3,
+              "range_deviation": 0.3,
+              "max_range": 15
+            }
+          }
+        ]
+      },
+      "magazine_size": 10,
+      "subgroup": "ammo",
+      "order": "b[shotgun]-a[basic]",
+      "inventory_move_sound": {
+        "filename": "__base__/sound/item/ammo-small-inventory-move.ogg",
+        "volume": 0.8,
+        "aggregation": {
+          "max_count": 1,
+          "remove": true
+        }
+      },
+      "pick_sound": {
+        "filename": "__base__/sound/item/ammo-small-inventory-pickup.ogg",
+        "volume": 0.7,
+        "aggregation": {
+          "max_count": 1,
+          "remove": true
+        }
+      },
+      "drop_sound": {
+        "filename": "__base__/sound/item/ammo-small-inventory-move.ogg",
+        "volume": 0.8,
+        "aggregation": {
+          "max_count": 1,
+          "remove": true
+        }
+      },
+      "stack_size": 100,
+      "weight": 10000
+    },
+    "railgun-ammo": {
+      "type": "ammo",
+      "name": "railgun-ammo",
+      "icon": "__space-age__/graphics/icons/railgun-ammo.png",
+      "ammo_category": "railgun",
+      "ammo_type": {
+        "target_type": "direction",
+        "clamp_position": true,
+        "action": {
+          "type": "line",
+          "range": 50,
+          "width": 1,
+          "range_effects": {
+            "type": "create-explosion",
+            "entity_name": "railgun-beam",
+            "only_when_visible": true
+          },
+          "action_delivery": {
+            "type": "instant",
+            "target_effects": {
+              "type": "damage",
+              "damage": {
+                "amount": 10000,
+                "type": "physical"
+              }
+            },
+            "source_effects": {
+              "type": "create-explosion",
+              "entity_name": "explosion-gunshot",
+              "only_when_visible": true
+            }
+          }
+        }
+      },
+      "subgroup": "ammo",
+      "order": "e[railgun-ammo]-a[basic]",
+      "inventory_move_sound": {
+        "filename": "__base__/sound/item/ammo-large-inventory-move.ogg",
+        "volume": 0.6,
+        "aggregation": {
+          "max_count": 1,
+          "remove": true
+        }
+      },
+      "pick_sound": {
+        "filename": "__base__/sound/item/ammo-large-inventory-pickup.ogg",
+        "volume": 0.7,
+        "aggregation": {
+          "max_count": 1,
+          "remove": true
+        }
+      },
+      "drop_sound": {
+        "filename": "__base__/sound/item/ammo-large-inventory-move.ogg",
+        "volume": 0.6,
+        "aggregation": {
+          "max_count": 1,
+          "remove": true
+        }
+      },
+      "stack_size": 10,
+      "weight": 200000
+    },
+    "capture-robot-rocket": {
+      "type": "ammo",
+      "name": "capture-robot-rocket",
+      "icon": "__space-age__/graphics/icons/capture-bot.png",
+      "ammo_category": "rocket",
+      "ammo_type": {
+        "action": {
+          "type": "direct",
+          "action_delivery": {
+            "type": "projectile",
+            "projectile": "capture-robot-rocket",
+            "starting_speed": 0.1
+          }
+        },
+        "target_filter": [
+          "biter-spawner",
+          "spitter-spawner"
+        ]
+      },
+      "subgroup": "ammo",
+      "order": "d[rocket-launcher]-d[capture]",
+      "inventory_move_sound": {
+        "filename": "__base__/sound/item/robotic-inventory-move.ogg",
+        "volume": 0.8,
+        "aggregation": {
+          "max_count": 1,
+          "remove": true
+        }
+      },
+      "pick_sound": {
+        "filename": "__base__/sound/item/robotic-inventory-pickup.ogg",
+        "volume": 0.5,
+        "aggregation": {
+          "max_count": 1,
+          "remove": true
+        }
+      },
+      "drop_sound": {
+        "filename": "__base__/sound/item/robotic-inventory-move.ogg",
+        "volume": 0.8,
+        "aggregation": {
+          "max_count": 1,
+          "remove": true
+        }
+      },
+      "stack_size": 10,
+      "default_import_location": "gleba",
+      "weight": 100000,
+      "shoot_protected": true
+    },
+    "tesla-ammo": {
+      "type": "ammo",
+      "name": "tesla-ammo",
+      "icon": "__space-age__/graphics/icons/tesla-ammo.png",
+      "ammo_category": "tesla",
+      "ammo_type": {
+        "target_type": "entity",
+        "action": {
+          "type": "direct",
+          "action_delivery": {
+            "type": "instant",
+            "target_effects": [
+              {
+                "type": "nested-result",
+                "action": {
+                  "type": "direct",
+                  "action_delivery": {
+                    "type": "chain",
+                    "chain": "chain-tesla-gun-chain"
+                  }
+                }
+              },
+              {
+                "type": "nested-result",
+                "action": {
+                  "type": "direct",
+                  "action_delivery": {
+                    "type": "beam",
+                    "beam": "chain-tesla-gun-beam-start",
+                    "source_offset": [
+                      0,
+                      -1.31439
+                    ],
+                    "max_length": 30,
+                    "duration": 30,
+                    "add_to_shooter": false,
+                    "destroy_with_source_or_target": false
+                  }
+                }
+              }
+            ]
+          }
+        }
+      },
+      "subgroup": "ammo",
+      "order": "e[railgun-ammo]-a[basic]",
+      "inventory_move_sound": {
+        "filename": "__base__/sound/item/ammo-large-inventory-move.ogg",
+        "volume": 0.6,
+        "aggregation": {
+          "max_count": 1,
+          "remove": true
+        }
+      },
+      "pick_sound": {
+        "filename": "__base__/sound/item/ammo-large-inventory-pickup.ogg",
+        "volume": 0.7,
+        "aggregation": {
+          "max_count": 1,
+          "remove": true
+        }
+      },
+      "drop_sound": {
+        "filename": "__base__/sound/item/ammo-large-inventory-move.ogg",
+        "volume": 0.6,
+        "aggregation": {
+          "max_count": 1,
+          "remove": true
+        }
+      },
+      "stack_size": 100,
+      "default_import_location": "fulgora",
+      "magazine_size": 10
+    }
   }
 }
