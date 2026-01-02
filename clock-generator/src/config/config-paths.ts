@@ -33,5 +33,6 @@ export const ConfigPaths = {
     SAMPLE_CONFIG: path.join(CONFIG_SAMPLES_DIR, 'sample-config.conf'),
     STONE_BRICKS_DIRECT_INSERT: path.join(CONFIG_SAMPLES_DIR, 'stone-bricks-direct-insert.conf'),
     UTILITY_SCIENCE: path.join(CONFIG_SAMPLES_DIR, 'utility-science.conf'),
-    LOW_DENSITY_STRUCTURE: path.join(CONFIG_SAMPLES_DIR, 'low-density-structure-120-per-second.json')
+    MILITARY_SCIENCE: path.join(CONFIG_SAMPLES_DIR, 'reja-military-1.json'),
+    LOW_DENSITY_STRUCTURE: path.join(CONFIG_SAMPLES_DIR, 'low-density-structure-120-per-second.json'),
 } as const;
