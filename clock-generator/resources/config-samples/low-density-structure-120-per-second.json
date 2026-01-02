@@ -1,7 +1,7 @@
 {
   "target_output": {
     "recipe": "low-density-structure",
-    "items_per_second": 120,
+    "items_per_second": 240,
     "copies": 1
   },
   "machines": [
@@ -22,6 +22,18 @@
       "recipe": "plastic-bar",
       "productivity": 300,
       "crafting_speed": 117.5
+    },
+    {
+      "id": 4,
+      "recipe": "casting-low-density-structure",
+      "productivity": 300,
+      "crafting_speed": 257.60000228882
+    },
+    {
+      "id": 5,
+      "recipe": "casting-low-density-structure",
+      "productivity": 300,
+      "crafting_speed": 257.60000228882
     }
   ],
   "inserters": [
@@ -78,7 +90,12 @@
         "type": "chest",
         "id": 1
       },
-      "stack_size": 16
+      "stack_size": 16,
+      "overrides": {
+        "enable_control": {
+          "mode": "ALWAYS"
+        }
+      }
     },
     {
       "source": {
@@ -111,7 +128,94 @@
         "type": "machine",
         "id": 3
       },
+      "stack_size": 16,
+      "overrides": {
+        "enable_control": {
+          "mode": "ALWAYS"
+        }
+      }
+    },
+    {
+      "source": {
+        "type": "machine",
+        "id": 4
+      },
+      "sink": {
+        "type": "belt",
+        "id": 1
+      },
       "stack_size": 16
+    },
+    {
+      "source": {
+        "type": "machine",
+        "id": 5
+      },
+      "sink": {
+        "type": "belt",
+        "id": 1
+      },
+      "stack_size": 16
+    },
+    {
+      "source": {
+        "type": "machine",
+        "id": 3
+      },
+      "sink": {
+        "type": "chest",
+        "id": 2
+      },
+      "stack_size": 16,
+      "overrides": {
+        "enable_control": {
+          "mode": "ALWAYS"
+        }
+      }
+    },
+    {
+      "source": {
+        "type": "chest",
+        "id": 2
+      },
+      "sink": {
+        "type": "machine",
+        "id": 4
+      },
+      "stack_size": 15
+    },
+    {
+      "source": {
+        "type": "chest",
+        "id": 2
+      },
+      "sink": {
+        "type": "machine",
+        "id": 5
+      },
+      "stack_size": 15
+    },
+    {
+      "source": {
+        "type": "machine",
+        "id": 3
+      },
+      "sink": {
+        "type": "machine",
+        "id": 4
+      },
+      "stack_size": 15
+    },
+    {
+      "source": {
+        "type": "machine",
+        "id": 3
+      },
+      "sink": {
+        "type": "machine",
+        "id": 5
+      },
+      "stack_size": 15
     }
   ],
   "belts": [
@@ -141,6 +245,15 @@
       "id": 1,
       "storage_size": 1,
       "item_filter": "plastic-bar"
+    },
+    {
+      "id": 2,
+      "storage_size": 1,
+      "item_filter": "plastic-bar"
     }
-  ]
+  ],
+  "overrides": {
+    "lcm": 3,
+    "terminal_swing_count": 4
+  }
 }
