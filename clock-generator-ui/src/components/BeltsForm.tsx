@@ -12,7 +12,7 @@ import {
     TextField,
     Typography,
 } from '@mui/material';
-import type { BeltFormData, BeltLaneFormData } from '../hooks/useConfigForm';
+import { BELT_FORM_DEFAULT_STACK_SIZE, type BeltFormData, type BeltLaneFormData } from '../hooks/useConfigForm';
 import { FactorioIcon } from './FactorioIcon';
 
 const BELT_TYPES = [
@@ -54,7 +54,7 @@ export function BeltsForm({
         if (belt.lanes.length < 2) {
             const newLanes: [BeltLaneFormData, BeltLaneFormData] = [
                 belt.lanes[0],
-                { ingredient: '', stack_size: 1 },
+                { ingredient: '', stack_size: BELT_FORM_DEFAULT_STACK_SIZE },
             ];
             onUpdate(beltIndex, { lanes: newLanes });
         }
@@ -193,7 +193,7 @@ export function BeltsForm({
                                             beltIndex,
                                             laneIndex,
                                             'stack_size',
-                                            parseInt(e.target.value) || 1
+                                            parseInt(e.target.value) || BELT_FORM_DEFAULT_STACK_SIZE
                                         )
                                     }
                                     inputProps={{ min: 1 }}

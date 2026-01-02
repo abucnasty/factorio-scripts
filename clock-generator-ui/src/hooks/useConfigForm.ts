@@ -51,6 +51,9 @@ export interface BeltFormData {
     lanes: [BeltLaneFormData] | [BeltLaneFormData, BeltLaneFormData];
 }
 
+export const BELT_FORM_DEFAULT_TYPE = 'turbo-transport-belt';
+export const BELT_FORM_DEFAULT_STACK_SIZE = 4;
+
 export interface DrillOverrides {
     enable_control?: EnableControlOverride;
 }
@@ -282,8 +285,8 @@ export function useConfigForm(): UseConfigFormResult {
                     ...prev.belts,
                     {
                         id: maxId + 1,
-                        type: 'transport-belt' as const,
-                        lanes: [{ ingredient: '', stack_size: 1 }] as [BeltLaneFormData],
+                        type: BELT_FORM_DEFAULT_TYPE,
+                        lanes: [{ ingredient: '', stack_size: BELT_FORM_DEFAULT_STACK_SIZE }] as [BeltLaneFormData],
                     },
                 ],
             };
