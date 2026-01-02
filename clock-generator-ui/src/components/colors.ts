@@ -37,6 +37,7 @@ export const INSERTER_STATUS_COLORS: Record<InserterStatus, string> = {
     [InserterStatus.SWING]: COLOR_BLIND_PALETTE.blue,        // in motion
     [InserterStatus.IDLE]: COLOR_BLIND_PALETTE.lightGrey,     // waiting
     [InserterStatus.DISABLED]: COLOR_BLIND_PALETTE.darkGrey,  // disabled
+    [InserterStatus.TARGET_FULL]: COLOR_BLIND_PALETTE.reddishPurple, // waiting for sink (chest) to have space
 };
 
 // Detailed status colors for machines

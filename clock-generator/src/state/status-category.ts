@@ -27,6 +27,7 @@ const INSERTER_STATUS_MAP: MapExtended<InserterStatus, StatusCategory> = new Map
     [InserterStatus.SWING, StatusCategory.ACTIVE],
     [InserterStatus.IDLE, StatusCategory.IDLE],
     [InserterStatus.DISABLED, StatusCategory.DISABLED],
+    [InserterStatus.TARGET_FULL, StatusCategory.BLOCKED],
 ])
 
 const MACHINE_STATUS_MAP: MapExtended<MachineStatus, StatusCategory> = new MapExtended([
