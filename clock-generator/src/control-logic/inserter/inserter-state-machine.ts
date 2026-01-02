@@ -87,8 +87,10 @@ function createInserterStateMachine(args: {
 
     const pickup_mode_evaluator = new PickupModeTransitionEvaluator(
         inserter_state,
+        sink_state,
         swing_mode,
         disabled_mode,
+        idle_mode,
         enable_control,
     );
 
