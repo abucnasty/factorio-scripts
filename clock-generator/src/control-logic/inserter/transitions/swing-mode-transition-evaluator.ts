@@ -56,7 +56,9 @@ export class InserterSwingModeTransitionEvaluator implements ModeTransitionEvalu
             return ModeTransition.transition(this.drop_mode, "swing to sink duration elapsed");
         }
 
-        if (this.from?.status === InserterStatus.DROP_OFF) {
+        if (this.from?.status === InserterStatus.DROP_OFF || this.from?.status === InserterStatus.TARGET_FULL) {
+            // After dropping off items (or after TARGET_FULL when chest had space and items were dropped),
+            // swing back to source
             const transition = this.idle_mode_transition_evaluator.evaluateTransition()
             if (transition !== ModeTransition.NONE && transition.toMode.status !== InserterStatus.DISABLED) {
                 return transition;
