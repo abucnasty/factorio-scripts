@@ -7,10 +7,17 @@
 
 ---@class MachineData
 ---@field name string Machine entity name
----@field recipe string Recipe name
----@field crafting_speed number Effective crafting speed with bonuses
+---@field recipe string Recipe name (for machines/furnaces)
+---@field crafting_speed number Effective crafting speed with bonuses (for machines/furnaces)
 ---@field productivity number Productivity bonus as percentage (0-100+)
----@field type "machine"|"furnace" Entity type category
+---@field type "machine"|"furnace"|"mining-drill" Entity type category
+
+---@class DrillData
+---@field drill_type string The specific drill type (e.g., "electric-mining-drill")
+---@field mined_item_name string The resource being mined
+---@field speed_bonus number The speed bonus from modules/beacons
+---@field productivity number Productivity bonus as percentage (for display only)
+---@field drop_target_unit_number number|nil The unit_number of the entity the drill drops to
 
 ---@class PlayerData
 ---@field machines MachineData[] Extracted machine data
@@ -30,10 +37,48 @@ end
 -- Machine Data Extraction
 -- ============================================================================
 
----Extract crafting data from a single entity
+---Extract data from a mining drill
+---@param entity LuaEntity
+---@return DrillData|nil
+local function extract_mining_drill_data(entity)
+    if not entity or not entity.valid then
+        return nil
+    end
+
+    -- Get what the drill is mining
+    local mining_target = entity.mining_target
+    if not mining_target then
+        return nil
+    end
+
+    local total_productivity = entity.productivity_bonus or 0
+
+    -- Speed bonus from modules/beacons (this is what clock-generator expects)
+    local speed_bonus = entity.speed_bonus or 0
+    
+    -- Get the drop target (the entity the drill is putting items into)
+    local drop_target = entity.drop_target
+    local drop_target_unit_number = nil
+    if drop_target and drop_target.valid and drop_target.unit_number then
+        drop_target_unit_number = drop_target.unit_number
+    end
+
+    ---@type DrillData
+    local data = {
+        drill_type = entity.name, -- e.g., "electric-mining-drill"
+        mined_item_name = mining_target.name, -- Resource being mined
+        speed_bonus = speed_bonus, -- Speed bonus from modules/beacons
+        productivity = total_productivity * 100, -- For display purposes
+        drop_target_unit_number = drop_target_unit_number, -- For cross-referencing
+    }
+
+    return data
+end
+
+---Extract crafting data from a single crafting machine entity
 ---@param entity LuaEntity
 ---@return MachineData|nil
-local function extract_machine_data(entity)
+local function extract_crafting_machine_data(entity)
     if not entity or not entity.valid then
         return nil
     end
@@ -50,7 +95,7 @@ local function extract_machine_data(entity)
         entity_type = "furnace"
     end
 
-    -- Debug: Log all productivity-related values
+    -- Get entity productivity from modules/beacons
     local entity_prod_bonus = entity.productivity_bonus or 0
     
     -- Get research productivity from the force's recipe
@@ -83,39 +128,111 @@ local function extract_machine_data(entity)
     return data
 end
 
----Extract data from all selected entities
+---Extract crafting data from a single entity (dispatches to appropriate handler)
+---@param entity LuaEntity
+---@return MachineData|nil
+local function extract_machine_data(entity)
+    if not entity or not entity.valid then
+        return nil
+    end
+
+    -- Handle mining drills separately
+    if entity.type == "mining-drill" then
+        return extract_mining_drill_data(entity), "drill"
+    end
+
+    -- Handle crafting machines (assemblers, furnaces, etc.)
+    return extract_crafting_machine_data(entity), "machine"
+end
+
+---@class ExtractionResult
+---@field machines MachineData[]
+---@field drills DrillData[]
+---@field unit_number_to_id table<number, number> Maps entity unit_number to machine ID
+
+---Extract data from all selected entities, separating machines and drills
 ---@param entities LuaEntity[]
----@return MachineData[]
-local function extract_all_machines(entities)
-    local machines = {}
+---@return ExtractionResult
+local function extract_all_entities(entities)
+    local result = {
+        machines = {},
+        drills = {},
+        unit_number_to_id = {}
+    }
     
+    -- First pass: extract machines and build unit_number -> id mapping
+    local machine_id = 0
     for _, entity in pairs(entities) do
-        local data = extract_machine_data(entity)
-        if data then
-            table.insert(machines, data)
+        if entity.type ~= "mining-drill" then
+            local data, entity_category = extract_machine_data(entity)
+            if data and entity_category == "machine" then
+                machine_id = machine_id + 1
+                table.insert(result.machines, data)
+                -- Map the entity's unit_number to its assigned ID
+                if entity.unit_number then
+                    result.unit_number_to_id[entity.unit_number] = machine_id
+                end
+            end
+        end
+    end
+    
+    -- Second pass: extract drills (now we have the unit_number mapping)
+    for _, entity in pairs(entities) do
+        if entity.type == "mining-drill" then
+            local data = extract_mining_drill_data(entity)
+            if data then
+                table.insert(result.drills, data)
+            end
         end
     end
 
-    return machines
+    return result
 end
 
 -- ============================================================================
 -- JSON Export
 -- ============================================================================
 
----Convert machine data to clock-generator compatible JSON
----@param machines MachineData[]
+---Convert extraction result to clock-generator compatible JSON
+---@param result ExtractionResult
 ---@return string
-local function machines_to_json(machines)
-    local export = {}
+local function to_export_json(result)
+    local export = {
+        machines = {},
+        drills = {}
+    }
     
-    for i, machine in ipairs(machines) do
-        table.insert(export, {
+    -- Format machines for clock-generator
+    for i, machine in ipairs(result.machines) do
+        table.insert(export.machines, {
             id = i,
             recipe = machine.recipe,
             crafting_speed = machine.crafting_speed,
             productivity = machine.productivity,
             type = machine.type
+        })
+    end
+    
+    -- Format drills for clock-generator (different schema)
+    for i, drill in ipairs(result.drills) do
+        -- Look up the target machine ID from the unit_number mapping
+        local target_machine_id = 1 -- Default fallback (must be >0)
+        if drill.drop_target_unit_number then
+            local mapped_id = result.unit_number_to_id[drill.drop_target_unit_number]
+            if mapped_id then
+                target_machine_id = mapped_id
+            end
+        end
+        
+        table.insert(export.drills, {
+            id = i,
+            type = drill.drill_type,
+            mined_item_name = drill.mined_item_name,
+            speed_bonus = drill.speed_bonus,
+            target = {
+                type = "machine",
+                id = target_machine_id
+            }
         })
     end
 
@@ -213,9 +330,14 @@ end
 ---Create the extraction results GUI
 ---@param player LuaPlayer
 ---@param machines MachineData[]
-local function create_gui(player, machines)
+---Create the GUI to display extracted data
+---@param player LuaPlayer
+---@param result ExtractionResult
+local function create_gui(player, result)
     -- Remove existing GUI
     destroy_gui(player)
+
+    local total_count = #result.machines + #result.drills
 
     -- Main frame
     local frame = player.gui.screen.add({
@@ -229,7 +351,7 @@ local function create_gui(player, machines)
     -- Store reference
     storage[player.index].gui = frame
 
-    -- Header flow with machine count
+    -- Header flow with count
     local header = frame.add({
         type = "flow",
         direction = "horizontal"
@@ -239,7 +361,7 @@ local function create_gui(player, machines)
 
     header.add({
         type = "label",
-        caption = { "crafting-speed-extractor.machine-count", #machines },
+        caption = { "crafting-speed-extractor.machine-count", total_count },
         style = "heading_2_label"
     })
 
@@ -249,69 +371,109 @@ local function create_gui(player, machines)
         direction = "vertical",
         style = "inside_shallow_frame_with_padding"
     })
-    content_frame.style.minimal_width = 500
-    content_frame.style.maximal_height = 400
+    content_frame.style.minimal_width = 550
+    content_frame.style.maximal_height = 450
 
-    if #machines == 0 then
+    if total_count == 0 then
         content_frame.add({
             type = "label",
             caption = { "crafting-speed-extractor.no-machines" },
             style = "bold_label"
         })
     else
-        -- Scroll pane for machine list
+        -- Scroll pane for entity list
         local scroll = content_frame.add({
             type = "scroll-pane",
             direction = "vertical",
             vertical_scroll_policy = "auto",
             horizontal_scroll_policy = "never"
         })
-        scroll.style.maximal_height = 350
+        scroll.style.maximal_height = 400
 
-        -- Table header
-        local header_table = scroll.add({
-            type = "table",
-            column_count = 5,
-            draw_horizontal_lines = true,
-            draw_vertical_lines = false
-        })
-        header_table.style.horizontal_spacing = 16
-        header_table.style.column_alignments[1] = "center"
-        header_table.style.column_alignments[4] = "right"
-        header_table.style.column_alignments[5] = "right"
-
-        -- Header labels
-        local headers = { "#", { "crafting-speed-extractor.col-machine" }, { "crafting-speed-extractor.col-recipe" }, { "crafting-speed-extractor.col-speed" }, { "crafting-speed-extractor.col-productivity" } }
-        for _, h in ipairs(headers) do
-            header_table.add({
+        -- Display machines if any
+        if #result.machines > 0 then
+            local machines_header = scroll.add({
                 type = "label",
-                caption = h,
-                style = "bold_label"
+                caption = "Machines & Furnaces (" .. #result.machines .. ")",
+                style = "heading_2_label"
             })
+            machines_header.style.bottom_margin = 4
+
+            local machine_table = scroll.add({
+                type = "table",
+                column_count = 5,
+                draw_horizontal_lines = true,
+                draw_vertical_lines = false
+            })
+            machine_table.style.horizontal_spacing = 16
+            machine_table.style.column_alignments[1] = "center"
+            machine_table.style.column_alignments[4] = "right"
+            machine_table.style.column_alignments[5] = "right"
+
+            -- Header labels for machines
+            local m_headers = { "#", { "crafting-speed-extractor.col-machine" }, { "crafting-speed-extractor.col-recipe" }, { "crafting-speed-extractor.col-speed" }, { "crafting-speed-extractor.col-productivity" } }
+            for _, h in ipairs(m_headers) do
+                machine_table.add({
+                    type = "label",
+                    caption = h,
+                    style = "bold_label"
+                })
+            end
+
+            -- Machine rows
+            for i, machine in ipairs(result.machines) do
+                machine_table.add({ type = "label", caption = tostring(i) })
+                machine_table.add({ type = "label", caption = machine.name })
+                machine_table.add({ type = "label", caption = machine.recipe })
+                machine_table.add({ type = "label", caption = string.format("%.2f", machine.crafting_speed) })
+                machine_table.add({ type = "label", caption = string.format("%.1f%%", machine.productivity) })
+            end
+
+            -- Add spacing if drills follow
+            if #result.drills > 0 then
+                local spacer = scroll.add({ type = "flow" })
+                spacer.style.height = 16
+            end
         end
 
-        -- Machine rows
-        for i, machine in ipairs(machines) do
-            header_table.add({
+        -- Display drills if any
+        if #result.drills > 0 then
+            local drills_header = scroll.add({
                 type = "label",
-                caption = tostring(i)
+                caption = "Mining Drills (" .. #result.drills .. ")",
+                style = "heading_2_label"
             })
-            header_table.add({
-                type = "label",
-                caption = machine.name
+            drills_header.style.bottom_margin = 4
+
+            local drill_table = scroll.add({
+                type = "table",
+                column_count = 5,
+                draw_horizontal_lines = true,
+                draw_vertical_lines = false
             })
-            header_table.add({
-                type = "label",
-                caption = machine.recipe
-            })
-            header_table.add({
-                type = "label",
-                caption = string.format("%.2f", machine.crafting_speed)
-            })
-            header_table.add({
-                type = "label",
-                caption = string.format("%.1f%%", machine.productivity)
-            })
+            drill_table.style.horizontal_spacing = 16
+            drill_table.style.column_alignments[1] = "center"
+            drill_table.style.column_alignments[4] = "right"
+            drill_table.style.column_alignments[5] = "right"
+
+            -- Header labels for drills
+            local d_headers = { "#", "Drill Type", "Resource", "Speed Bonus", { "crafting-speed-extractor.col-productivity" } }
+            for _, h in ipairs(d_headers) do
+                drill_table.add({
+                    type = "label",
+                    caption = h,
+                    style = "bold_label"
+                })
+            end
+
+            -- Drill rows
+            for i, drill in ipairs(result.drills) do
+                drill_table.add({ type = "label", caption = tostring(i) })
+                drill_table.add({ type = "label", caption = drill.drill_type })
+                drill_table.add({ type = "label", caption = drill.mined_item_name })
+                drill_table.add({ type = "label", caption = string.format("+%.0f%%", drill.speed_bonus * 100) })
+                drill_table.add({ type = "label", caption = string.format("%.1f%%", drill.productivity) })
+            end
         end
     end
 
@@ -325,8 +487,8 @@ local function create_gui(player, machines)
     button_flow.style.horizontally_stretchable = true
     button_flow.style.horizontal_align = "right"
 
-    -- Copy button (only if we have machines)
-    if #machines > 0 then
+    -- Copy button (only if we have data)
+    if total_count > 0 then
         button_flow.add({
             type = "button",
             name = "crafting_speed_extractor_copy",
@@ -363,17 +525,18 @@ local function on_player_selected_area(event)
 
     init_player_data(event.player_index)
 
-    -- Extract machine data
-    local machines = extract_all_machines(event.entities)
-    storage[event.player_index].machines = machines
+    -- Extract entity data (machines and drills separately)
+    local result = extract_all_entities(event.entities)
+    storage[event.player_index].extraction_result = result
 
     -- Show GUI
-    create_gui(player, machines)
+    create_gui(player, result)
 
-    if #machines == 0 then
+    local total = #result.machines + #result.drills
+    if total == 0 then
         player.print({ "crafting-speed-extractor.no-machines-selected" })
     else
-        player.print({ "crafting-speed-extractor.machines-found", #machines })
+        player.print({ "crafting-speed-extractor.machines-found", total })
     end
 end
 
@@ -393,11 +556,16 @@ local function on_gui_click(event)
     if element.name == "crafting_speed_extractor_copy" then
         -- Show copy popup with JSON text
         local player_data = storage[event.player_index]
-        if player_data and player_data.machines and #player_data.machines > 0 then
-            local json = machines_to_json(player_data.machines)
-            create_copy_popup(player, json)
+        if player_data and player_data.extraction_result then
+            local result = player_data.extraction_result
+            if #result.machines > 0 or #result.drills > 0 then
+                local json = to_export_json(result)
+                create_copy_popup(player, json)
+            else
+                player.print("[Crafting Speed Extractor] No data found. Please select machines or drills first.")
+            end
         else
-            player.print("[Crafting Speed Extractor] No machine data found. Please select machines first.")
+            player.print("[Crafting Speed Extractor] No data found. Please select machines or drills first.")
         end
     elseif element.name == "crafting_speed_extractor_close" then
         destroy_all_gui(player)

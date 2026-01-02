@@ -2,22 +2,25 @@ import { Download, Upload, ContentPaste } from '@mui/icons-material';
 import { Box, Button, Snackbar, Alert, Tooltip } from '@mui/material';
 import { useRef, useState, useCallback } from 'react';
 import type { Config } from 'clock-generator/browser';
-import { MachineConfigurationSchema } from 'clock-generator/browser';
+import { MachineConfigurationSchema, MiningDrillConfigSchema } from 'clock-generator/browser';
 import type { z } from 'zod';
 
 type MachineConfiguration = z.infer<typeof MachineConfigurationSchema>;
+type MiningDrillConfiguration = z.infer<typeof MiningDrillConfigSchema>;
 
 interface ConfigImportExportProps {
     config: Config;
     onImport: (config: Config) => void;
-    onMergeMachines: (machines: MachineConfiguration[]) => void;
+    onReplaceMachines: (machines: MachineConfiguration[]) => void;
+    onReplaceDrills: (drills: MiningDrillConfiguration[]) => void;
     parseConfig: (content: string) => Promise<Config>;
 }
 
 export function ConfigImportExport({
     config,
     onImport,
-    onMergeMachines,
+    onReplaceMachines,
+    onReplaceDrills,
     parseConfig,
 }: ConfigImportExportProps) {
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -96,7 +99,7 @@ export function ConfigImportExport({
         try {
             const clipboardText = await navigator.clipboard.readText();
             
-            // Try to parse as JSON array
+            // Try to parse as JSON
             let parsed: unknown;
             try {
                 parsed = JSON.parse(clipboardText);
@@ -104,18 +107,73 @@ export function ConfigImportExport({
                 throw new Error('Clipboard does not contain valid JSON. Make sure to copy from the Factorio mod.');
             }
 
-            // Validate it's an array
+            // Check if it's the new format with machines and drills
+            if (typeof parsed === 'object' && parsed !== null && 'machines' in parsed) {
+                const data = parsed as { machines?: unknown[]; drills?: unknown[] };
+                
+                const machineCount = Array.isArray(data.machines) ? data.machines.length : 0;
+                const drillCount = Array.isArray(data.drills) ? data.drills.length : 0;
+                
+                if (machineCount === 0 && drillCount === 0) {
+                    throw new Error('No machines or drills found in clipboard data.');
+                }
+
+                // Validate machines (IDs are already assigned by the mod)
+                const validatedMachines: MachineConfiguration[] = [];
+                if (Array.isArray(data.machines)) {
+                    for (let i = 0; i < data.machines.length; i++) {
+                        const entry = data.machines[i];
+                        const result = MachineConfigurationSchema.safeParse(entry);
+                        if (!result.success) {
+                            throw new Error(`Invalid machine at index ${i}: ${result.error.issues[0]?.message || 'Unknown error'}`);
+                        }
+                        validatedMachines.push(result.data);
+                    }
+                }
+
+                // Validate drills (IDs are already assigned by the mod)
+                const validatedDrills: MiningDrillConfiguration[] = [];
+                if (Array.isArray(data.drills)) {
+                    for (let i = 0; i < data.drills.length; i++) {
+                        const entry = data.drills[i];
+                        const result = MiningDrillConfigSchema.safeParse(entry);
+                        if (!result.success) {
+                            throw new Error(`Invalid drill at index ${i}: ${result.error.issues[0]?.message || 'Unknown error'}`);
+                        }
+                        validatedDrills.push(result.data);
+                    }
+                }
+
+                if (validatedMachines.length > 0) {
+                    onReplaceMachines(validatedMachines);
+                }
+                if (validatedDrills.length > 0) {
+                    onReplaceDrills(validatedDrills);
+                }
+
+                const parts: string[] = [];
+                if (validatedMachines.length > 0) parts.push(`${validatedMachines.length} machines`);
+                if (validatedDrills.length > 0) parts.push(`${validatedDrills.length} drills`);
+                
+                setSnackbar({
+                    open: true,
+                    message: `Replaced with ${parts.join(' and ')} from Factorio!`,
+                    severity: 'success',
+                });
+                return;
+            }
+
+            // Legacy format: array of machines
             if (!Array.isArray(parsed)) {
-                throw new Error('Expected an array of machines from Factorio mod.');
+                throw new Error('Expected machines/drills object or array from Factorio mod.');
             }
 
             if (parsed.length === 0) {
                 throw new Error('No machines found in clipboard data.');
             }
 
-            // Validate each machine entry
+            // Validate each machine entry (IDs are already assigned by the mod)
             const validatedMachines: MachineConfiguration[] = [];
-            const existingMaxId = config.machines.reduce((max, m) => Math.max(max, m.id), 0);
             
             for (let i = 0; i < parsed.length; i++) {
                 const entry = parsed[i];
@@ -123,17 +181,13 @@ export function ConfigImportExport({
                 if (!result.success) {
                     throw new Error(`Invalid machine at index ${i}: ${result.error.issues[0]?.message || 'Unknown error'}`);
                 }
-                // Reassign ID to avoid conflicts
-                validatedMachines.push({
-                    ...result.data,
-                    id: existingMaxId + i + 1
-                });
+                validatedMachines.push(result.data);
             }
 
-            onMergeMachines(validatedMachines);
+            onReplaceMachines(validatedMachines);
             setSnackbar({
                 open: true,
-                message: `Successfully imported ${validatedMachines.length} machines from Factorio!`,
+                message: `Replaced with ${validatedMachines.length} machines from Factorio!`,
                 severity: 'success',
             });
         } catch (error) {
@@ -144,7 +198,7 @@ export function ConfigImportExport({
                 severity: 'error',
             });
         }
-    }, [config.machines, onMergeMachines]);
+    }, [onReplaceMachines, onReplaceDrills]);
 
     return (
         <>

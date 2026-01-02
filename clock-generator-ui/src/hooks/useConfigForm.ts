@@ -148,6 +148,7 @@ export interface UseConfigFormResult {
     updateMachine: (index: number, field: keyof MachineFormData, value: string | number) => void;
     removeMachine: (index: number) => void;
     mergeMachines: (machines: MachineFormData[]) => void;
+    replaceMachines: (machines: MachineFormData[]) => void;
     
     // Inserters
     addInserter: () => void;
@@ -171,6 +172,8 @@ export interface UseConfigFormResult {
     addDrill: () => void;
     updateDrill: (index: number, updates: Partial<DrillFormData>) => void;
     removeDrill: (index: number) => void;
+    mergeDrills: (drills: DrillFormData[]) => void;
+    replaceDrills: (drills: DrillFormData[]) => void;
     
     // Overrides
     updateOverrides: (field: keyof NonNullable<ConfigFormData['overrides']>, value: number | undefined) => void;
@@ -255,6 +258,13 @@ export function useConfigForm(): UseConfigFormResult {
                 machines: [...prev.machines, ...machinesWithNewIds],
             };
         });
+    }, []);
+
+    const replaceMachines = useCallback((newMachines: MachineFormData[]) => {
+        setConfig((prev) => ({
+            ...prev,
+            machines: newMachines,
+        }));
     }, []);
 
     // Inserters
@@ -438,6 +448,49 @@ export function useConfigForm(): UseConfigFormResult {
         });
     }, []);
 
+    const mergeDrills = useCallback((newDrills: DrillFormData[]) => {
+        setConfig((prev) => {
+            // If drills aren't enabled, enable them first
+            const currentDrills = prev.drills ?? {
+                mining_productivity_level: 0,
+                configs: [],
+            };
+            
+            // Reassign IDs to avoid conflicts
+            const maxId = Math.max(0, ...currentDrills.configs.map((d) => d.id));
+            const drillsWithNewIds = newDrills.map((d, i) => ({
+                ...d,
+                id: maxId + i + 1,
+            }));
+            
+            return {
+                ...prev,
+                drills: {
+                    ...currentDrills,
+                    configs: [...currentDrills.configs, ...drillsWithNewIds],
+                },
+            };
+        });
+    }, []);
+
+    const replaceDrills = useCallback((newDrills: DrillFormData[]) => {
+        setConfig((prev) => {
+            // If drills aren't enabled, enable them first
+            const currentDrills = prev.drills ?? {
+                mining_productivity_level: 0,
+                configs: [],
+            };
+            
+            return {
+                ...prev,
+                drills: {
+                    ...currentDrills,
+                    configs: newDrills,
+                },
+            };
+        });
+    }, []);
+
     // Overrides
     const updateOverrides = useCallback((
         field: keyof NonNullable<ConfigFormData['overrides']>,
@@ -546,6 +599,7 @@ export function useConfigForm(): UseConfigFormResult {
         updateMachine,
         removeMachine,
         mergeMachines,
+        replaceMachines,
         addInserter,
         updateInserter,
         removeInserter,
@@ -561,6 +615,8 @@ export function useConfigForm(): UseConfigFormResult {
         addDrill,
         updateDrill,
         removeDrill,
+        mergeDrills,
+        replaceDrills,
         updateOverrides,
         importConfig,
         exportConfig,
