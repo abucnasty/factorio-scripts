@@ -1,6 +1,7 @@
 export * from "./machine"
 export * from "./inserter"
 export * from "./belt"
+export * from "./chest"
 export * from "./entity"
 export * from "./entity-id"
 export * from "./entity-registry"

@@ -1,6 +1,7 @@
 import { EntityType } from "../entities";
 import { EntityId } from "../entities/entity-id";
 import { BeltState } from "./belt-state";
+import { ChestState } from "./chest-state";
 import { DrillState } from "./drill-state";
 import { InserterState } from "./inserter-state";
 import { WritableInventoryState } from "./inventory-state";
@@ -28,6 +29,10 @@ export function isDrill(state: EntityState): state is DrillState {
     return EntityId.isDrill(state.entity_id);
 }
 
+export function isChest(state: EntityState): state is ChestState {
+    return EntityId.isChest(state.entity_id);
+}
+
 export function assertIsMachineState(state: EntityState): asserts state is MachineState {
     if (!isMachine(state)) {
         throw new Error(`Expected machine state, got ${state.entity_id.type}`);
@@ -45,4 +50,5 @@ export const EntityState = {
     isMachine: isMachine,
     isInserter: isInserter,
     isDrill: isDrill,
+    isChest: isChest,
 }

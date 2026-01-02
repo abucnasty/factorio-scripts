@@ -9,7 +9,12 @@ export const InserterStatus = {
     PICKUP: "PICKUP",
     DROP_OFF: "DROP",
     SWING: "SWING",
-    DISABLED: "DISABLED"
+    DISABLED: "DISABLED",
+    /**
+     * Inserter is waiting because its sink (chest) is full and it still has items in hand.
+     * The inserter will retry dropping until space becomes available.
+     */
+    TARGET_FULL: "TARGET_FULL"
 } as const;
 
 export type InserterStatus = typeof InserterStatus[keyof typeof InserterStatus];

@@ -1,13 +1,14 @@
 import { CompositeControlLogic, ControlLogic, EnableControl, TickControlLogic } from "../../../control-logic";
 import { EntityId } from "../../../entities";
-import { MachineStatus } from "../../../state";
+import { ChestState, EntityState, MachineStatus } from "../../../state";
 import { cloneSimulationContextWithInterceptors, SimulationContext } from "../../sequence";
 import { InserterInterceptor } from "../../sequence/interceptors/inserter-interceptor";
 import { RunnerStep, RunnerStepType } from "./runner-step";
 
 /**
- * PrepareStep simulates the crafting process until all machines are output blocked.
- * This ensures that the system is in a steady state before further simulation steps.
+ * PrepareStep simulates the crafting process until all machines are output blocked
+ * and all buffer chests are full. This ensures that the system is in a steady state
+ * before further simulation steps.
  */
 export class PrepareStep implements RunnerStep {
     public readonly type: RunnerStepType = RunnerStepType.PREPARE
@@ -23,6 +24,12 @@ export class PrepareStep implements RunnerStep {
         console.log("Executing Prepare Step");
         const control_logic = this.control_logic;
         const context = this.simulation_context;
+        
+        // Get all chest states for checking if they're full
+        const chest_states = context.state_registry
+            .getAllStates()
+            .filter(EntityState.isChest);
+        
         while (true) {
             control_logic.executeForTick();
             if (context.tick_provider.getCurrentTick() > 1_000_000) {
@@ -35,9 +42,22 @@ export class PrepareStep implements RunnerStep {
                         }
                     })
                 })
-                throw new Error("Simulation exceeded 1,000,000 ticks without reaching output blocked state");
+                
+                const chests_not_full = chest_states.filter(it => !it.isFull());
+                chests_not_full.forEach(it => {
+                    console.error(`Chest ${it.entity_id} not full: ${it.getCurrentQuantity()}/${it.getCapacity()}`);
+                })
+                
+                throw new Error("Simulation exceeded 1,000,000 ticks without reaching ready state");
             }
+            
+            // Check all machines are output blocked
             if (context.machines.some(it => it.machine_state.status !== MachineStatus.OUTPUT_FULL)) {
+                continue;
+            }
+            
+            // Check all buffer chests are full
+            if (chest_states.some(it => !it.isFull())) {
                 continue;
             }
 
@@ -48,18 +68,34 @@ export class PrepareStep implements RunnerStep {
     private build(): ControlLogic {
         const context = this.simulation_context
         const tick_control_logic = new TickControlLogic(context.tick_provider);
+        
+        // Input inserters: inserters that drop into machines
         const input_inserters_only = context.inserters
             .filter(it => EntityId.isMachine(it.inserter_state.inserter.sink.entity_id))
 
         const input_inserter_ids = new Set(
             input_inserters_only.map(it => it.inserter_state.inserter.entity_id.id)
         )
+        
+        // Inserters that drop into chests (buffer fillers)
+        const chest_sink_inserters = context.inserters
+            .filter(it => EntityId.isChest(it.inserter_state.inserter.sink.entity_id))
+        
+        const chest_sink_inserter_ids = new Set(
+            chest_sink_inserters.map(it => it.inserter_state.inserter.entity_id.id)
+        )
 
         const cloned_context = cloneSimulationContextWithInterceptors(context, {
             inserter: (inserter_state, source_state, sink_state) => {
+                // Input inserters: wait until source machine is output blocked
                 if (input_inserter_ids.has(inserter_state.inserter.entity_id.id)) {
                     return InserterInterceptor.wait_until_source_is_output_blocked(inserter_state, source_state, sink_state);
                 }
+                // Inserters filling chests: wait until source is output blocked (like input inserters)
+                if (chest_sink_inserter_ids.has(inserter_state.inserter.entity_id.id)) {
+                    return InserterInterceptor.wait_until_source_is_output_blocked(inserter_state, source_state, sink_state);
+                }
+                // All other inserters (output inserters): disabled until prepare is complete
                 return EnableControl.never
             }
         });

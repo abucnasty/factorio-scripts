@@ -3,7 +3,7 @@ import { AlwaysEnabledControl, EnableControl, MutableTickProvider } from "../../
 import { DrillStateMachine } from "../../control-logic/drill/drill-state-machine";
 import { InserterStateMachine } from "../../control-logic/inserter/inserter-state-machine";
 import { MachineStateMachine } from "../../control-logic/machine/machine-state-machine";
-import { Belt, EntityRegistry, InserterFactory, Machine, WritableEntityRegistry } from "../../entities";
+import { Belt, Chest, EntityRegistry, InserterFactory, Machine, WritableEntityRegistry } from "../../entities";
 import { MiningDrill } from "../../entities/drill/mining-drill";
 import { MiningProductivity } from "../../entities/drill/mining-productivity";
 import { assertIsMachineState, DrillState, DrillStatus, EntityState, EntityStateFactory, EntityStateRegistry, InserterState, MachineState, WritableEntityStateRegistry } from "../../state";
@@ -83,6 +83,14 @@ function createSimulationContextFromConfig(
         const mining_productivity = MiningProductivity.fromLevel(drills.mining_productivity_level)
         drills.configs.forEach((drill_config, index) => {
             entity_registry.add(MiningDrill.fromConfig(mining_productivity, drill_config))
+        })
+    }
+
+    const chests = config.chests
+
+    if (chests) {
+        chests.forEach(chestConfig => {
+            entity_registry.add(Chest.fromConfig(chestConfig))
         })
     }
 

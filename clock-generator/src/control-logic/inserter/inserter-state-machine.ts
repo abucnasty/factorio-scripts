@@ -1,13 +1,14 @@
 import assert from "../../common/assert"
 import { ModePlugin, ModeStateMachine, ModeTransitionEvaluator } from "../mode";
 import { InserterDropMode, InserterIdleMode, InserterMode, InserterPickupMode, InserterSwingMode } from "./modes";
+import { InserterTargetFullMode } from "./modes/target-full-mode";
 import { EntityId } from "../../entities";
 import { EntityState, InserterState, ReadableEntityStateRegistry } from "../../state";
 import { TickProvider } from "../current-tick-provider";
 import { EnableControl } from "../enable-control";
 import { InserterDisabledMode } from "./modes/disabled-mode";
 import { InserterStatusPlugin } from "./plugins";
-import { IdleModeTransitionEvaluator, InserterSwingModeTransitionEvaluator, DropModeTransitionEvaluator, PickupModeTransitionEvaluator, DisabledModeTransitionEvaluator } from "./transitions";
+import { IdleModeTransitionEvaluator, InserterSwingModeTransitionEvaluator, DropModeTransitionEvaluator, PickupModeTransitionEvaluator, DisabledModeTransitionEvaluator, TargetFullModeTransitionEvaluator } from "./transitions";
 
 export class InserterStateMachine extends ModeStateMachine<InserterMode> {
     public entity_id: EntityId;
@@ -52,6 +53,7 @@ function createInserterStateMachine(args: {
     const swing_mode = new InserterSwingMode();
     const drop_mode = new InserterDropMode(inserter_state, sink_state);
     const disabled_mode = new InserterDisabledMode();
+    const target_full_mode = new InserterTargetFullMode(drop_mode);
 
     const idle_mode_evaluator = IdleModeTransitionEvaluator.create({
         inserter_state: inserter_state,
@@ -72,9 +74,15 @@ function createInserterStateMachine(args: {
     })
 
     const drop_mode_evaluator = new DropModeTransitionEvaluator(
-        inserter_state.inserter.animation,
+        inserter_state,
+        sink_state,
         swing_mode,
-        tick_provider
+        target_full_mode
+    );
+
+    const target_full_mode_evaluator = new TargetFullModeTransitionEvaluator(
+        inserter_state,
+        swing_mode
     );
 
     const pickup_mode_evaluator = new PickupModeTransitionEvaluator(
@@ -90,11 +98,12 @@ function createInserterStateMachine(args: {
     );
 
     const graph = new Map<InserterMode, ModeTransitionEvaluator<InserterMode>>([
-        [idle_mode,     idle_mode_evaluator],
-        [swing_mode,    swing_mode_evaluator],
-        [drop_mode,     drop_mode_evaluator],
-        [pickup_mode,   pickup_mode_evaluator],
-        [disabled_mode, disabled_mode_evaluator],
+        [idle_mode,        idle_mode_evaluator],
+        [swing_mode,       swing_mode_evaluator],
+        [drop_mode,        drop_mode_evaluator],
+        [pickup_mode,      pickup_mode_evaluator],
+        [disabled_mode,    disabled_mode_evaluator],
+        [target_full_mode, target_full_mode_evaluator],
     ]);
 
     const initial_mode = idle_mode;

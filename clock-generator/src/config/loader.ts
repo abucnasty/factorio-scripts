@@ -280,3 +280,50 @@ export function createBrowserConfigLoader(
         }
     };
 }
+
+// ============================================================================
+// Config Validation Functions
+// ============================================================================
+
+/**
+ * Validate config for chest usage constraints.
+ * 
+ * Throws an error if:
+ * - A chest is used only as a source without being a sink for another inserter
+ *   (the chest would start empty and never be filled)
+ * 
+ * @param config - The parsed config to validate
+ * @throws {Error} If validation fails
+ */
+export function validateChestUsage(config: Config): void {
+    const chests = config.chests ?? [];
+    
+    if (chests.length === 0) {
+        return; // No chests to validate
+    }
+
+    // Collect all chest IDs that are used as sinks
+    const chestIdsUsedAsSink = new Set<number>();
+    // Collect all chest IDs that are used as sources
+    const chestIdsUsedAsSource = new Set<number>();
+
+    for (const inserter of config.inserters) {
+        if (inserter.sink.type === "chest") {
+            chestIdsUsedAsSink.add(inserter.sink.id);
+        }
+        if (inserter.source.type === "chest") {
+            chestIdsUsedAsSource.add(inserter.source.id);
+        }
+    }
+
+    // Check each chest that is used as a source
+    for (const chestId of chestIdsUsedAsSource) {
+        if (!chestIdsUsedAsSink.has(chestId)) {
+            const chest = chests.find(c => c.id === chestId);
+            throw new Error(
+                `Chest with id ${chestId} is used as a source but is never filled by any inserter. ` +
+                `A chest must be used as a sink by at least one inserter before it can be used as a source.`
+            );
+        }
+    }
+}

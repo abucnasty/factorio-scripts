@@ -1,6 +1,6 @@
 import assert from "../../../common/assert";
 import { AlwaysEnabledControl, EnableControl } from "../../../control-logic";
-import { InserterState, EntityState, MachineStatus } from "../../../state";
+import { ChestState, InserterState, EntityState, MachineStatus } from "../../../state";
 
 export type InserterInterceptor = (inserter_state: InserterState, source_state: EntityState, sink_state: EntityState) => EnableControl
 
@@ -28,8 +28,26 @@ const WaitUntilSourceIsOutputBlockedInterceptor: InserterInterceptor = (inserter
     return AlwaysEnabledControl
 }
 
+/**
+ * Interceptor that waits until a chest sink is full before allowing the inserter to proceed.
+ * Used during warmup to fill buffer chests before allowing downstream inserters to swing.
+ */
+const WaitUntilSinkChestIsFullInterceptor: InserterInterceptor = (inserter_state, source_state, sink_state): EnableControl => {
+    if (EntityState.isChest(sink_state)) {
+        return EnableControl.latched({
+            base: EnableControl.lambda(() => {
+                return sink_state.isFull()
+            }),
+            release: EnableControl.never
+        })
+    }
+
+    return AlwaysEnabledControl
+}
+
 export const InserterInterceptor = {
     always_enabled: AlwaysEnabledInterceptor,
     always_disabled: AlwaysDisabledInterceptor,
-    wait_until_source_is_output_blocked: WaitUntilSourceIsOutputBlockedInterceptor
+    wait_until_source_is_output_blocked: WaitUntilSourceIsOutputBlockedInterceptor,
+    wait_until_sink_chest_is_full: WaitUntilSinkChestIsFullInterceptor
 }

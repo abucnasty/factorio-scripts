@@ -1,4 +1,5 @@
 export * from "./belt-state";
+export * from "./chest-state";
 export * from "./entity-state";
 export * from "./entity-state-registry";
 export * from "./entity-state-factory";

@@ -1,6 +1,6 @@
 import assert from "../../../common/assert";
 import { ItemName } from "../../../data";
-import { BeltState, EntityState, InserterState, InserterStatus, MachineState, ReadableEntityStateRegistry } from "../../../state";
+import { BeltState, ChestState, EntityState, InserterState, InserterStatus, MachineState, ReadableEntityStateRegistry } from "../../../state";
 import { InserterMode } from "./inserter-mode";
 
 export class InserterPickupMode implements InserterMode {
@@ -50,6 +50,9 @@ export class InserterPickupMode implements InserterMode {
         }
         if (EntityState.isMachine(source)) {
             this.pickupFromMachine(this.inserterState, source);
+        }
+        if (EntityState.isChest(source)) {
+            this.pickupFromChest(this.inserterState, source);
         }
 
         if (this.heldItemQuantity() === this.inserterState.inserter.metadata.stack_size) {
@@ -113,6 +116,32 @@ export class InserterPickupMode implements InserterMode {
         source.inventoryState.removeQuantity(output_item_name, pickup_quantity);
     }
 
+    /**
+     * Pick up items from a chest source.
+     * 
+     * The chest only holds a single item type (item_filter), so we pick up
+     * as many items as possible up to the inserter's stack size.
+     */
+    private pickupFromChest(state: InserterState, source: ChestState): void {
+        const item_name = source.getItemFilter();
+        const available_quantity = source.getCurrentQuantity();
+
+        const held_item = state.held_item ?? { item_name: item_name, quantity: 0 };
+
+        const pickup_quantity = Math.min(
+            state.inserter.metadata.stack_size - held_item.quantity,
+            available_quantity
+        );
+
+        if (pickup_quantity <= 0) {
+            return;
+        }
+
+        state.held_item = { item_name: held_item.item_name, quantity: held_item.quantity + pickup_quantity };
+        state.inventoryState.addQuantity(item_name, pickup_quantity);
+        source.inventoryState.removeQuantity(item_name, pickup_quantity);
+    }
+
     private hasPickupDurationElapsed(): boolean {
         return this.current_tick >= this.inserterState.inserter.animation.pickup.ticks;
     }
@@ -131,6 +160,15 @@ function canPickupFromEntity(inserter_state: InserterState, entity_state: Entity
         // TODO: this should be configurable, setting to stack size for now
         const output_threshold = 1
         if (output_quantity >= output_threshold && canPickupItem(inserter_state, output_item_name)) {
+            return true;
+        }
+    }
+
+    if (EntityState.isChest(entity_state)) {
+        const item_name = entity_state.getItemFilter();
+        const available_quantity = entity_state.getCurrentQuantity();
+        // Can pickup if chest has at least 1 item and inserter can pick up this item type
+        if (available_quantity >= 1 && canPickupItem(inserter_state, item_name)) {
             return true;
         }
     }
