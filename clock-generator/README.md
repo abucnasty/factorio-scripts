@@ -200,6 +200,43 @@ drills: {
 }
 ```
 
+### Chest Buffering Support
+
+Chests can be used as intermediate buffers between inserters. This is useful when you want to accumulate items before an inserter picks them up, or when inserters need to partially drop items due to capacity constraints.
+
+#### Basic Chest Configuration
+
+```conf
+chests = [
+    {
+        id = 1
+        storage_size = 1        # Number of inventory slots
+        item_filter = "iron-ore" # Single item type allowed in this chest
+    }
+]
+```
+
+#### Using Chests with Inserters
+
+Reference chests in inserter source/sink configurations:
+
+```conf
+inserters = [
+    # Inserter dropping items into a chest buffer
+    {
+        source { type = "machine", id = 1 }
+        sink { type = "chest", id = 1 }
+        stack_size = 16
+    },
+    # Inserter picking up items from the chest buffer
+    {
+        source { type = "chest", id = 1 }
+        sink { type = "machine", id = 2 }
+        stack_size = 16
+    }
+]
+```
+
 ### Enable Control Overrides
 
 You can override the automatic enable control logic for individual inserters and drills. This is useful when you want to manually specify when an entity should be enabled during the crafting cycle.
