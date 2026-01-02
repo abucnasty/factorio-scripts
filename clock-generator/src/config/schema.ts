@@ -241,6 +241,17 @@ export const BeltConfigSchema = z.object({
 export type BeltConfig = z.infer<typeof BeltConfigSchema>;
 
 // ============================================================================
+// Chest Configuration
+// ============================================================================
+
+export const ChestConfigSchema = z.object({
+    id: z.number().int().positive(),
+    storage_size: z.number().int().positive()
+});
+
+export type ChestConfig = z.infer<typeof ChestConfigSchema>;
+
+// ============================================================================
 // Config Overrides
 // ============================================================================
 
