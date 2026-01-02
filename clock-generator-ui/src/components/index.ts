@@ -2,6 +2,7 @@ export { TargetOutputForm } from './TargetOutputForm';
 export { MachinesForm } from './MachinesForm';
 export { InsertersForm } from './InsertersForm';
 export { BeltsForm } from './BeltsForm';
+export { ChestsForm } from './ChestsForm';
 export { DrillsForm } from './DrillsForm';
 export { OverridesForm } from './OverridesForm';
 export { ConfigImportExport } from './ConfigImportExport';

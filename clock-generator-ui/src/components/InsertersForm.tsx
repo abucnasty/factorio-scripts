@@ -11,13 +11,13 @@ import {
     Typography,
 } from '@mui/material';
 import { useMemo, useState } from 'react';
-import type { BeltFormData, EnableControlOverride, InserterFormData, MachineFormData } from '../hooks/useConfigForm';
+import type { BeltFormData, ChestFormData, EnableControlOverride, InserterFormData, MachineFormData } from '../hooks/useConfigForm';
 import { EnableControlModal } from './EnableControlModal';
 import type { RecipeInfo } from '../hooks/useSimulationWorker';
 import { FactorioIcon } from './FactorioIcon';
 
 interface EntityOption {
-    type: 'machine' | 'belt';
+    type: 'machine' | 'belt' | 'chest';
     id: number;
     label: string;
     icon: string;
@@ -29,6 +29,7 @@ interface InsertersFormProps {
     inserters: InserterFormData[];
     machines: MachineFormData[];
     belts: BeltFormData[];
+    chests: ChestFormData[];
     itemNames: string[];
     getRecipeInfo: (recipeName: string) => RecipeInfo | null;
     onAdd: () => void;
@@ -40,6 +41,7 @@ export function InsertersForm({
     inserters,
     machines,
     belts,
+    chests,
     itemNames,
     getRecipeInfo,
     onAdd,
@@ -77,11 +79,23 @@ export function InsertersForm({
             });
         });
 
+        // Add chests
+        chests.forEach((chest) => {
+            options.push({
+                type: 'chest',
+                id: chest.id,
+                label: `Chest ${chest.id}`,
+                icon: 'iron-chest',
+                sublabel: chest.item_filter || 'No item filter',
+                ingredientIcons: chest.item_filter ? [chest.item_filter] : undefined,
+            });
+        });
+
         return options;
-    }, [machines, belts]);
+    }, [machines, belts, chests]);
 
     // Find entity option by type and id
-    const findEntityOption = (type: 'machine' | 'belt', id: number): EntityOption | undefined => {
+    const findEntityOption = (type: 'machine' | 'belt' | 'chest', id: number): EntityOption | undefined => {
         return entityOptions.find(opt => opt.type === type && opt.id === id);
     };
 
@@ -97,11 +111,17 @@ export function InsertersForm({
                     sourceItems = recipeInfo.results; // Machine outputs its recipe results
                 }
             }
-        } else {
+        } else if (inserter.source.type === 'belt') {
             // Belt source - get ingredients from lanes
             const belt = belts.find(b => b.id === inserter.source.id);
             if (belt) {
                 sourceItems = belt.lanes.map(lane => lane.ingredient).filter(Boolean);
+            }
+        } else if (inserter.source.type === 'chest') {
+            // Chest source - get item filter
+            const chest = chests.find(c => c.id === inserter.source.id);
+            if (chest?.item_filter) {
+                sourceItems = [chest.item_filter];
             }
         }
 
@@ -115,9 +135,17 @@ export function InsertersForm({
                     sinkNeeds = recipeInfo.ingredients; // Machine needs its recipe ingredients
                 }
             }
-        } else {
+        } else if (inserter.sink.type === 'belt') {
             // Belt sink - accept anything from source
             sinkNeeds = sourceItems;
+        } else if (inserter.sink.type === 'chest') {
+            // Chest sink - only accepts its item filter
+            const chest = chests.find(c => c.id === inserter.sink.id);
+            if (chest?.item_filter) {
+                sinkNeeds = [chest.item_filter];
+            } else {
+                sinkNeeds = sourceItems;
+            }
         }
 
         // Return intersection of source items and sink needs

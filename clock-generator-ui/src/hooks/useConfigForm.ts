@@ -33,8 +33,8 @@ export interface InserterOverrides {
 }
 
 export interface InserterFormData {
-    source: { type: 'machine' | 'belt'; id: number };
-    sink: { type: 'machine' | 'belt'; id: number };
+    source: { type: 'machine' | 'belt' | 'chest'; id: number };
+    sink: { type: 'machine' | 'belt' | 'chest'; id: number };
     stack_size: number;
     filters?: string[];
     overrides?: InserterOverrides;
@@ -64,6 +64,12 @@ export interface DrillFormData {
     overrides?: DrillOverrides;
 }
 
+export interface ChestFormData {
+    id: number;
+    storage_size: number;
+    item_filter: string;
+}
+
 export interface ConfigFormData {
     target_output: {
         recipe: string;
@@ -74,6 +80,7 @@ export interface ConfigFormData {
     machines: MachineFormData[];
     inserters: InserterFormData[];
     belts: BeltFormData[];
+    chests: ChestFormData[];
     drills?: {
         mining_productivity_level: number;
         configs: DrillFormData[];
@@ -100,6 +107,7 @@ const createDefaultConfig = (): ConfigFormData => ({
     ],
     inserters: [],
     belts: [],
+    chests: [],
 });
 
 /** Load config from localStorage, returns default if not found or invalid */
@@ -109,7 +117,7 @@ function loadConfigFromStorage(): ConfigFormData {
         if (stored) {
             const parsed = JSON.parse(stored);
             // Basic validation - check if it has the required fields
-            if (parsed && parsed.target_output && parsed.machines) {
+            if (parsed && parsed.target_output && parsed.machines && parsed.chests) {
                 return parsed as ConfigFormData;
             }
         }
@@ -149,6 +157,11 @@ export interface UseConfigFormResult {
     addBelt: () => void;
     updateBelt: (index: number, updates: Partial<BeltFormData>) => void;
     removeBelt: (index: number) => void;
+    
+    // Chests
+    addChest: () => void;
+    updateChest: (index: number, updates: Partial<ChestFormData>) => void;
+    removeChest: (index: number) => void;
     
     // Drills
     enableDrills: () => void;
@@ -290,6 +303,40 @@ export function useConfigForm(): UseConfigFormResult {
         setConfig((prev) => ({
             ...prev,
             belts: prev.belts.filter((_, i) => i !== index),
+        }));
+    }, []);
+
+    // Chests
+    const addChest = useCallback(() => {
+        setConfig((prev) => {
+            const maxId = Math.max(0, ...prev.chests.map((c) => c.id));
+            return {
+                ...prev,
+                chests: [
+                    ...prev.chests,
+                    {
+                        id: maxId + 1,
+                        storage_size: 1,
+                        item_filter: '',
+                    },
+                ],
+            };
+        });
+    }, []);
+
+    const updateChest = useCallback((index: number, updates: Partial<ChestFormData>) => {
+        setConfig((prev) => ({
+            ...prev,
+            chests: prev.chests.map((c, i) =>
+                i === index ? { ...c, ...updates } : c
+            ),
+        }));
+    }, []);
+
+    const removeChest = useCallback((index: number) => {
+        setConfig((prev) => ({
+            ...prev,
+            chests: prev.chests.filter((_, i) => i !== index),
         }));
     }, []);
 
@@ -441,6 +488,11 @@ export function useConfigForm(): UseConfigFormResult {
                 type: b.type,
                 lanes: b.lanes as [BeltLaneFormData] | [BeltLaneFormData, BeltLaneFormData],
             })),
+            chests: (imported.chests ?? []).map((c: { id: number; storage_size: number; item_filter: string }) => ({
+                id: c.id,
+                storage_size: c.storage_size,
+                item_filter: c.item_filter,
+            })),
             drills: imported.drills
                 ? {
                     mining_productivity_level: imported.drills.mining_productivity_level,
@@ -483,6 +535,9 @@ export function useConfigForm(): UseConfigFormResult {
         addBelt,
         updateBelt,
         removeBelt,
+        addChest,
+        updateChest,
+        removeChest,
         enableDrills,
         disableDrills,
         updateDrillsConfig,
