@@ -59,11 +59,17 @@ export class InserterTransferTrackerPlugin implements ModePlugin<InserterMode> {
             return;
         }
 
+        // Clamp pickup_tick to 0 if it's from the warmup period (before simulation started)
+        // This can happen when an inserter started picking up during warmup
+        // but completed its transfer during the simulation period.
+        // Warmup ticks are large positive numbers, so if pickup > current, it's from warmup.
+        const clamped_pickup_tick = last_pickup.tick > current_tick ? 0 : last_pickup.tick;
+
         const inserter_transfer: TransferSnapshot = {
-            pickup_tick: last_pickup.tick,
+            pickup_tick: clamped_pickup_tick,
             item_name: exited!.held_item?.item_name ?? "unknown",
             tick_range: OpenRange.from(
-                last_pickup.tick,
+                clamped_pickup_tick,
                 current_tick,
             ),
             transition: {
