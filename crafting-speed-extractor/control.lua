@@ -50,13 +50,33 @@ local function extract_machine_data(entity)
         entity_type = "furnace"
     end
 
+    -- Debug: Log all productivity-related values
+    local entity_prod_bonus = entity.productivity_bonus or 0
+    
+    -- Get research productivity from the force's recipe
+    local research_prod = 0
+    if entity.force and recipe then
+        local force_recipe = entity.force.recipes[recipe.name]
+        if force_recipe then
+            research_prod = force_recipe.productivity_bonus or 0
+        end
+    end
+
+    -- Combine entity productivity (modules/beacons) with research productivity
+    local total_productivity = entity_prod_bonus + research_prod
+    
+    -- Cap productivity at 300% (Factorio maximum)
+    if total_productivity > 3.0 then
+        total_productivity = 3.0
+    end
+
     -- Extract data
     ---@type MachineData
     local data = {
         name = entity.name,
         recipe = recipe.name,
         crafting_speed = entity.crafting_speed,
-        productivity = (entity.productivity_bonus or 0) * 100,
+        productivity = total_productivity * 100,
         type = entity_type
     }
 
