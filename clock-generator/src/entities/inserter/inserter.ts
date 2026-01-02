@@ -6,7 +6,7 @@ import { ReadableMachineRegistry } from "../machine";
 import { InserterMetadata } from "./metadata/inserter-metadata";
 import { InserterAnimation } from "./inserter-animation";
 import assert from "../../common/assert";
-import { assertIsBelt, assertIsMachine, Entity } from "../entity";
+import { assertIsBelt, assertIsChest, assertIsMachine, Entity } from "../entity";
 import { EntityId } from "../entity-id";
 import { EntityRegistry } from "../entity-registry";
 
@@ -64,6 +64,12 @@ export class InserterFactory {
             source_provided_items.add(machine.output.ingredient.name)
         }
 
+        if (source.type === EntityType.CHEST) {
+            const chest = this.entity_registry.getEntityByIdOrThrow(EntityId.forChest(source.id))
+            assertIsChest(chest)
+            source_provided_items.add(chest.item_filter)
+        }
+
         if (sink.type === EntityType.BELT) {
             source_provided_items.forEach(it => sink_consumed_items.add(it))
         }
@@ -74,6 +80,12 @@ export class InserterFactory {
             machine.inputs.forEach((input) => {
                 sink_consumed_items.add(input.ingredient.name)
             })
+        }
+
+        if (sink.type === EntityType.CHEST) {
+            const chest = this.entity_registry.getEntityByIdOrThrow(EntityId.forChest(sink.id))
+            assertIsChest(chest)
+            sink_consumed_items.add(chest.item_filter)
         }
 
 

@@ -25,6 +25,26 @@ const WaitUntilSourceIsOutputBlockedInterceptor: InserterInterceptor = (inserter
         })
     }
 
+    // For chest source going to machine: wait until chest is full (buffered and ready)
+    if (EntityState.isChest(source_state) && EntityState.isMachine(sink_state)) {
+        return EnableControl.latched({
+            base: EnableControl.lambda(() => {
+                return source_state.isFull()
+            }),
+            release: EnableControl.never
+        })
+    }
+
+    // For machine source going to chest: wait until machine is output full
+    if (EntityState.isMachine(source_state) && EntityState.isChest(sink_state)) {
+        return EnableControl.latched({
+            base: EnableControl.lambda(() => {
+                return source_state.status === MachineStatus.OUTPUT_FULL
+            }),
+            release: EnableControl.never
+        })
+    }
+
     return AlwaysEnabledControl
 }
 

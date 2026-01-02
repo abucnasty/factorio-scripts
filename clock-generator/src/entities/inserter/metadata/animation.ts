@@ -22,7 +22,7 @@ function fromSourceAndSink(
         animationMetadata.pickup_duration = meta.belt.pickup;
     }
 
-    if (source === "machine") {
+    if (source === "machine" || source === "chest") {
         animationMetadata.pickup_duration = meta.machine.pickup;
     }
 
@@ -30,7 +30,7 @@ function fromSourceAndSink(
         animationMetadata.drop_duration = meta.belt.drop;
     }
 
-    if (sink === "machine") {
+    if (sink === "machine" || sink === "chest") {
         animationMetadata.drop_duration = meta.machine.drop;
     }
 

@@ -52,7 +52,7 @@ async function main() {
         debug_steps: {
             [RunnerStepType.PREPARE]: false,
             [RunnerStepType.WARM_UP]: false,
-            [RunnerStepType.SIMULATE]: true
+            [RunnerStepType.SIMULATE]: false
         },
         debug: debug
     };

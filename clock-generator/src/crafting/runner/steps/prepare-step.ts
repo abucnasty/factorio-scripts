@@ -43,9 +43,24 @@ export class PrepareStep implements RunnerStep {
                     })
                 })
                 
+                // Debug all machines output inventory
+                context.machines.forEach(it => {
+                    const output_item = it.machine_state.machine.output.ingredient.name;
+                    const output_qty = it.machine_state.inventoryState.getQuantity(output_item);
+                    console.error(`Machine ${it.machine_state.machine.entity_id} output: ${output_item}=${output_qty}, status=${it.machine_state.status}`);
+                })
+                
                 const chests_not_full = chest_states.filter(it => !it.isFull());
                 chests_not_full.forEach(it => {
                     console.error(`Chest ${it.entity_id} not full: ${it.getCurrentQuantity()}/${it.getCapacity()}`);
+                })
+                
+                // Debug inserter states
+                context.inserters.forEach(it => {
+                    const src = it.inserter_state.inserter.source.entity_id;
+                    const sink = it.inserter_state.inserter.sink.entity_id;
+                    const filters = Array.from(it.inserter_state.inserter.filtered_items);
+                    console.error(`Inserter ${it.inserter_state.inserter.entity_id}: status=${it.inserter_state.status}, src=${src}, sink=${sink}, filters=${JSON.stringify(filters)}, held_item=${JSON.stringify(it.inserter_state.held_item)}`);
                 })
                 
                 throw new Error("Simulation exceeded 1,000,000 ticks without reaching ready state");

@@ -49,6 +49,13 @@ export class InventoryTransferHistory extends MapExtended<EntityId, InventoryTra
                 return;
             }
 
+            // Skip trimming for inserters that drop to chests (not counted in entity_transfer_count_map)
+            const sink_entity = entity_registry.getEntityByIdOrThrow(entity.sink.entity_id);
+            if (Entity.isChest(sink_entity)) {
+                trimmed.set(entityId, transfers);
+                return;
+            }
+
             const last_swing_offset = computeLastSwingOffsetDuration(
                 source_machine,
                 entity,

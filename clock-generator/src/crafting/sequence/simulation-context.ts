@@ -73,6 +73,14 @@ function createSimulationContextFromConfig(
         entity_registry.add(Machine.fromConfig(machineConfig))
     });
 
+    const chests = config.chests
+
+    if (chests) {
+        chests.forEach(chestConfig => {
+            entity_registry.add(Chest.fromConfig(chestConfig))
+        })
+    }
+
     config.inserters.forEach((inserterConfig, index) => {
         entity_registry.add(inserter_factory.fromConfig(index + 1, inserterConfig))
     });
@@ -83,14 +91,6 @@ function createSimulationContextFromConfig(
         const mining_productivity = MiningProductivity.fromLevel(drills.mining_productivity_level)
         drills.configs.forEach((drill_config, index) => {
             entity_registry.add(MiningDrill.fromConfig(mining_productivity, drill_config))
-        })
-    }
-
-    const chests = config.chests
-
-    if (chests) {
-        chests.forEach(chestConfig => {
-            entity_registry.add(Chest.fromConfig(chestConfig))
         })
     }
 
