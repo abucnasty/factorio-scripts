@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
+    "build": "npm run build:deps && tsc -b && vite build",
+    "build:deps": "cd ../clock-generator && npm ci && npm run build",
     "lint": "eslint .",
     "preview": "vite preview"
   },
