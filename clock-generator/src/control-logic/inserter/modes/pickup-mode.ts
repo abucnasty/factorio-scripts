@@ -73,13 +73,21 @@ export class InserterPickupMode implements InserterMode {
         }
 
         const held_item = inserter_state.held_item
+        const inserter_stack_size = inserter_state.inserter.metadata.stack_size;
 
         if (held_item) {
             const lane = source.belt.lanes.find(lane => lane.ingredient_name === held_item.item_name);
             assert(lane, `No belt lane found for item ${held_item.item_name}`);
-            const stack_size = lane.stack_size;
-            held_item.quantity = held_item.quantity + stack_size;
-            inserter_state.inventoryState.addQuantity(held_item.item_name, stack_size);
+            // Pick up at most lane.stack_size items, but cap at remaining capacity
+            const remaining_capacity = inserter_stack_size - held_item.quantity;
+            const pickup_quantity = Math.min(lane.stack_size, remaining_capacity);
+            
+            if (pickup_quantity <= 0) {
+                return;
+            }
+            
+            held_item.quantity = held_item.quantity + pickup_quantity;
+            inserter_state.inventoryState.addQuantity(held_item.item_name, pickup_quantity);
             inserter_state.held_item = held_item;
             return;
         }
@@ -88,9 +96,10 @@ export class InserterPickupMode implements InserterMode {
             if (!MachineState.machineInputIsBlocked(sink, item_name)) {
                 const lane = source.belt.lanes.find(lane => lane.ingredient_name === item_name);
                 assert(lane, `No belt lane found for item ${item_name}`);
-                const stack_size = lane.stack_size;
-                inserter_state.held_item = { item_name: item_name, quantity: stack_size };
-                inserter_state.inventoryState.addQuantity(item_name, stack_size);
+                // Pick up at most lane.stack_size items, but cap at inserter stack size
+                const pickup_quantity = Math.min(lane.stack_size, inserter_stack_size);
+                inserter_state.held_item = { item_name: item_name, quantity: pickup_quantity };
+                inserter_state.inventoryState.addQuantity(item_name, pickup_quantity);
                 return;
             }
         }
