@@ -1,4 +1,4 @@
-import { Add, Delete, ExpandMore, Settings } from '@mui/icons-material';
+import { Add, Delete, ExpandMore, Info, Settings } from '@mui/icons-material';
 import {
     Accordion,
     AccordionDetails,
@@ -10,6 +10,7 @@ import {
     IconButton,
     InputLabel,
     MenuItem,
+    Popover,
     Select,
     TextField,
     Tooltip,
@@ -25,6 +26,8 @@ const DRILL_TYPES = [
     { value: 'burner-mining-drill', label: 'Burner Mining Drill' },
     { value: 'big-mining-drill', label: 'Big Mining Drill' },
 ];
+
+const SPEED_BONUS_COMMAND = '/c game.print(game.player.selected.speed_bonus)';
 
 interface DrillsFormProps {
     enabled: boolean;
@@ -54,14 +57,77 @@ export function DrillsForm({
     onRemove,
 }: DrillsFormProps) {
     const [enableControlModalDrillIndex, setEnableControlModalDrillIndex] = useState<number | null>(null);
+    const [infoAnchorEl, setInfoAnchorEl] = useState<HTMLButtonElement | null>(null);
+    const [copied, setCopied] = useState(false);
+
+    const handleInfoClick = (event: React.MouseEvent<HTMLButtonElement>) => {
+        event.stopPropagation();
+        setInfoAnchorEl(event.currentTarget);
+    };
+
+    const handleInfoClose = () => {
+        setInfoAnchorEl(null);
+        setCopied(false);
+    };
+
+    const handleCopy = async () => {
+        await navigator.clipboard.writeText(SPEED_BONUS_COMMAND);
+        setCopied(true);
+    };
 
     return (
         <Accordion defaultExpanded={enabled}>
             <AccordionSummary expandIcon={<ExpandMore />}>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, width: '100%' }}>
-                    <Typography variant="h6">
-                        Mining Drills (Optional)
-                    </Typography>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <Typography variant="h6">
+                            Mining Drills (Optional)
+                        </Typography>
+                        <IconButton 
+                            size="small" 
+                            onClick={handleInfoClick} 
+                            color="info"
+                        >
+                            <Info fontSize="small" />
+                        </IconButton>
+                        <Popover
+                            open={Boolean(infoAnchorEl)}
+                            anchorEl={infoAnchorEl}
+                            onClose={handleInfoClose}
+                            anchorOrigin={{
+                                vertical: 'bottom',
+                                horizontal: 'left',
+                            }}
+                        >
+                            <Box sx={{ p: 2, maxWidth: 350 }}>
+                                <Typography variant="body2" sx={{ mb: 1 }}>
+                                    To get the speed bonus of a mining drill in Factorio, hover over the drill and run this command:
+                                </Typography>
+                                <Box
+                                    sx={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: 1,
+                                        bgcolor: 'action.hover',
+                                        p: 1,
+                                        borderRadius: 1,
+                                        fontFamily: 'monospace',
+                                        fontSize: '0.85rem',
+                                    }}
+                                >
+                                    <Typography
+                                        component="code"
+                                        sx={{ flex: 1, wordBreak: 'break-all', fontFamily: 'monospace', fontSize: '0.85rem' }}
+                                    >
+                                        {SPEED_BONUS_COMMAND}
+                                    </Typography>
+                                    <Button size="small" onClick={handleCopy} variant="outlined">
+                                        {copied ? 'Copied!' : 'Copy'}
+                                    </Button>
+                                </Box>
+                            </Box>
+                        </Popover>
+                    </Box>
                     {!enabled && (
                         <Typography 
                             variant="body2" 

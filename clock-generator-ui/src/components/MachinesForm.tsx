@@ -1,4 +1,4 @@
-import { Add, Delete } from '@mui/icons-material';
+import { Add, Delete, Info } from '@mui/icons-material';
 import {
     Autocomplete,
     Box,
@@ -8,10 +8,12 @@ import {
     InputLabel,
     MenuItem,
     Paper,
+    Popover,
     Select,
     TextField,
     Typography,
 } from '@mui/material';
+import { useState } from 'react';
 import type { MachineFormData } from '../hooks/useConfigForm';
 import { FactorioIcon } from './FactorioIcon';
 
@@ -23,6 +25,8 @@ interface MachinesFormProps {
     onRemove: (index: number) => void;
 }
 
+const CRAFTING_SPEED_COMMAND = '/c game.print(game.player.selected.crafting_speed)';
+
 export function MachinesForm({
     machines,
     recipeNames,
@@ -30,12 +34,71 @@ export function MachinesForm({
     onUpdate,
     onRemove,
 }: MachinesFormProps) {
+    const [anchorEl, setAnchorEl] = useState<HTMLButtonElement | null>(null);
+    const [copied, setCopied] = useState(false);
+
+    const handleInfoClick = (event: React.MouseEvent<HTMLButtonElement>) => {
+        setAnchorEl(event.currentTarget);
+    };
+
+    const handleClose = () => {
+        setAnchorEl(null);
+        setCopied(false);
+    };
+
+    const handleCopy = async () => {
+        await navigator.clipboard.writeText(CRAFTING_SPEED_COMMAND);
+        setCopied(true);
+    };
+
     return (
         <Paper sx={{ p: 2, mb: 2 }}>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-                <Typography variant="h6">
-                    Machines ({machines.length})
-                </Typography>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <Typography variant="h6">
+                        Machines ({machines.length})
+                    </Typography>
+                    <IconButton size="small" onClick={handleInfoClick} color="info">
+                        <Info fontSize="small" />
+                    </IconButton>
+                    <Popover
+                        open={Boolean(anchorEl)}
+                        anchorEl={anchorEl}
+                        onClose={handleClose}
+                        anchorOrigin={{
+                            vertical: 'bottom',
+                            horizontal: 'left',
+                        }}
+                    >
+                        <Box sx={{ p: 2, maxWidth: 350 }}>
+                            <Typography variant="body2" sx={{ mb: 1 }}>
+                                To get the crafting speed of a machine in Factorio, hover over the machine and run this command:
+                            </Typography>
+                            <Box
+                                sx={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: 1,
+                                    bgcolor: 'action.hover',
+                                    p: 1,
+                                    borderRadius: 1,
+                                    fontFamily: 'monospace',
+                                    fontSize: '0.85rem',
+                                }}
+                            >
+                                <Typography
+                                    component="code"
+                                    sx={{ flex: 1, wordBreak: 'break-all', fontFamily: 'monospace', fontSize: '0.85rem' }}
+                                >
+                                    {CRAFTING_SPEED_COMMAND}
+                                </Typography>
+                                <Button size="small" onClick={handleCopy} variant="outlined">
+                                    {copied ? 'Copied!' : 'Copy'}
+                                </Button>
+                            </Box>
+                        </Box>
+                    </Popover>
+                </Box>
                 <Button startIcon={<Add />} onClick={onAdd} variant="outlined" size="small">
                     Add Machine
                 </Button>
