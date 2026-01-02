@@ -75,6 +75,103 @@ local function extract_mining_drill_data(entity)
     return data
 end
 
+---Determine the target type for an entity
+---@param entity LuaEntity
+---@return "machine"|"belt"|"chest"|nil
+local function get_target_type(entity)
+    if not entity or not entity.valid then
+        return nil
+    end
+    
+    local entity_type = entity.type
+    
+    -- Machines (assemblers, furnaces, labs)
+    if entity_type == "assembling-machine" or entity_type == "furnace" or entity_type == "lab" then
+        return "machine"
+    end
+    
+    -- Belts
+    if entity_type == "transport-belt" or entity_type == "underground-belt" or 
+       entity_type == "splitter" or entity_type == "loader" or entity_type == "loader-1x1" then
+        return "belt"
+    end
+    
+    -- Containers/Chests
+    if entity_type == "container" or entity_type == "logistic-container" or 
+       entity_type == "linked-container" or entity_type == "infinity-container" then
+        return "chest"
+    end
+    
+    return nil
+end
+
+---Extract data from an inserter
+---@param entity LuaEntity
+---@return InserterData|nil
+local function extract_inserter_data(entity)
+    if not entity or not entity.valid then
+        return nil
+    end
+    
+    if entity.type ~= "inserter" then
+        return nil
+    end
+    
+    -- Get stack size (use inserter_stack_size_override if set, otherwise the current target pickup count)
+    local stack_size = entity.inserter_stack_size_override
+    if stack_size == 0 then
+        -- No override, use the effective stack size
+        stack_size = entity.inserter_target_pickup_count
+    end
+    
+    -- Get filters
+    local filters = {}
+    local filter_slot_count = entity.filter_slot_count or 0
+    for i = 1, filter_slot_count do
+        local filter = entity.get_filter(i)
+        if filter and filter.name then
+            table.insert(filters, filter.name)
+        end
+    end
+    
+    -- Get source (pickup target)
+    local source = nil
+    local pickup_target = entity.pickup_target
+    if pickup_target and pickup_target.valid then
+        local target_type = get_target_type(pickup_target)
+        if target_type then
+            source = {
+                type = target_type,
+                unit_number = pickup_target.unit_number
+            }
+        end
+    end
+    
+    -- Get sink (drop target)
+    local sink = nil
+    local drop_target = entity.drop_target
+    if drop_target and drop_target.valid then
+        local target_type = get_target_type(drop_target)
+        if target_type then
+            sink = {
+                type = target_type,
+                unit_number = drop_target.unit_number
+            }
+        end
+    end
+    
+    ---@type InserterData
+    local data = {
+        inserter_type = entity.name,
+        stack_size = stack_size,
+        filters = filters,
+        source = source,
+        sink = sink
+    }
+    
+    return data
+end
+
 ---Extract crafting data from a single crafting machine entity
 ---@param entity LuaEntity
 ---@return MachineData|nil
@@ -148,22 +245,24 @@ end
 ---@class ExtractionResult
 ---@field machines MachineData[]
 ---@field drills DrillData[]
+---@field inserters InserterData[]
 ---@field unit_number_to_id table<number, number> Maps entity unit_number to machine ID
 
----Extract data from all selected entities, separating machines and drills
+---Extract data from all selected entities, separating machines, drills, and inserters
 ---@param entities LuaEntity[]
 ---@return ExtractionResult
 local function extract_all_entities(entities)
     local result = {
         machines = {},
         drills = {},
+        inserters = {},
         unit_number_to_id = {}
     }
     
     -- First pass: extract machines and build unit_number -> id mapping
     local machine_id = 0
     for _, entity in pairs(entities) do
-        if entity.type ~= "mining-drill" then
+        if entity.type ~= "mining-drill" and entity.type ~= "inserter" then
             local data, entity_category = extract_machine_data(entity)
             if data and entity_category == "machine" then
                 machine_id = machine_id + 1
@@ -185,6 +284,16 @@ local function extract_all_entities(entities)
             end
         end
     end
+    
+    -- Third pass: extract inserters
+    for _, entity in pairs(entities) do
+        if entity.type == "inserter" then
+            local data = extract_inserter_data(entity)
+            if data then
+                table.insert(result.inserters, data)
+            end
+        end
+    end
 
     return result
 end
@@ -199,7 +308,8 @@ end
 local function to_export_json(result)
     local export = {
         machines = {},
-        drills = {}
+        drills = {},
+        inserters = {}
     }
     
     -- Format machines for clock-generator
@@ -234,6 +344,57 @@ local function to_export_json(result)
                 id = target_machine_id
             }
         })
+    end
+    
+    -- Format inserters for clock-generator
+    for _, inserter in ipairs(result.inserters) do
+        -- Resolve source target ID
+        local source_config = nil
+        if inserter.source then
+            local source_id = 1 -- Default fallback
+            if inserter.source.unit_number then
+                local mapped_id = result.unit_number_to_id[inserter.source.unit_number]
+                if mapped_id then
+                    source_id = mapped_id
+                end
+            end
+            source_config = {
+                type = inserter.source.type,
+                id = source_id
+            }
+        end
+        
+        -- Resolve sink target ID
+        local sink_config = nil
+        if inserter.sink then
+            local sink_id = 1 -- Default fallback
+            if inserter.sink.unit_number then
+                local mapped_id = result.unit_number_to_id[inserter.sink.unit_number]
+                if mapped_id then
+                    sink_id = mapped_id
+                end
+            end
+            sink_config = {
+                type = inserter.sink.type,
+                id = sink_id
+            }
+        end
+        
+        -- Only include inserter if both source and sink are known
+        if source_config and sink_config then
+            local inserter_export = {
+                source = source_config,
+                sink = sink_config,
+                stack_size = inserter.stack_size
+            }
+            
+            -- Add filters if any exist
+            if #inserter.filters > 0 then
+                inserter_export.filters = inserter.filters
+            end
+            
+            table.insert(export.inserters, inserter_export)
+        end
     end
 
     return helpers.table_to_json(export)
@@ -337,7 +498,7 @@ local function create_gui(player, result)
     -- Remove existing GUI
     destroy_gui(player)
 
-    local total_count = #result.machines + #result.drills
+    local total_count = #result.machines + #result.drills + #result.inserters
 
     -- Main frame
     local frame = player.gui.screen.add({
@@ -474,6 +635,67 @@ local function create_gui(player, result)
                 drill_table.add({ type = "label", caption = string.format("+%.0f%%", drill.speed_bonus * 100) })
                 drill_table.add({ type = "label", caption = string.format("%.1f%%", drill.productivity) })
             end
+            
+            -- Add spacing if inserters follow
+            if #result.inserters > 0 then
+                local spacer = scroll.add({ type = "flow" })
+                spacer.style.height = 16
+            end
+        end
+        
+        -- Display inserters if any
+        if #result.inserters > 0 then
+            local inserters_header = scroll.add({
+                type = "label",
+                caption = "Inserters (" .. #result.inserters .. ")",
+                style = "heading_2_label"
+            })
+            inserters_header.style.bottom_margin = 4
+
+            local inserter_table = scroll.add({
+                type = "table",
+                column_count = 5,
+                draw_horizontal_lines = true,
+                draw_vertical_lines = false
+            })
+            inserter_table.style.horizontal_spacing = 16
+            inserter_table.style.column_alignments[1] = "center"
+            inserter_table.style.column_alignments[2] = "left"
+            inserter_table.style.column_alignments[3] = "left"
+            inserter_table.style.column_alignments[4] = "center"
+            inserter_table.style.column_alignments[5] = "left"
+
+            -- Header labels for inserters
+            local i_headers = { "#", "Type", "Source", "Stack", "Sink" }
+            for _, h in ipairs(i_headers) do
+                inserter_table.add({
+                    type = "label",
+                    caption = h,
+                    style = "bold_label"
+                })
+            end
+
+            -- Inserter rows
+            for i, inserter in ipairs(result.inserters) do
+                inserter_table.add({ type = "label", caption = tostring(i) })
+                inserter_table.add({ type = "label", caption = inserter.inserter_type })
+                
+                -- Source description
+                local source_text = "?"
+                if inserter.source then
+                    source_text = inserter.source.type
+                end
+                inserter_table.add({ type = "label", caption = source_text })
+                
+                inserter_table.add({ type = "label", caption = tostring(inserter.stack_size) })
+                
+                -- Sink description
+                local sink_text = "?"
+                if inserter.sink then
+                    sink_text = inserter.sink.type
+                end
+                inserter_table.add({ type = "label", caption = sink_text })
+            end
         end
     end
 
@@ -525,14 +747,14 @@ local function on_player_selected_area(event)
 
     init_player_data(event.player_index)
 
-    -- Extract entity data (machines and drills separately)
+    -- Extract entity data (machines, drills, and inserters)
     local result = extract_all_entities(event.entities)
     storage[event.player_index].extraction_result = result
 
     -- Show GUI
     create_gui(player, result)
 
-    local total = #result.machines + #result.drills
+    local total = #result.machines + #result.drills + #result.inserters
     if total == 0 then
         player.print({ "clock-generator-sidecar.no-machines-selected" })
     else
@@ -558,14 +780,14 @@ local function on_gui_click(event)
         local player_data = storage[event.player_index]
         if player_data and player_data.extraction_result then
             local result = player_data.extraction_result
-            if #result.machines > 0 or #result.drills > 0 then
+            if #result.machines > 0 or #result.drills > 0 or #result.inserters > 0 then
                 local json = to_export_json(result)
                 create_copy_popup(player, json)
             else
-                player.print("[Clock Generator Sidecar] No data found. Please select machines or drills first.")
+                player.print("[Clock Generator Sidecar] No data found. Please select entities first.")
             end
         else
-            player.print("[Clock Generator Sidecar] No data found. Please select machines or drills first.")
+            player.print("[Clock Generator Sidecar] No data found. Please select entities first.")
         end
     elseif element.name == "clock_generator_sidecar_close" then
         destroy_all_gui(player)

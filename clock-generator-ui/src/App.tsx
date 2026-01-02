@@ -100,6 +100,7 @@ function App() {
         updateDrill,
         removeDrill,
         replaceDrills,
+        replaceInserters,
         updateOverrides,
         importConfig,
         exportConfig,
@@ -167,6 +168,7 @@ function App() {
                             onImport={handleImportConfig}
                             onReplaceMachines={replaceMachines}
                             onReplaceDrills={replaceDrills}
+                            onReplaceInserters={replaceInserters}
                             parseConfig={parseConfig}
                         />
                         <Tooltip title="Reset all configuration to defaults">

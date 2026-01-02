@@ -154,6 +154,7 @@ export interface UseConfigFormResult {
     addInserter: () => void;
     updateInserter: (index: number, updates: Partial<InserterFormData>) => void;
     removeInserter: (index: number) => void;
+    replaceInserters: (inserters: InserterFormData[]) => void;
     
     // Belts
     addBelt: () => void;
@@ -295,6 +296,13 @@ export function useConfigForm(): UseConfigFormResult {
         setConfig((prev) => ({
             ...prev,
             inserters: prev.inserters.filter((_, i) => i !== index),
+        }));
+    }, []);
+
+    const replaceInserters = useCallback((newInserters: InserterFormData[]) => {
+        setConfig((prev) => ({
+            ...prev,
+            inserters: newInserters,
         }));
     }, []);
 
@@ -603,6 +611,7 @@ export function useConfigForm(): UseConfigFormResult {
         addInserter,
         updateInserter,
         removeInserter,
+        replaceInserters,
         addBelt,
         updateBelt,
         removeBelt,

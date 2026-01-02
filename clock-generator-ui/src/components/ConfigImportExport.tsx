@@ -2,17 +2,19 @@ import { Download, Upload, ContentPaste } from '@mui/icons-material';
 import { Box, Button, Snackbar, Alert, Tooltip } from '@mui/material';
 import { useRef, useState, useCallback } from 'react';
 import type { Config } from 'clock-generator/browser';
-import { MachineConfigurationSchema, MiningDrillConfigSchema } from 'clock-generator/browser';
+import { MachineConfigurationSchema, MiningDrillConfigSchema, InserterConfigSchema } from 'clock-generator/browser';
 import type { z } from 'zod';
 
 type MachineConfiguration = z.infer<typeof MachineConfigurationSchema>;
 type MiningDrillConfiguration = z.infer<typeof MiningDrillConfigSchema>;
+type InserterConfiguration = z.infer<typeof InserterConfigSchema>;
 
 interface ConfigImportExportProps {
     config: Config;
     onImport: (config: Config) => void;
     onReplaceMachines: (machines: MachineConfiguration[]) => void;
     onReplaceDrills: (drills: MiningDrillConfiguration[]) => void;
+    onReplaceInserters: (inserters: InserterConfiguration[]) => void;
     parseConfig: (content: string) => Promise<Config>;
 }
 
@@ -21,6 +23,7 @@ export function ConfigImportExport({
     onImport,
     onReplaceMachines,
     onReplaceDrills,
+    onReplaceInserters,
     parseConfig,
 }: ConfigImportExportProps) {
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -109,13 +112,14 @@ export function ConfigImportExport({
 
             // Check if it's the new format with machines and drills
             if (typeof parsed === 'object' && parsed !== null && 'machines' in parsed) {
-                const data = parsed as { machines?: unknown[]; drills?: unknown[] };
+                const data = parsed as { machines?: unknown[]; drills?: unknown[]; inserters?: unknown[] };
                 
                 const machineCount = Array.isArray(data.machines) ? data.machines.length : 0;
                 const drillCount = Array.isArray(data.drills) ? data.drills.length : 0;
+                const inserterCount = Array.isArray(data.inserters) ? data.inserters.length : 0;
                 
-                if (machineCount === 0 && drillCount === 0) {
-                    throw new Error('No machines or drills found in clipboard data.');
+                if (machineCount === 0 && drillCount === 0 && inserterCount === 0) {
+                    throw new Error('No machines, drills, or inserters found in clipboard data.');
                 }
 
                 // Validate machines (IDs are already assigned by the mod)
@@ -144,16 +148,33 @@ export function ConfigImportExport({
                     }
                 }
 
+                // Validate inserters
+                const validatedInserters: InserterConfiguration[] = [];
+                if (Array.isArray(data.inserters)) {
+                    for (let i = 0; i < data.inserters.length; i++) {
+                        const entry = data.inserters[i];
+                        const result = InserterConfigSchema.safeParse(entry);
+                        if (!result.success) {
+                            throw new Error(`Invalid inserter at index ${i}: ${result.error.issues[0]?.message || 'Unknown error'}`);
+                        }
+                        validatedInserters.push(result.data);
+                    }
+                }
+
                 if (validatedMachines.length > 0) {
                     onReplaceMachines(validatedMachines);
                 }
                 if (validatedDrills.length > 0) {
                     onReplaceDrills(validatedDrills);
                 }
+                if (validatedInserters.length > 0) {
+                    onReplaceInserters(validatedInserters);
+                }
 
                 const parts: string[] = [];
                 if (validatedMachines.length > 0) parts.push(`${validatedMachines.length} machines`);
                 if (validatedDrills.length > 0) parts.push(`${validatedDrills.length} drills`);
+                if (validatedInserters.length > 0) parts.push(`${validatedInserters.length} inserters`);
                 
                 setSnackbar({
                     open: true,
@@ -198,7 +219,7 @@ export function ConfigImportExport({
                 severity: 'error',
             });
         }
-    }, [onReplaceMachines, onReplaceDrills]);
+    }, [onReplaceMachines, onReplaceDrills, onReplaceInserters]);
 
     return (
         <>
