@@ -1,39 +1,35 @@
-import { Duration } from "../../../data-types";
-import { InserterAnimation } from "../../../entities/inserter/inserter-animation";
-import { TickProvider } from "../../current-tick-provider";
+import { ChestState, EntityState, InserterState } from "../../../state";
 import { ModeTransition, ModeTransitionEvaluator } from "../../mode";
 import { InserterMode } from "../modes";
 import { InserterSwingMode } from "../modes/swing-mode";
+import { InserterTargetFullMode } from "../modes/target-full-mode";
 
 export class DropModeTransitionEvaluator implements ModeTransitionEvaluator<InserterMode> {
 
     constructor(
-        private readonly inserter_animation: InserterAnimation,
+        private readonly inserter_state: InserterState,
+        private readonly sink_entity_state: EntityState,
         private readonly swing_mode: InserterSwingMode,
-        private readonly tick_provider: TickProvider
+        private readonly target_full_mode: InserterTargetFullMode
     ) { }
 
-    public entered_tick: number = 0;
-
-    public onEnter(fromMode: InserterMode): void {
-        this.entered_tick = this.tick_provider.getCurrentTick();
-    }
+    public onEnter(fromMode: InserterMode): void { }
 
     public onExit(toMode: InserterMode): void { }
 
     public evaluateTransition(): ModeTransition<InserterMode> {
-        if (this.elapsedDuration().ticks < this.inserter_animation.drop.ticks) {
-            return ModeTransition.NONE;
+        // Universal completion signal: all items dropped
+        if (this.inserter_state.held_item === null) {
+            return ModeTransition.transition(this.swing_mode, "all items dropped");
         }
-        return ModeTransition.transition(this.swing_mode, "drop duration completed");
-    }
 
-    public elapsedDuration(): Duration {
-        const current_tick = this.tick_provider.getCurrentTick();
-        if (this.entered_tick === null) {
-            throw new Error("Cannot get elapsed duration, evaluator has not entered a mode yet");
+        // If sink is a chest and it's full, transition to target_full mode
+        if (EntityState.isChest(this.sink_entity_state)) {
+            if (this.sink_entity_state.isFull()) {
+                return ModeTransition.transition(this.target_full_mode, "chest is full, waiting for space");
+            }
         }
-        const ticks_elapsed = current_tick - this.entered_tick;
-        return Duration.ofTicks(ticks_elapsed);
+
+        return ModeTransition.NONE;
     }
 }

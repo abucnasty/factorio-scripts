@@ -1,5 +1,5 @@
 import assert from "../../../common/assert";
-import { EntityState, InserterState, InserterStatus, MachineState } from "../../../state";
+import { ChestState, EntityState, InserterState, InserterStatus, MachineState } from "../../../state";
 import { InserterMode } from "./inserter-mode";
 
 export class InserterDropMode implements InserterMode {
@@ -21,6 +21,10 @@ export class InserterDropMode implements InserterMode {
 
         if (EntityState.isMachine(this.sink_entity_state)) {
             this.dropOffToMachine(this.inserter_state, this.sink_entity_state);
+        }
+
+        if (EntityState.isChest(this.sink_entity_state)) {
+            this.dropOffToChest(this.inserter_state, this.sink_entity_state);
         }
     }
 
@@ -51,5 +55,45 @@ export class InserterDropMode implements InserterMode {
         sink.inventoryState.addQuantity(held_item.item_name, held_item.quantity);
         inserter_state.inventoryState.removeQuantity(held_item.item_name, held_item.quantity);
         inserter_state.held_item = null;
+    }
+
+    /**
+     * Drop items to a chest with partial drop support.
+     * 
+     * If the chest has limited space, the inserter will only drop as many items
+     * as can fit, leaving the remaining items in its hand. The inserter will
+     * then transition to TARGET_FULL mode and wait for space.
+     */
+    private dropOffToChest(inserter_state: InserterState, sink: ChestState): void {
+        const held_item = inserter_state.held_item;
+        
+        // If no items in hand, nothing to do
+        if (held_item === null) {
+            return;
+        }
+
+        const available_space = sink.getAvailableSpace();
+        
+        // If chest is full, nothing can be dropped this tick
+        if (available_space <= 0) {
+            return;
+        }
+
+        // Calculate how many items we can actually drop
+        const items_to_drop = Math.min(held_item.quantity, available_space);
+
+        // Add items to chest inventory
+        sink.inventoryState.addQuantity(held_item.item_name, items_to_drop);
+        
+        // Remove items from inserter inventory and hand
+        inserter_state.inventoryState.removeQuantity(held_item.item_name, items_to_drop);
+        held_item.quantity -= items_to_drop;
+
+        assert(held_item.quantity >= 0, "Held item quantity went below 0");
+        
+        // Clear held_item if all items have been dropped
+        if (held_item.quantity === 0) {
+            inserter_state.held_item = null;
+        }
     }
 }

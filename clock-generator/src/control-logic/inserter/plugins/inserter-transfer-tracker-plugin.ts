@@ -1,5 +1,4 @@
 import { OpenRange } from "../../../data-types";
-import { EntityId } from "../../../entities";
 import { InserterHandContents, InserterState, InserterStatus } from "../../../state";
 import { TickProvider } from "../../current-tick-provider";
 import { ModePlugin, Transition } from "../../mode";
@@ -26,17 +25,6 @@ interface InserterSnapshot {
 }
 
 export class InserterTransferTrackerPlugin implements ModePlugin<InserterMode> {
-
-    static readonly transfer_statuses: ReadonlySet<InserterStatus> = new Set([
-        InserterStatus.DROP_OFF,
-        InserterStatus.PICKUP,
-    ]);
-
-    static readonly transfer_complete_statuses: ReadonlySet<InserterStatus> = new Set([
-        InserterStatus.DISABLED,
-        InserterStatus.IDLE,
-        InserterStatus.PICKUP,
-    ]);
 
     constructor(
         private readonly tick_provider: TickProvider,

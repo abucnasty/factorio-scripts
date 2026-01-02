@@ -22,6 +22,7 @@ import { TargetOutputForm } from './components/TargetOutputForm';
 import { MachinesForm } from './components/MachinesForm';
 import { InsertersForm } from './components/InsertersForm';
 import { BeltsForm } from './components/BeltsForm';
+import { ChestsForm } from './components/ChestsForm';
 import { DrillsForm } from './components/DrillsForm';
 import { OverridesForm } from './components/OverridesForm';
 import { ConfigImportExport } from './components/ConfigImportExport';
@@ -88,6 +89,9 @@ function App() {
         addBelt,
         updateBelt,
         removeBelt,
+        addChest,
+        updateChest,
+        removeChest,
         enableDrills,
         disableDrills,
         updateDrillsConfig,
@@ -211,6 +215,7 @@ function App() {
                                 inserters={config.inserters}
                                 machines={config.machines}
                                 belts={config.belts}
+                                chests={config.chests}
                                 itemNames={itemNames}
                                 getRecipeInfo={getRecipeInfo}
                                 onAdd={addInserter}
@@ -224,6 +229,14 @@ function App() {
                                 onAdd={addBelt}
                                 onUpdate={updateBelt}
                                 onRemove={removeBelt}
+                            />
+
+                            <ChestsForm
+                                chests={config.chests}
+                                itemNames={itemNames}
+                                onAdd={addChest}
+                                onUpdate={updateChest}
+                                onRemove={removeChest}
                             />
 
                             <Box sx={{ mb: 2 }}>

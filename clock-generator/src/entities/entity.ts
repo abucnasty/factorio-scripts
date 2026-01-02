@@ -4,6 +4,7 @@ import { EntityId } from "./entity-id";
 import { Inserter } from "./inserter";
 import { Machine } from "./machine";
 import { MiningDrill } from "./drill";
+import { Chest } from "./chest/chest";
 
 export interface Entity {
     readonly entity_id: EntityId
@@ -25,6 +26,10 @@ function isDrill(entity: Entity): entity is MiningDrill {
     return EntityId.isDrill(entity.entity_id);
 }
 
+function isChest(entity: Entity): entity is Chest {
+    return EntityId.isChest(entity.entity_id);
+}
+
 export function assertIsInserter(entity: Entity): asserts entity is Inserter {
     assert(isInserter(entity), `Entity with id ${entity.entity_id} is not an inserter`);
 }
@@ -41,9 +46,14 @@ export function assertIsDrill(entity: Entity): asserts entity is MiningDrill {
     assert(isDrill(entity), `Entity with id ${entity.entity_id} is not a drill`);
 }
 
+export function assertIsChest(entity: Entity): asserts entity is Chest {
+    assert(isChest(entity), `Entity with id ${entity.entity_id} is not a chest`);
+}
+
 export const Entity = {
     isInserter: isInserter,
     isMachine: isMachine,
     isBelt: isBelt,
     isDrill: isDrill,
+    isChest: isChest,
 };

@@ -154,4 +154,107 @@ describe("transitions (belt to machine)", () => {
             expect(nextMode).toBe(ModeTransition.NONE)
         })
     })
+
+    describe("InserterPickupMode (belt to machine)", () => {
+
+        test("stops picking up from belt once stack size is reached", () => {
+            const mockSource: BeltState = mock<BeltState>({
+                entity_id: EntityId.forBelt(-1),
+                belt: {
+                    lanes: [
+                        { ingredient_name: "iron-plate", stack_size: 4 }
+                    ]
+                }
+            });
+
+            const mockSink: MachineState = MachineState.forMachine(
+                createMachine("iron-gear-wheel")
+            );
+
+            const stack_size = InserterStackSize.SIZE_12;
+            const inserterState = InserterState.createIdle(createInserter({
+                source: {
+                    entity_id: mockSource.entity_id,
+                    item_names: new Set(["iron-plate"])
+                },
+                sink: {
+                    entity_id: mockSink.entity_id,
+                    item_names: new Set(["iron-plate"])
+                },
+                stack_size: stack_size,
+                filters: ["iron-plate"]
+            }));
+
+            const pickup_mode = InserterPickupMode.create({
+                inserterState: inserterState,
+                sourceState: mockSource,
+                sinkState: mockSink,
+            });
+
+            // First pickup: 0 + 4 = 4
+            pickup_mode.executeForTick();
+            expect(inserterState.held_item?.quantity).toBe(4);
+
+            // Second pickup: 4 + 4 = 8
+            pickup_mode.executeForTick();
+            expect(inserterState.held_item?.quantity).toBe(8);
+
+            // Third pickup: 8 + 4 = 12 (should reach stack size)
+            pickup_mode.executeForTick();
+            expect(inserterState.held_item?.quantity).toBe(12);
+
+            // Fourth pickup: should not exceed stack size of 12
+            pickup_mode.executeForTick();
+            expect(inserterState.held_item?.quantity).toBe(12);
+            expect(inserterState.held_item?.quantity).toBeLessThanOrEqual(stack_size);
+        })
+
+        test("caps pickup quantity when remaining capacity is less than lane stack size", () => {
+            const mockSource: BeltState = mock<BeltState>({
+                entity_id: EntityId.forBelt(-1),
+                belt: {
+                    lanes: [
+                        { ingredient_name: "iron-plate", stack_size: 4 }
+                    ]
+                }
+            });
+
+            const mockSink: MachineState = MachineState.forMachine(
+                createMachine("iron-gear-wheel")
+            );
+
+            const stack_size = InserterStackSize.SIZE_10;
+            const inserterState = InserterState.createIdle(createInserter({
+                source: {
+                    entity_id: mockSource.entity_id,
+                    item_names: new Set(["iron-plate"])
+                },
+                sink: {
+                    entity_id: mockSink.entity_id,
+                    item_names: new Set(["iron-plate"])
+                },
+                stack_size: stack_size,
+                filters: ["iron-plate"]
+            }));
+
+            const pickup_mode = InserterPickupMode.create({
+                inserterState: inserterState,
+                sourceState: mockSource,
+                sinkState: mockSink,
+            });
+
+            // First pickup
+            pickup_mode.executeForTick();
+            expect(inserterState.held_item?.quantity).toBe(4);
+
+            // Second pickup
+            pickup_mode.executeForTick();
+            expect(inserterState.held_item?.quantity).toBe(8);
+
+            // Third pickup
+            pickup_mode.executeForTick();
+            expect(inserterState.held_item?.quantity).toBe(10);
+            expect(inserterState.held_item?.quantity).toBeLessThanOrEqual(stack_size);
+        })
+    })
 })

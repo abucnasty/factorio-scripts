@@ -174,6 +174,13 @@ export const InserterMachineConfigSchema = z.object({
 
 export type InserterMachineConfig = z.infer<typeof InserterMachineConfigSchema>;
 
+export const InserterChestConfigSchema = z.object({
+    type: z.literal("chest"),
+    id: z.number().int().positive()
+});
+
+export type InserterChestConfig = z.infer<typeof InserterChestConfigSchema>;
+
 export const InserterAnimationOverrideConfigSchema = z.object({
     pickup_duration_ticks: z.number().int().positive().optional()
 });
@@ -194,11 +201,13 @@ export type InserterOverridesConfig = z.infer<typeof InserterOverridesConfigSche
 export const InserterConfigSchema = z.object({
     source: z.discriminatedUnion("type", [
         InserterBeltConfigSchema,
-        InserterMachineConfigSchema
+        InserterMachineConfigSchema,
+        InserterChestConfigSchema
     ]),
     sink: z.discriminatedUnion("type", [
         InserterBeltConfigSchema,
-        InserterMachineConfigSchema
+        InserterMachineConfigSchema,
+        InserterChestConfigSchema
     ]),
     stack_size: z.number().int().positive(),
     filters: z.array(z.string()).optional(),
@@ -241,6 +250,22 @@ export const BeltConfigSchema = z.object({
 export type BeltConfig = z.infer<typeof BeltConfigSchema>;
 
 // ============================================================================
+// Chest Configuration
+// ============================================================================
+
+export const ChestConfigSchema = z.object({
+    id: z.number().int().positive(),
+    storage_size: z.number().int().positive(),
+    /**
+     * The single item type this chest is filtered to hold.
+     * Chests only support one item type for simplicity.
+     */
+    item_filter: z.string()
+});
+
+export type ChestConfig = z.infer<typeof ChestConfigSchema>;
+
+// ============================================================================
 // Config Overrides
 // ============================================================================
 
@@ -261,6 +286,7 @@ export const ConfigSchema = z.object({
     drills: DrillsConfigSchema.optional(),
     inserters: z.array(InserterConfigSchema),
     belts: z.array(BeltConfigSchema),
+    chests: z.array(ChestConfigSchema).optional(),
     overrides: ConfigOverridesSchema.optional()
 });
 

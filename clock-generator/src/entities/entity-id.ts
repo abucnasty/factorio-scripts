@@ -22,6 +22,10 @@ export class EntityId {
         return this.forEntity(id, EntityType.DRILL);
     }
 
+    public static forChest(id: number): EntityId {
+        return this.forEntity(id, EntityType.CHEST);
+    }
+
     public static isInserter(entityId: EntityId): boolean {
         return entityId.type === EntityType.INSERTER;
     }
@@ -36,6 +40,10 @@ export class EntityId {
 
     public static isDrill(entityId: EntityId): boolean {
         return entityId.type === EntityType.DRILL;
+    }
+
+    public static isChest(entityId: EntityId): boolean {
+        return entityId.type === EntityType.CHEST;
     }
 
     private constructor(

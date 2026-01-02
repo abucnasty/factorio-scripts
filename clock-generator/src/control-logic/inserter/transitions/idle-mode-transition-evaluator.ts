@@ -1,4 +1,4 @@
-import { EntityState, InserterState, InserterStatus, MachineState } from "../../../state";
+import { ChestState, EntityState, InserterState, InserterStatus, MachineState } from "../../../state";
 import { ModeTransition, ModeTransitionEvaluator } from "../../mode";
 import { InserterMode } from "../modes/inserter-mode";
 import { InserterPickupMode } from "../modes/pickup-mode";
@@ -70,6 +70,10 @@ export class IdleModeTransitionEvaluator implements ModeTransitionEvaluator<Inse
         if (EntityState.isBelt(this.source_state)) {
             return ModeTransition.transition(this.pickup_mode, "pickup from belt");
         }
+
+        if (EntityState.isChest(this.source_state)) {
+            return this.chestPickupTransition(this.inserter_state, this.source_state);
+        }
         
         return null;
     }    
@@ -85,6 +89,11 @@ export class IdleModeTransitionEvaluator implements ModeTransitionEvaluator<Inse
                     return true
                 }
             }
+        }
+
+        if (EntityState.isChest(this.sink_state)) {
+            // Chest accepts items if it has available space
+            return !this.sink_state.isFull();
         }
 
         return false;
@@ -104,6 +113,17 @@ export class IdleModeTransitionEvaluator implements ModeTransitionEvaluator<Inse
             if (quantity >= pickup_amount_condition) {
                 return ModeTransition.transition(this.pickup_mode, `machine has ${quantity} of ${item_name} to pickup`);
             }
+        }
+        return ModeTransition.NONE;
+    }
+
+    private chestPickupTransition(state: InserterState, source: ChestState): ModeTransition<InserterMode> {
+        const pickup_amount_condition = 1;
+        const item_name = source.getItemFilter();
+        const quantity = source.getCurrentQuantity();
+        
+        if (quantity >= pickup_amount_condition) {
+            return ModeTransition.transition(this.pickup_mode, `chest has ${quantity} of ${item_name} to pickup`);
         }
         return ModeTransition.NONE;
     }
