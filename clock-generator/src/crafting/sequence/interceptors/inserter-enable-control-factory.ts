@@ -2,7 +2,7 @@ import assert from "../../../common/assert";
 import { EntityId, Inserter, InserterStackSize, Machine, MiningDrill, miningDrillMaxInsertion } from "../../../entities";
 import { EntityTransferCountMap } from "../cycle/swing-counts";
 import { AlwaysEnabledControl, EnableControl, ResettableRegistry, TickProvider } from "../../../control-logic";
-import { assertIsInserterState, assertIsMachineState, BeltState, EntityState, InserterState, MachineState, ReadableEntityStateRegistry } from "../../../state";
+import { assertIsInserterState, assertIsMachineState, BeltState, ChestState, EntityState, InserterState, MachineState, ReadableEntityStateRegistry } from "../../../state";
 import { ItemName } from "../../../data";
 import { computeSimulationMode, SimulationMode, simulationModeForInput } from "../simulation-mode";
 import { CraftingCyclePlan } from "../cycle/crafting-cycle";
@@ -78,6 +78,19 @@ export class EnableControlFactory {
             ]);
         }
 
+        // Machine → Chest: Enable when chest has space and source machine has output
+        if (EntityState.isMachine(source_state) && EntityState.isChest(sink_state)) {
+            return this.fromMachineToChest(entity_state.inserter, source_state, sink_state);
+        }
+
+        // Chest → Machine: Enable when chest has items and machine needs them
+        if (EntityState.isChest(source_state) && EntityState.isMachine(sink_state)) {
+            return EnableControl.all([
+                ...additional_enable_controls,
+                this.fromChestToMachine(entity_state.inserter, source_state, sink_state)
+            ]);
+        }
+
         return AlwaysEnabledControl
     }
 
@@ -125,6 +138,78 @@ export class EnableControlFactory {
             })
         )
         return enable_control;
+    }
+
+    /**
+     * Enable control for machine → chest inserters.
+     * 
+     * These inserters should be enabled when:
+     * 1. The chest has available space
+     * 2. The source machine has items to transfer
+     * 
+     * This allows the chest to act as a buffer that gets refilled when depleted.
+     */
+    public fromMachineToChest(
+        inserter: Inserter,
+        source_state: MachineState,
+        sink_state: ChestState,
+    ): EnableControl {
+        const source_item_name = source_state.machine.output.item_name;
+        const stack_size = inserter.metadata.stack_size;
+        
+        return EnableControl.latched({
+            base: EnableControl.lambda(() => {
+                // Enable when chest has space for at least one stack and source has items
+                const available_space = sink_state.getAvailableSpace();
+                const source_quantity = source_state.inventoryState.getQuantity(source_item_name);
+                return available_space >= stack_size && source_quantity >= stack_size;
+            }),
+            release: EnableControl.lambda(() => {
+                // Release when chest is full
+                return sink_state.isFull();
+            })
+        });
+    }
+
+    /**
+     * Enable control for chest → machine inserters.
+     * 
+     * These inserters should be enabled when:
+     * 1. The chest has items to transfer
+     * 2. The sink machine needs the items (below insertion limit)
+     */
+    public fromChestToMachine(
+        inserter: Inserter,
+        source_state: ChestState,
+        sink_state: MachineState,
+    ): EnableControl {
+        const source_item_name = source_state.getItemFilter();
+        const buffer_multiplier = 2;
+        
+        // Get sink machine's input info for this item
+        const sink_input = sink_state.machine.inputs.get(source_item_name);
+        if (!sink_input) {
+            // This item isn't needed by the sink machine, always disabled
+            return EnableControl.never;
+        }
+        
+        const minimum_required = sink_input.consumption_rate.amount_per_craft;
+        const automated_insertion_limit = sink_input.automated_insertion_limit.quantity;
+        
+        return EnableControl.latched({
+            base: EnableControl.lambda(() => {
+                // Enable when sink needs items (below buffer threshold) AND chest has items
+                const sink_quantity = sink_state.inventoryState.getQuantity(source_item_name);
+                const chest_has_items = source_state.getCurrentQuantity() > 0;
+                return chest_has_items && sink_quantity < minimum_required * buffer_multiplier;
+            }),
+            release: EnableControl.lambda(() => {
+                // Release when sink is at insertion limit OR chest is empty
+                const sink_quantity = sink_state.inventoryState.getQuantity(source_item_name);
+                const chest_is_empty = source_state.isEmpty();
+                return sink_quantity >= automated_insertion_limit || chest_is_empty;
+            })
+        });
     }
 
     public fromMachinetoMachine(
