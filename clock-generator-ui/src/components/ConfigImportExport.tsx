@@ -1,17 +1,23 @@
-import { Download, Upload } from '@mui/icons-material';
-import { Box, Button, Snackbar, Alert } from '@mui/material';
+import { Download, Upload, ContentPaste } from '@mui/icons-material';
+import { Box, Button, Snackbar, Alert, Tooltip } from '@mui/material';
 import { useRef, useState, useCallback } from 'react';
 import type { Config } from 'clock-generator/browser';
+import { MachineConfigurationSchema } from 'clock-generator/browser';
+import type { z } from 'zod';
+
+type MachineConfiguration = z.infer<typeof MachineConfigurationSchema>;
 
 interface ConfigImportExportProps {
     config: Config;
     onImport: (config: Config) => void;
+    onMergeMachines: (machines: MachineConfiguration[]) => void;
     parseConfig: (content: string) => Promise<Config>;
 }
 
 export function ConfigImportExport({
     config,
     onImport,
+    onMergeMachines,
     parseConfig,
 }: ConfigImportExportProps) {
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -86,6 +92,60 @@ export function ConfigImportExport({
         setSnackbar((prev) => ({ ...prev, open: false }));
     }, []);
 
+    const handlePasteFromFactorio = useCallback(async () => {
+        try {
+            const clipboardText = await navigator.clipboard.readText();
+            
+            // Try to parse as JSON array
+            let parsed: unknown;
+            try {
+                parsed = JSON.parse(clipboardText);
+            } catch {
+                throw new Error('Clipboard does not contain valid JSON. Make sure to copy from the Factorio mod.');
+            }
+
+            // Validate it's an array
+            if (!Array.isArray(parsed)) {
+                throw new Error('Expected an array of machines from Factorio mod.');
+            }
+
+            if (parsed.length === 0) {
+                throw new Error('No machines found in clipboard data.');
+            }
+
+            // Validate each machine entry
+            const validatedMachines: MachineConfiguration[] = [];
+            const existingMaxId = config.machines.reduce((max, m) => Math.max(max, m.id), 0);
+            
+            for (let i = 0; i < parsed.length; i++) {
+                const entry = parsed[i];
+                const result = MachineConfigurationSchema.safeParse(entry);
+                if (!result.success) {
+                    throw new Error(`Invalid machine at index ${i}: ${result.error.issues[0]?.message || 'Unknown error'}`);
+                }
+                // Reassign ID to avoid conflicts
+                validatedMachines.push({
+                    ...result.data,
+                    id: existingMaxId + i + 1
+                });
+            }
+
+            onMergeMachines(validatedMachines);
+            setSnackbar({
+                open: true,
+                message: `Successfully imported ${validatedMachines.length} machines from Factorio!`,
+                severity: 'success',
+            });
+        } catch (error) {
+            console.error('Paste from Factorio error:', error);
+            setSnackbar({
+                open: true,
+                message: `Failed to paste: ${error instanceof Error ? error.message : 'Unknown error'}`,
+                severity: 'error',
+            });
+        }
+    }, [config.machines, onMergeMachines]);
+
     return (
         <>
             <Box sx={{ display: 'flex', gap: 2 }}>
@@ -105,6 +165,17 @@ export function ConfigImportExport({
                 >
                     Export Config
                 </Button>
+                <Tooltip title="Paste machines copied from the Crafting Speed Extractor Factorio mod">
+                    <Button
+                        startIcon={<ContentPaste />}
+                        onClick={handlePasteFromFactorio}
+                        variant="outlined"
+                        size="small"
+                        color="secondary"
+                    >
+                        Paste from Factorio
+                    </Button>
+                </Tooltip>
             </Box>
 
             <input

@@ -147,6 +147,7 @@ export interface UseConfigFormResult {
     addMachine: () => void;
     updateMachine: (index: number, field: keyof MachineFormData, value: string | number) => void;
     removeMachine: (index: number) => void;
+    mergeMachines: (machines: MachineFormData[]) => void;
     
     // Inserters
     addInserter: () => void;
@@ -239,6 +240,21 @@ export function useConfigForm(): UseConfigFormResult {
             ...prev,
             machines: prev.machines.filter((_, i) => i !== index),
         }));
+    }, []);
+
+    const mergeMachines = useCallback((newMachines: MachineFormData[]) => {
+        setConfig((prev) => {
+            // Reassign IDs to avoid conflicts
+            const maxId = Math.max(0, ...prev.machines.map((m) => m.id));
+            const machinesWithNewIds = newMachines.map((m, i) => ({
+                ...m,
+                id: maxId + i + 1,
+            }));
+            return {
+                ...prev,
+                machines: [...prev.machines, ...machinesWithNewIds],
+            };
+        });
     }, []);
 
     // Inserters
@@ -529,6 +545,7 @@ export function useConfigForm(): UseConfigFormResult {
         addMachine,
         updateMachine,
         removeMachine,
+        mergeMachines,
         addInserter,
         updateInserter,
         removeInserter,

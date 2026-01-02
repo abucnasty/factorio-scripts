@@ -83,6 +83,7 @@ function App() {
         addMachine,
         updateMachine,
         removeMachine,
+        mergeMachines,
         addInserter,
         updateInserter,
         removeInserter,
@@ -163,6 +164,7 @@ function App() {
                         <ConfigImportExport
                             config={exportConfig()}
                             onImport={handleImportConfig}
+                            onMergeMachines={mergeMachines}
                             parseConfig={parseConfig}
                         />
                         <Tooltip title="Reset all configuration to defaults">
