@@ -1,4 +1,4 @@
--- Crafting Speed Extractor - Data Stage
+-- Clock Generator Sidecar - Data Stage
 -- Defines the selection tool prototype for selecting machines
 
 data:extend({

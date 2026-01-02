@@ -1,4 +1,4 @@
--- Crafting Speed Extractor - Control Stage
+-- Clock Generator Sidecar - Control Stage
 -- Runtime logic for selecting machines and extracting crafting data
 
 -- ============================================================================
@@ -243,8 +243,8 @@ end
 -- GUI Management
 -- ============================================================================
 
-local GUI_NAME = "crafting_speed_extractor_frame"
-local COPY_GUI_NAME = "crafting_speed_extractor_copy_frame"
+local GUI_NAME = "clock_generator_sidecar_frame"
+local COPY_GUI_NAME = "clock_generator_sidecar_copy_frame"
 
 ---Destroy the main results GUI for a player (not the copy popup)
 ---@param player LuaPlayer
@@ -283,20 +283,20 @@ local function create_copy_popup(player, json)
         type = "frame",
         name = COPY_GUI_NAME,
         direction = "vertical",
-        caption = { "crafting-speed-extractor.copy-popup-title" }
+        caption = { "clock-generator-sidecar.copy-popup-title" }
     })
     frame.auto_center = true
 
     -- Instructions
     frame.add({
         type = "label",
-        caption = { "crafting-speed-extractor.copy-instructions" }
+        caption = { "clock-generator-sidecar.copy-instructions" }
     })
 
     -- Text box with JSON (user can select all and copy)
     local textbox = frame.add({
         type = "text-box",
-        name = "crafting_speed_extractor_json_text",
+        name = "clock_generator_sidecar_json_text",
         text = json
     })
     textbox.style.width = 600
@@ -319,8 +319,8 @@ local function create_copy_popup(player, json)
 
     button_flow.add({
         type = "button",
-        name = "crafting_speed_extractor_copy_close",
-        caption = { "crafting-speed-extractor.close-button" }
+        name = "clock_generator_sidecar_copy_close",
+        caption = { "clock-generator-sidecar.close-button" }
     })
 
     -- Don't set player.opened here - it would close the main GUI and trigger destroy_gui
@@ -344,7 +344,7 @@ local function create_gui(player, result)
         type = "frame",
         name = GUI_NAME,
         direction = "vertical",
-        caption = { "crafting-speed-extractor.gui-title" }
+        caption = { "clock-generator-sidecar.gui-title" }
     })
     frame.auto_center = true
 
@@ -361,7 +361,7 @@ local function create_gui(player, result)
 
     header.add({
         type = "label",
-        caption = { "crafting-speed-extractor.machine-count", total_count },
+        caption = { "clock-generator-sidecar.machine-count", total_count },
         style = "heading_2_label"
     })
 
@@ -377,7 +377,7 @@ local function create_gui(player, result)
     if total_count == 0 then
         content_frame.add({
             type = "label",
-            caption = { "crafting-speed-extractor.no-machines" },
+            caption = { "clock-generator-sidecar.no-machines" },
             style = "bold_label"
         })
     else
@@ -411,7 +411,7 @@ local function create_gui(player, result)
             machine_table.style.column_alignments[5] = "right"
 
             -- Header labels for machines
-            local m_headers = { "#", { "crafting-speed-extractor.col-machine" }, { "crafting-speed-extractor.col-recipe" }, { "crafting-speed-extractor.col-speed" }, { "crafting-speed-extractor.col-productivity" } }
+            local m_headers = { "#", { "clock-generator-sidecar.col-machine" }, { "clock-generator-sidecar.col-recipe" }, { "clock-generator-sidecar.col-speed" }, { "clock-generator-sidecar.col-productivity" } }
             for _, h in ipairs(m_headers) do
                 machine_table.add({
                     type = "label",
@@ -457,7 +457,7 @@ local function create_gui(player, result)
             drill_table.style.column_alignments[5] = "right"
 
             -- Header labels for drills
-            local d_headers = { "#", "Drill Type", "Resource", "Speed Bonus", { "crafting-speed-extractor.col-productivity" } }
+            local d_headers = { "#", "Drill Type", "Resource", "Speed Bonus", { "clock-generator-sidecar.col-productivity" } }
             for _, h in ipairs(d_headers) do
                 drill_table.add({
                     type = "label",
@@ -491,8 +491,8 @@ local function create_gui(player, result)
     if total_count > 0 then
         button_flow.add({
             type = "button",
-            name = "crafting_speed_extractor_copy",
-            caption = { "crafting-speed-extractor.copy-button" },
+            name = "clock_generator_sidecar_copy",
+            caption = { "clock-generator-sidecar.copy-button" },
             style = "confirm_button"
         })
     end
@@ -500,8 +500,8 @@ local function create_gui(player, result)
     -- Close button
     button_flow.add({
         type = "button",
-        name = "crafting_speed_extractor_close",
-        caption = { "crafting-speed-extractor.close-button" }
+        name = "clock_generator_sidecar_close",
+        caption = { "clock-generator-sidecar.close-button" }
     })
 
     player.opened = frame
@@ -534,9 +534,9 @@ local function on_player_selected_area(event)
 
     local total = #result.machines + #result.drills
     if total == 0 then
-        player.print({ "crafting-speed-extractor.no-machines-selected" })
+        player.print({ "clock-generator-sidecar.no-machines-selected" })
     else
-        player.print({ "crafting-speed-extractor.machines-found", total })
+        player.print({ "clock-generator-sidecar.machines-found", total })
     end
 end
 
@@ -553,7 +553,7 @@ local function on_gui_click(event)
         return
     end
 
-    if element.name == "crafting_speed_extractor_copy" then
+    if element.name == "clock_generator_sidecar_copy" then
         -- Show copy popup with JSON text
         local player_data = storage[event.player_index]
         if player_data and player_data.extraction_result then
@@ -562,14 +562,14 @@ local function on_gui_click(event)
                 local json = to_export_json(result)
                 create_copy_popup(player, json)
             else
-                player.print("[Crafting Speed Extractor] No data found. Please select machines or drills first.")
+                player.print("[Clock Generator Sidecar] No data found. Please select machines or drills first.")
             end
         else
-            player.print("[Crafting Speed Extractor] No data found. Please select machines or drills first.")
+            player.print("[Clock Generator Sidecar] No data found. Please select machines or drills first.")
         end
-    elseif element.name == "crafting_speed_extractor_close" then
+    elseif element.name == "clock_generator_sidecar_close" then
         destroy_all_gui(player)
-    elseif element.name == "crafting_speed_extractor_copy_close" then
+    elseif element.name == "clock_generator_sidecar_copy_close" then
         -- Close just the copy popup
         local copy_frame = player.gui.screen[COPY_GUI_NAME]
         if copy_frame and copy_frame.valid then

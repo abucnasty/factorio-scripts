@@ -1,5 +1,5 @@
 #!/bin/bash
-# Build script for Crafting Speed Extractor Factorio mod
+# Build script for Clock Generator Sidecar Factorio mod
 # Creates a zip file ready for installation in Factorio's mods folder
 
 set -e
