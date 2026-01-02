@@ -1,7 +1,7 @@
 import { computeSimulationMode, SimulationMode } from "./simulation-mode";
 import { InventoryTransfer } from "./inventory-transfer";
 import { Duration, MapExtended, OpenRange } from "../../data-types";
-import { Entity, EntityId, Inserter, Machine, ReadableEntityRegistry } from "../../entities";
+import { assertIsMachine, Entity, EntityId, Inserter, ReadableEntityRegistry } from "../../entities";
 import { Logger, defaultLogger } from "../../common/logger";
 import { EntityTransferCount, EntityTransferCountMap } from "./cycle/swing-counts";
 
@@ -43,8 +43,8 @@ export class InventoryTransferHistory extends MapExtended<EntityId, InventoryTra
                 trimmed.set(entityId, transfers);
                 return;
             }
-            const source_machine = entity_registry.getEntityByIdOrThrow(entity.source.entity_id);
-            if (!Entity.isMachine(source_machine)) {
+            const source_entity = entity_registry.getEntityByIdOrThrow(entity.source.entity_id);
+            if (Entity.isBelt(source_entity)) {
                 trimmed.set(entityId, transfers);
                 return;
             }
@@ -57,7 +57,7 @@ export class InventoryTransferHistory extends MapExtended<EntityId, InventoryTra
             }
 
             const last_swing_offset = computeLastSwingOffsetDuration(
-                source_machine,
+                source_entity,
                 entity,
                 entity_transfer_count_map.getOrThrow(entityId)
             );
@@ -235,10 +235,17 @@ function deduplicateEntityTransfers(transfers: ReadonlyMap<EntityId, InventoryTr
 
 
 function computeLastSwingOffsetDuration(
-    source_machine: Machine,
+    source_entity: Entity,
     inserter: Inserter,
     entity_transfer_count: EntityTransferCount
 ): Duration {
+    if (Entity.isChest(source_entity)) {
+        const animation = inserter.animation
+        const offset = animation.rotation.ticks
+        return Duration.ofTicks(-1 * offset);
+    }
+    assertIsMachine(source_entity)
+    const source_machine = source_entity;
     const mode = computeSimulationMode(source_machine, inserter, entity_transfer_count);
     if (mode === SimulationMode.NORMAL) {
         const animation = inserter.animation
