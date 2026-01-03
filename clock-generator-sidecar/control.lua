@@ -116,16 +116,19 @@ end
 
 ---Get the primary ingredient and max stack size from a transport line
 ---@param transport_line LuaTransportLine
+---@param default_stack_size number? The default stack size to use if no items are found (default 1)
 ---@return string|nil ingredient The primary ingredient name, or nil
----@return number stack_size The maximum stack size found on this lane (default 1)
-local function get_lane_info(transport_line)
+---@return number stack_size The maximum stack size found on this lane, or default_stack_size
+local function get_lane_info(transport_line, default_stack_size)
+    default_stack_size = default_stack_size or 1
+    
     if not transport_line or not transport_line.valid then
-        return nil, 1
+        return nil, default_stack_size
     end
     
     local contents = transport_line.get_contents()
     if not contents or #contents == 0 then
-        return nil, 1
+        return nil, default_stack_size
     end
     
     -- Get the first item found on this lane
@@ -183,6 +186,12 @@ local function extract_belt_data(entity)
         return nil
     end
     
+    -- Get the researched belt stack size for this force (1 + bonus)
+    local default_belt_stack_size = 1
+    if entity.force then
+        default_belt_stack_size = 1 + (entity.force.belt_stack_size_bonus or 0)
+    end
+    
     local lanes = {}
     
     -- Transport belts have 2 lines: 1 = right lane, 2 = left lane
@@ -191,7 +200,7 @@ local function extract_belt_data(entity)
     local has_items = false
     for i = 1, math.min(max_lines, 2) do
         local transport_line = entity.get_transport_line(i)
-        local ingredient, stack_size = get_lane_info(transport_line)
+        local ingredient, stack_size = get_lane_info(transport_line, default_belt_stack_size)
         
         if ingredient then
             has_items = true
@@ -279,6 +288,12 @@ local function extract_inserter_data(entity)
                 local picks_left = entity.pickup_from_left_lane
                 local picks_right = entity.pickup_from_right_lane
                 
+                -- Get the researched belt stack size for this force
+                local default_belt_stack_size = 1
+                if pickup_target.force then
+                    default_belt_stack_size = 1 + (pickup_target.force.belt_stack_size_bonus or 0)
+                end
+                
                 for i = 1, math.min(max_lines, 2) do
                     local is_right_lane = (i == 1)
                     local is_left_lane = (i == 2)
@@ -286,7 +301,7 @@ local function extract_inserter_data(entity)
                     -- Only get contents for lanes the inserter actually picks from
                     if (is_right_lane and picks_right) or (is_left_lane and picks_left) then
                         local transport_line = pickup_target.get_transport_line(i)
-                        local ingredient, _ = get_lane_info(transport_line)
+                        local ingredient, _ = get_lane_info(transport_line, default_belt_stack_size)
                         if ingredient then
                             table.insert(source_belt_lanes, {
                                 lane = i,
