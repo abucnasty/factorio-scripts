@@ -155,7 +155,7 @@ export function InsertersForm({
         return sourceItems.filter(item => sinkNeeds.includes(item));
     };
 
-    const handleSlotClick = (event: React.MouseEvent<HTMLElement>, inserterIndex: number, slotIndex: number) => {
+    const handleSlotClick = (event: React.UIEvent<HTMLElement>, inserterIndex: number, slotIndex: number) => {
         setAnchorEl(event.currentTarget);
         setActiveSlot({ inserterIndex, slotIndex });
     };
@@ -456,7 +456,16 @@ export function InsertersForm({
                                 return (
                                     <Box
                                         key={slotIndex}
+                                        tabIndex={0}
+                                        role="button"
+                                        aria-label={filterItem ? `Filter ${slotIndex + 1}: ${filterItem}` : `Add filter ${slotIndex + 1}`}
                                         onClick={(e) => handleSlotClick(e, index, slotIndex)}
+                                        onKeyDown={(e) => {
+                                            if (e.key === 'Enter' || e.key === ' ') {
+                                                e.preventDefault();
+                                                handleSlotClick(e, index, slotIndex);
+                                            }
+                                        }}
                                         sx={{
                                             width: 36,
                                             height: 36,
@@ -469,9 +478,14 @@ export function InsertersForm({
                                             cursor: 'pointer',
                                             bgcolor: 'background.paper',
                                             position: 'relative',
-                                            '&:hover': {
+                                            '&:hover, &:focus': {
                                                 borderColor: 'primary.light',
                                                 bgcolor: 'action.hover',
+                                                outline: 'none',
+                                            },
+                                            '&:focus-visible': {
+                                                boxShadow: '0 0 0 2px',
+                                                boxShadowColor: 'primary.main',
                                             },
                                         }}
                                     >
