@@ -1094,7 +1094,7 @@ end
 ---Handle selection tool area selection
 ---@param event EventData.on_player_selected_area
 local function on_player_selected_area(event)
-    if event.item ~= "crafting-speed-analyzer" then
+    if event.item ~= "clock-generator-sidecar" then
         return
     end
 

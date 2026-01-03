@@ -5,11 +5,11 @@ data:extend({
     -- Selection tool for extracting crafting speeds
     {
         type = "selection-tool",
-        name = "crafting-speed-analyzer",
+        name = "clock-generator-sidecar",
         icon = "__base__/graphics/icons/blueprint.png",
         icon_size = 64,
         subgroup = "tool",
-        order = "c[automated-construction]-d[crafting-speed-analyzer]",
+        order = "c[automated-construction]-d[clock-generator-sidecar]",
         stack_size = 1,
         select = {
             border_color = { r = 0, g = 1, b = 0.5 },
@@ -29,22 +29,22 @@ data:extend({
     -- Shortcut button for quick access
     {
         type = "shortcut",
-        name = "crafting-speed-analyzer-shortcut",
+        name = "clock-generator-sidecar-shortcut",
         action = "spawn-item",
-        item_to_spawn = "crafting-speed-analyzer",
+        item_to_spawn = "clock-generator-sidecar",
         icon = "__base__/graphics/icons/blueprint.png",
         icon_size = 64,
         small_icon = "__base__/graphics/icons/blueprint.png",
         small_icon_size = 64,
-        associated_control_input = "crafting-speed-analyzer-toggle"
+        associated_control_input = "clock-generator-sidecar-toggle"
     },
 
     -- Custom input for keyboard shortcut
     {
         type = "custom-input",
-        name = "crafting-speed-analyzer-toggle",
+        name = "clock-generator-sidecar-toggle",
         key_sequence = "ALT + E",
         action = "spawn-item",
-        item_to_spawn = "crafting-speed-analyzer"
+        item_to_spawn = "clock-generator-sidecar"
     }
 })
