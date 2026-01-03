@@ -114,27 +114,37 @@ local function get_target_type(entity)
     return nil
 end
 
----Get the primary ingredient from a transport line (first item found, or nil if mixed/empty)
+---Get the primary ingredient and max stack size from a transport line
 ---@param transport_line LuaTransportLine
 ---@return string|nil ingredient The primary ingredient name, or nil
-local function get_lane_ingredient(transport_line)
+---@return number stack_size The maximum stack size found on this lane (default 1)
+local function get_lane_info(transport_line)
     if not transport_line or not transport_line.valid then
-        return nil
+        return nil, 1
     end
     
     local contents = transport_line.get_contents()
     if not contents or #contents == 0 then
-        return nil
+        return nil, 1
     end
     
     -- Get the first item found on this lane
     -- contents is an array of {name, quality, count}
     local first_item = contents[1]
-    if first_item and first_item.name then
-        return first_item.name
+    local ingredient = first_item and first_item.name or nil
+    
+    -- Get max stack size from detailed contents
+    local max_stack = 1
+    local detailed = transport_line.get_detailed_contents()
+    if detailed then
+        for _, item_info in pairs(detailed) do
+            if item_info.stack and item_info.stack.valid and item_info.stack.count then
+                max_stack = math.max(max_stack, item_info.stack.count)
+            end
+        end
     end
     
-    return nil
+    return ingredient, max_stack
 end
 
 ---Normalize belt name to transport belt type (converts underground belts and splitters)
@@ -181,7 +191,7 @@ local function extract_belt_data(entity)
     local has_items = false
     for i = 1, math.min(max_lines, 2) do
         local transport_line = entity.get_transport_line(i)
-        local ingredient = get_lane_ingredient(transport_line)
+        local ingredient, stack_size = get_lane_info(transport_line)
         
         if ingredient then
             has_items = true
@@ -189,7 +199,7 @@ local function extract_belt_data(entity)
         
         table.insert(lanes, {
             ingredient = ingredient,
-            stack_size = 1  -- Default stack size, can be adjusted based on belt type
+            stack_size = stack_size
         })
     end
     
@@ -276,7 +286,7 @@ local function extract_inserter_data(entity)
                     -- Only get contents for lanes the inserter actually picks from
                     if (is_right_lane and picks_right) or (is_left_lane and picks_left) then
                         local transport_line = pickup_target.get_transport_line(i)
-                        local ingredient = get_lane_ingredient(transport_line)
+                        local ingredient, _ = get_lane_info(transport_line)
                         if ingredient then
                             table.insert(source_belt_lanes, {
                                 lane = i,
@@ -665,21 +675,28 @@ local COPY_GUI_NAME = "clock_generator_sidecar_copy_frame"
 
 ---Destroy the main results GUI for a player (not the copy popup)
 ---@param player LuaPlayer
-local function destroy_gui(player)
+---@param clear_data boolean? Whether to also clear the extraction result data (default: false)
+local function destroy_gui(player, clear_data)
     local frame = player.gui.screen[GUI_NAME]
     if frame and frame.valid then
         frame.destroy()
     end
     if storage[player.index] then
         storage[player.index].gui = nil
-        storage[player.index].extraction_result = nil
+        if clear_data then
+            storage[player.index].extraction_result = nil
+        end
     end
 end
 
 ---Destroy all GUIs for a player (including copy popup)
 ---@param player LuaPlayer
-local function destroy_all_gui(player)
-    destroy_gui(player)
+---@param clear_data boolean? Whether to also clear the extraction result data (default: true)
+local function destroy_all_gui(player, clear_data)
+    if clear_data == nil then
+        clear_data = true
+    end
+    destroy_gui(player, clear_data)
     local copy_frame = player.gui.screen[COPY_GUI_NAME]
     if copy_frame and copy_frame.valid then
         copy_frame.destroy()
@@ -1121,7 +1138,7 @@ local function on_gui_closed(event)
     if event.element and event.element.valid and event.element.name == GUI_NAME then
         local player = game.get_player(event.player_index)
         if player then
-            destroy_gui(player)
+            destroy_gui(player, true)  -- Clear data when user closes the window
         end
     end
 end
