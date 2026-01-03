@@ -7,11 +7,13 @@ import {
     Box,
     Button,
     FormControl,
+    FormControlLabel,
     IconButton,
     InputLabel,
     MenuItem,
     Popover,
     Select,
+    Switch,
     TextField,
     Tooltip,
     Typography,
@@ -128,40 +130,26 @@ export function DrillsForm({
                             </Box>
                         </Popover>
                     </Box>
-                    {!enabled && (
-                        <Typography 
-                            variant="body2" 
-                            sx={{ 
-                                color: 'primary.main', 
-                                cursor: 'pointer',
-                                textDecoration: 'underline',
-                                '&:hover': { color: 'primary.dark' }
-                            }}
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                onEnable();
-                            }}
-                        >
-                            Enable Drills
-                        </Typography>
-                    )}
-                    {enabled && (
-                        <Typography 
-                            variant="body2" 
-                            sx={{ 
-                                color: 'error.main', 
-                                cursor: 'pointer',
-                                textDecoration: 'underline',
-                                '&:hover': { color: 'error.dark' }
-                            }}
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                onDisable();
-                            }}
-                        >
-                            Disable Drills
-                        </Typography>
-                    )}
+                    <FormControlLabel
+                        control={
+                            <Switch
+                                checked={enabled}
+                                onChange={(e) => {
+                                    e.stopPropagation();
+                                    if (enabled) {
+                                        onDisable();
+                                    } else {
+                                        onEnable();
+                                    }
+                                }}
+                                onClick={(e) => e.stopPropagation()}
+                                size="small"
+                            />
+                        }
+                        label={enabled ? 'Enabled' : 'Disabled'}
+                        onClick={(e) => e.stopPropagation()}
+                        sx={{ ml: 1 }}
+                    />
                 </Box>
             </AccordionSummary>
             <AccordionDetails>
