@@ -11,7 +11,7 @@ import {
 interface OverridesFormProps {
     lcm?: number;
     terminalSwingCount?: number;
-    onUpdate: (field: 'lcm' | 'terminal_swing_count', value: number | undefined) => void;
+    onUpdate: (field: 'lcm' | 'terminal_swing_count', value: number | null) => void;
 }
 
 export function OverridesForm({
@@ -38,26 +38,26 @@ export function OverridesForm({
                         onChange={(e) =>
                             onUpdate(
                                 'lcm',
-                                e.target.value ? parseInt(e.target.value) : undefined
+                                e.target.value ? parseInt(e.target.value) : null
                             )
                         }
-                        inputProps={{ min: 1 }}
-                        sx={{ width: 150 }}
+                        slotProps={{ htmlInput: { min: 1 } }}
+                        sx={{ width: 200 }}
                         size="small"
                         helperText="Override the calculated LCM"
                     />
                     <TextField
                         label="Terminal Swing Count"
                         type="number"
-                        value={terminalSwingCount ?? ''}
+                        value={terminalSwingCount ?? null}
                         onChange={(e) =>
                             onUpdate(
                                 'terminal_swing_count',
-                                e.target.value ? parseInt(e.target.value) : undefined
+                                e.target.value ? parseInt(e.target.value) : null
                             )
                         }
-                        inputProps={{ min: 1 }}
-                        sx={{ width: 180 }}
+                        slotProps={{ htmlInput: { min: 1 } }}
+                        sx={{ width: 240 }}
                         size="small"
                         helperText="Override max swings per cycle"
                     />

@@ -79,6 +79,12 @@ export function DebugPanel({
                                     <Checkbox
                                         checked={debugSteps[step as keyof typeof STEP_LABELS] ?? false}
                                         onChange={() => handleStepToggle(step as keyof typeof STEP_LABELS)}
+                                        onKeyDown={(e) => {
+                                            if (e.key === 'Enter') {
+                                                e.preventDefault();
+                                                handleStepToggle(step as keyof typeof STEP_LABELS);
+                                            }
+                                        }}
                                     />
                                 }
                                 label={label}

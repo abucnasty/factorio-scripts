@@ -181,7 +181,7 @@ export interface UseConfigFormResult {
     replaceDrills: (drills: DrillFormData[]) => void;
     
     // Overrides
-    updateOverrides: (field: keyof NonNullable<ConfigFormData['overrides']>, value: number | undefined) => void;
+    updateOverrides: (field: keyof NonNullable<ConfigFormData['overrides']>, value: number | null) => void;
     
     // Import/Export
     importConfig: (config: Config) => void;
@@ -513,7 +513,7 @@ export function useConfigForm(): UseConfigFormResult {
     // Overrides
     const updateOverrides = useCallback((
         field: keyof NonNullable<ConfigFormData['overrides']>,
-        value: number | undefined
+        value: number | null
     ) => {
         setConfig((prev) => {
             const newOverrides = {
