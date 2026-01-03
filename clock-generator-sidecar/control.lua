@@ -430,18 +430,26 @@ end
 ---@field belts BeltData[]
 ---@field unit_number_to_id table<number, number> Maps entity unit_number to machine ID
 ---@field belt_unit_number_to_id table<number, number> Maps belt unit_number to belt ID
+---@field mining_productivity_level number The researched mining productivity level
 
 ---Extract data from all selected entities, separating machines, drills, inserters, and belts
 ---@param entities LuaEntity[]
+---@param force LuaForce? The player's force (for researched bonuses)
 ---@return ExtractionResult
-local function extract_all_entities(entities)
+local function extract_all_entities(entities, force)
+    local mining_productivity_level = 1
+    if force and force.technologies['mining-productivity-3'] then
+        mining_productivity_level = force.technologies['mining-productivity-3'].level - 1
+    end
+    
     local result = {
         machines = {},
         drills = {},
         inserters = {},
         belts = {},
         unit_number_to_id = {},
-        belt_unit_number_to_id = {}
+        belt_unit_number_to_id = {},
+        mining_productivity_level = mining_productivity_level
     }
     
     -- First pass: extract machines and build unit_number -> id mapping
@@ -537,7 +545,10 @@ end
 local function to_export_json(result)
     local export = {
         machines = {},
-        drills = {},
+        drills = {
+            mining_productivity_level = result.mining_productivity_level,
+            configs = {}
+        },
         inserters = {},
         belts = {}
     }
@@ -581,7 +592,7 @@ local function to_export_json(result)
             end
         end
         
-        table.insert(export.drills, {
+        table.insert(export.drills.configs, {
             id = i,
             type = drill.drill_type,
             mined_item_name = drill.mined_item_name,
@@ -1095,7 +1106,7 @@ local function on_player_selected_area(event)
     init_player_data(event.player_index)
 
     -- Extract entity data (machines, drills, and inserters)
-    local result = extract_all_entities(event.entities)
+    local result = extract_all_entities(event.entities, player.force)
     storage[event.player_index].extraction_result = result
 
     -- Show GUI

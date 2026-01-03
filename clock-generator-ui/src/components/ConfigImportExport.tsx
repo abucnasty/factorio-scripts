@@ -17,6 +17,7 @@ interface ConfigImportExportProps {
     onReplaceDrills: (drills: MiningDrillConfiguration[]) => void;
     onReplaceInserters: (inserters: InserterConfiguration[]) => void;
     onReplaceBelts: (belts: BeltConfiguration[]) => void;
+    onUpdateMiningProductivityLevel: (level: number) => void;
     parseConfig: (content: string) => Promise<Config>;
 }
 
@@ -27,6 +28,7 @@ export function ConfigImportExport({
     onReplaceDrills,
     onReplaceInserters,
     onReplaceBelts,
+    onUpdateMiningProductivityLevel,
     parseConfig,
 }: ConfigImportExportProps) {
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -115,10 +117,23 @@ export function ConfigImportExport({
 
             // Check if it's the new format with machines and drills
             if (typeof parsed === 'object' && parsed !== null && 'machines' in parsed) {
-                const data = parsed as { machines?: unknown[]; drills?: unknown[]; inserters?: unknown[]; belts?: unknown[] };
+                const data = parsed as { 
+                    machines?: unknown[]; 
+                    drills?: { mining_productivity_level?: number; configs?: unknown[] } | unknown[]; 
+                    inserters?: unknown[]; 
+                    belts?: unknown[] 
+                };
                 
                 const machineCount = Array.isArray(data.machines) ? data.machines.length : 0;
-                const drillCount = Array.isArray(data.drills) ? data.drills.length : 0;
+                // Handle new drills format: { mining_productivity_level, configs: [...] }
+                const drillsData = data.drills;
+                const drillConfigs = drillsData && typeof drillsData === 'object' && !Array.isArray(drillsData) && 'configs' in drillsData
+                    ? (drillsData.configs as unknown[])
+                    : (Array.isArray(drillsData) ? drillsData : []);
+                const miningProductivityLevel = drillsData && typeof drillsData === 'object' && !Array.isArray(drillsData) && 'mining_productivity_level' in drillsData
+                    ? (drillsData.mining_productivity_level as number)
+                    : undefined;
+                const drillCount = Array.isArray(drillConfigs) ? drillConfigs.length : 0;
                 const inserterCount = Array.isArray(data.inserters) ? data.inserters.length : 0;
                 const beltCount = Array.isArray(data.belts) ? data.belts.length : 0;
                 
@@ -141,9 +156,9 @@ export function ConfigImportExport({
 
                 // Validate drills (IDs are already assigned by the mod)
                 const validatedDrills: MiningDrillConfiguration[] = [];
-                if (Array.isArray(data.drills)) {
-                    for (let i = 0; i < data.drills.length; i++) {
-                        const entry = data.drills[i];
+                if (Array.isArray(drillConfigs)) {
+                    for (let i = 0; i < drillConfigs.length; i++) {
+                        const entry = drillConfigs[i];
                         const result = MiningDrillConfigSchema.safeParse(entry);
                         if (!result.success) {
                             throw new Error(`Invalid drill at index ${i}: ${result.error.issues[0]?.message || 'Unknown error'}`);
@@ -183,6 +198,10 @@ export function ConfigImportExport({
                 }
                 if (validatedDrills.length > 0) {
                     onReplaceDrills(validatedDrills);
+                }
+                // Update mining productivity level if provided
+                if (miningProductivityLevel !== undefined) {
+                    onUpdateMiningProductivityLevel(miningProductivityLevel);
                 }
                 if (validatedInserters.length > 0) {
                     onReplaceInserters(validatedInserters);
@@ -240,7 +259,7 @@ export function ConfigImportExport({
                 severity: 'error',
             });
         }
-    }, [onReplaceMachines, onReplaceDrills, onReplaceInserters, onReplaceBelts]);
+    }, [onReplaceMachines, onReplaceDrills, onReplaceInserters, onReplaceBelts, onUpdateMiningProductivityLevel]);
 
     return (
         <>
