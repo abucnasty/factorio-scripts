@@ -54,7 +54,7 @@ function computeInserterSwingCountsForMultipleMachines(
     output_stack_size: number
 ): EntityTransferCountMap {
     assert(output_machines.length > 0, "At least one output machine is required");
-    
+
     // Find all output inserters for each machine
     const output_inserters_by_machine = new Map<string, Inserter[]>();
     for (const machine of output_machines) {
@@ -63,7 +63,7 @@ function computeInserterSwingCountsForMultipleMachines(
             .filter(inserter => inserter.source.entity_id.id === machine.entity_id.id);
         output_inserters_by_machine.set(machine.entity_id.id, inserters);
     }
-    
+
     // Validate each machine has at least one output inserter and all have the same stack size
     for (const machine of output_machines) {
         const inserters = output_inserters_by_machine.get(machine.entity_id.id) ?? [];
@@ -72,7 +72,7 @@ function computeInserterSwingCountsForMultipleMachines(
             `Output machine ${machine.entity_id.id} must have at least one dedicated output inserter, ` +
             `but found ${inserters.length}.`
         );
-        
+
         // Validate all output inserters have the same stack size
         const first_stack_size = inserters[0].metadata.stack_size;
         for (const inserter of inserters) {
@@ -83,7 +83,7 @@ function computeInserterSwingCountsForMultipleMachines(
             );
         }
     }
-    
+
     // If only one output machine with one inserter, use the original function directly
     const first_machine_inserters = output_inserters_by_machine.get(output_machines[0].entity_id.id) ?? [];
     if (output_machines.length === 1 && first_machine_inserters.length === 1) {
@@ -94,17 +94,17 @@ function computeInserterSwingCountsForMultipleMachines(
             output_stack_size
         );
     }
-    
+
     // For multiple output machines (or multiple inserters), compute swing counts for each and merge
     const combined_result = new EntityTransferCountMap();
-    
+
     for (const machine of output_machines) {
         const inserters = output_inserters_by_machine.get(machine.entity_id.id) ?? [];
         const num_output_inserters = inserters.length;
-        
-        // Divide the swing count among multiple output inserters (they work in parallel)
+
+        // Divide the swing count among multiple output inserters (they should work in parallel)
         const swing_count_per_inserter = output_swing_count_per_machine.divide(num_output_inserters);
-        
+
         // Compute swing counts for each output inserter
         for (const output_inserter of inserters) {
             const machine_swing_counts = computeInserterSwingCounts(
@@ -113,36 +113,36 @@ function computeInserterSwingCountsForMultipleMachines(
                 swing_count_per_inserter,
                 output_stack_size,
                 new EntityTransferCountMap(),
-                output_inserter  // Pass the specific output inserter
+                output_inserter
             );
-        
-        // Merge into combined result
-        for (const [entity_id, transfer_count] of machine_swing_counts.entries()) {
-            const existing = combined_result.get(entity_id);
-            if (existing) {
-                // If entity already exists (shared upstream entity), add the transfer counts
-                const merged_item_transfers: ItemTransfer[] = [...existing.item_transfers];
-                for (const new_transfer of transfer_count.item_transfers) {
-                    const existing_item = merged_item_transfers.find(it => it.item_name === new_transfer.item_name);
-                    if (existing_item) {
-                        existing_item.transfer_count = existing_item.transfer_count.add(new_transfer.transfer_count);
-                    } else {
-                        merged_item_transfers.push({ ...new_transfer });
+
+            // Merge into combined result
+            for (const [entity_id, transfer_count] of machine_swing_counts.entries()) {
+                const existing = combined_result.get(entity_id);
+                if (existing) {
+                    // If entity already exists (shared upstream entity), add the transfer counts
+                    const merged_item_transfers: ItemTransfer[] = [...existing.item_transfers];
+                    for (const new_transfer of transfer_count.item_transfers) {
+                        const existing_item = merged_item_transfers.find(it => it.item_name === new_transfer.item_name);
+                        if (existing_item) {
+                            existing_item.transfer_count = existing_item.transfer_count.add(new_transfer.transfer_count);
+                        } else {
+                            merged_item_transfers.push({ ...new_transfer });
+                        }
                     }
+                    combined_result.set(entity_id, {
+                        entity: existing.entity,
+                        item_transfers: merged_item_transfers,
+                        total_transfer_count: existing.total_transfer_count.add(transfer_count.total_transfer_count),
+                        stack_size: existing.stack_size
+                    });
+                } else {
+                    combined_result.set(entity_id, transfer_count);
                 }
-                combined_result.set(entity_id, {
-                    entity: existing.entity,
-                    item_transfers: merged_item_transfers,
-                    total_transfer_count: existing.total_transfer_count.add(transfer_count.total_transfer_count),
-                    stack_size: existing.stack_size
-                });
-            } else {
-                combined_result.set(entity_id, transfer_count);
             }
         }
-        }  // End of inserter loop
     }
-    
+
     return combined_result;
 }
 
