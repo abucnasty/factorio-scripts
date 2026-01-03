@@ -2,12 +2,13 @@ import { Download, Upload, ContentPaste } from '@mui/icons-material';
 import { Box, Button, Snackbar, Alert, Tooltip } from '@mui/material';
 import { useRef, useState, useCallback } from 'react';
 import type { Config } from 'clock-generator/browser';
-import { MachineConfigurationSchema, MiningDrillConfigSchema, InserterConfigSchema } from 'clock-generator/browser';
+import { MachineConfigurationSchema, MiningDrillConfigSchema, InserterConfigSchema, BeltConfigSchema } from 'clock-generator/browser';
 import type { z } from 'zod';
 
 type MachineConfiguration = z.infer<typeof MachineConfigurationSchema>;
 type MiningDrillConfiguration = z.infer<typeof MiningDrillConfigSchema>;
 type InserterConfiguration = z.infer<typeof InserterConfigSchema>;
+type BeltConfiguration = z.infer<typeof BeltConfigSchema>;
 
 interface ConfigImportExportProps {
     config: Config;
@@ -15,6 +16,7 @@ interface ConfigImportExportProps {
     onReplaceMachines: (machines: MachineConfiguration[]) => void;
     onReplaceDrills: (drills: MiningDrillConfiguration[]) => void;
     onReplaceInserters: (inserters: InserterConfiguration[]) => void;
+    onReplaceBelts: (belts: BeltConfiguration[]) => void;
     parseConfig: (content: string) => Promise<Config>;
 }
 
@@ -24,6 +26,7 @@ export function ConfigImportExport({
     onReplaceMachines,
     onReplaceDrills,
     onReplaceInserters,
+    onReplaceBelts,
     parseConfig,
 }: ConfigImportExportProps) {
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -112,14 +115,15 @@ export function ConfigImportExport({
 
             // Check if it's the new format with machines and drills
             if (typeof parsed === 'object' && parsed !== null && 'machines' in parsed) {
-                const data = parsed as { machines?: unknown[]; drills?: unknown[]; inserters?: unknown[] };
+                const data = parsed as { machines?: unknown[]; drills?: unknown[]; inserters?: unknown[]; belts?: unknown[] };
                 
                 const machineCount = Array.isArray(data.machines) ? data.machines.length : 0;
                 const drillCount = Array.isArray(data.drills) ? data.drills.length : 0;
                 const inserterCount = Array.isArray(data.inserters) ? data.inserters.length : 0;
+                const beltCount = Array.isArray(data.belts) ? data.belts.length : 0;
                 
-                if (machineCount === 0 && drillCount === 0 && inserterCount === 0) {
-                    throw new Error('No machines, drills, or inserters found in clipboard data.');
+                if (machineCount === 0 && drillCount === 0 && inserterCount === 0 && beltCount === 0) {
+                    throw new Error('No machines, drills, inserters, or belts found in clipboard data.');
                 }
 
                 // Validate machines (IDs are already assigned by the mod)
@@ -161,6 +165,19 @@ export function ConfigImportExport({
                     }
                 }
 
+                // Validate belts
+                const validatedBelts: BeltConfiguration[] = [];
+                if (Array.isArray(data.belts)) {
+                    for (let i = 0; i < data.belts.length; i++) {
+                        const entry = data.belts[i];
+                        const result = BeltConfigSchema.safeParse(entry);
+                        if (!result.success) {
+                            throw new Error(`Invalid belt at index ${i}: ${result.error.issues[0]?.message || 'Unknown error'}`);
+                        }
+                        validatedBelts.push(result.data);
+                    }
+                }
+
                 if (validatedMachines.length > 0) {
                     onReplaceMachines(validatedMachines);
                 }
@@ -170,11 +187,15 @@ export function ConfigImportExport({
                 if (validatedInserters.length > 0) {
                     onReplaceInserters(validatedInserters);
                 }
+                if (validatedBelts.length > 0) {
+                    onReplaceBelts(validatedBelts);
+                }
 
                 const parts: string[] = [];
                 if (validatedMachines.length > 0) parts.push(`${validatedMachines.length} machines`);
                 if (validatedDrills.length > 0) parts.push(`${validatedDrills.length} drills`);
                 if (validatedInserters.length > 0) parts.push(`${validatedInserters.length} inserters`);
+                if (validatedBelts.length > 0) parts.push(`${validatedBelts.length} belts`);
                 
                 setSnackbar({
                     open: true,
@@ -219,7 +240,7 @@ export function ConfigImportExport({
                 severity: 'error',
             });
         }
-    }, [onReplaceMachines, onReplaceDrills, onReplaceInserters]);
+    }, [onReplaceMachines, onReplaceDrills, onReplaceInserters, onReplaceBelts]);
 
     return (
         <>

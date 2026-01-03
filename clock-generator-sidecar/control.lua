@@ -19,6 +19,15 @@
 ---@field productivity number Productivity bonus as percentage (for display only)
 ---@field drop_target_unit_number number|nil The unit_number of the entity the drill drops to
 
+---@class BeltLaneData
+---@field ingredient string|nil The item on this lane (nil if empty or mixed)
+---@field stack_size number The belt stack size
+
+---@class BeltData
+---@field belt_type string The belt type (e.g., "transport-belt", "express-transport-belt")
+---@field unit_number number The unit number of the belt entity
+---@field lanes BeltLaneData[] Data for each lane (1 = right, 2 = left)
+
 ---@class PlayerData
 ---@field machines MachineData[] Extracted machine data
 ---@field gui LuaGuiElement? Reference to the GUI frame
@@ -105,6 +114,100 @@ local function get_target_type(entity)
     return nil
 end
 
+---Get the primary ingredient from a transport line (first item found, or nil if mixed/empty)
+---@param transport_line LuaTransportLine
+---@return string|nil ingredient The primary ingredient name, or nil
+local function get_lane_ingredient(transport_line)
+    if not transport_line or not transport_line.valid then
+        return nil
+    end
+    
+    local contents = transport_line.get_contents()
+    if not contents or #contents == 0 then
+        return nil
+    end
+    
+    -- Get the first item found on this lane
+    -- contents is an array of {name, quality, count}
+    local first_item = contents[1]
+    if first_item and first_item.name then
+        return first_item.name
+    end
+    
+    return nil
+end
+
+---Normalize belt name to transport belt type (converts underground belts and splitters)
+---@param name string The entity name (e.g., "turbo-underground-belt", "fast-splitter")
+---@return string The normalized transport belt name (e.g., "turbo-transport-belt", "fast-transport-belt")
+local function normalize_belt_type(name)
+    -- Map underground belts to transport belts
+    local underground_to_belt = {
+        ["underground-belt"] = "transport-belt",
+        ["fast-underground-belt"] = "fast-transport-belt",
+        ["express-underground-belt"] = "express-transport-belt",
+        ["turbo-underground-belt"] = "turbo-transport-belt"
+    }
+    
+    -- Map splitters to transport belts
+    local splitter_to_belt = {
+        ["splitter"] = "transport-belt",
+        ["fast-splitter"] = "fast-transport-belt",
+        ["express-splitter"] = "express-transport-belt",
+        ["turbo-splitter"] = "turbo-transport-belt"
+    }
+    
+    return underground_to_belt[name] or splitter_to_belt[name] or name
+end
+
+---Extract data from a transport belt
+---@param entity LuaEntity
+---@return BeltData|nil
+local function extract_belt_data(entity)
+    if not entity or not entity.valid then
+        return nil
+    end
+    
+    -- Only accept transport-belt entity type (covers all belt tiers)
+    if entity.prototype.subgroup.name ~= "belt" then
+        return nil
+    end
+    
+    local lanes = {}
+    
+    -- Transport belts have 2 lines: 1 = right lane, 2 = left lane
+    local max_lines = entity.get_max_transport_line_index()
+    
+    local has_items = false
+    for i = 1, math.min(max_lines, 2) do
+        local transport_line = entity.get_transport_line(i)
+        local ingredient = get_lane_ingredient(transport_line)
+        
+        if ingredient then
+            has_items = true
+        end
+        
+        table.insert(lanes, {
+            ingredient = ingredient,
+            stack_size = 1  -- Default stack size, can be adjusted based on belt type
+        })
+    end
+    
+    -- Skip belts with no items on them
+    if not has_items then
+        return nil
+    end
+    
+    ---@type BeltData
+    local data = {
+        belt_type = normalize_belt_type(entity.name),
+        unit_number = entity.unit_number,
+        lanes = lanes
+    }
+    
+    return data
+end
+
 ---Extract data from an inserter
 ---@param entity LuaEntity
 ---@return InserterData|nil
@@ -136,6 +239,8 @@ local function extract_inserter_data(entity)
     
     -- Get source (pickup target)
     local source = nil
+    local source_recipe_outputs = nil
+    local source_belt_lanes = nil
     local pickup_target = entity.pickup_target
     if pickup_target and pickup_target.valid then
         local target_type = get_target_type(pickup_target)
@@ -144,6 +249,43 @@ local function extract_inserter_data(entity)
                 type = target_type,
                 unit_number = pickup_target.unit_number
             }
+            
+            -- If source is a machine, get its recipe outputs for auto-configuration
+            if target_type == "machine" then
+                local recipe, _ = pickup_target.get_recipe()
+                if recipe then
+                    source_recipe_outputs = {}
+                    for _, product in pairs(recipe.products) do
+                        if product.type == "item" then
+                            table.insert(source_recipe_outputs, product.name)
+                        end
+                    end
+                end
+            -- If source is a belt, get contents from each lane
+            elseif target_type == "belt" then
+                source_belt_lanes = {}
+                local max_lines = pickup_target.get_max_transport_line_index()
+                -- Check which lanes the inserter picks from
+                local picks_left = entity.pickup_from_left_lane
+                local picks_right = entity.pickup_from_right_lane
+                
+                for i = 1, math.min(max_lines, 2) do
+                    local is_right_lane = (i == 1)
+                    local is_left_lane = (i == 2)
+                    
+                    -- Only get contents for lanes the inserter actually picks from
+                    if (is_right_lane and picks_right) or (is_left_lane and picks_left) then
+                        local transport_line = pickup_target.get_transport_line(i)
+                        local ingredient = get_lane_ingredient(transport_line)
+                        if ingredient then
+                            table.insert(source_belt_lanes, {
+                                lane = i,
+                                ingredient = ingredient
+                            })
+                        end
+                    end
+                end
+            end
         end
     end
     
@@ -166,7 +308,9 @@ local function extract_inserter_data(entity)
         stack_size = stack_size,
         filters = filters,
         source = source,
-        sink = sink
+        sink = sink,
+        source_recipe_outputs = source_recipe_outputs,
+        source_belt_lanes = source_belt_lanes
     }
     
     return data
@@ -238,6 +382,18 @@ local function extract_machine_data(entity)
         return extract_mining_drill_data(entity), "drill"
     end
 
+    -- Only handle entities with supported subgroups
+    local supported_subgroups = {
+        ["smelting-machine"] = true,
+        ["production-machine"] = true
+    }
+    
+    local prototype = entity.prototype
+    local subgroup = prototype and prototype.subgroup and prototype.subgroup.name
+    if not supported_subgroups[subgroup] then
+        return nil
+    end
+
     -- Handle crafting machines (assemblers, furnaces, etc.)
     return extract_crafting_machine_data(entity), "machine"
 end
@@ -246,9 +402,11 @@ end
 ---@field machines MachineData[]
 ---@field drills DrillData[]
 ---@field inserters InserterData[]
+---@field belts BeltData[]
 ---@field unit_number_to_id table<number, number> Maps entity unit_number to machine ID
+---@field belt_unit_number_to_id table<number, number> Maps belt unit_number to belt ID
 
----Extract data from all selected entities, separating machines, drills, and inserters
+---Extract data from all selected entities, separating machines, drills, inserters, and belts
 ---@param entities LuaEntity[]
 ---@return ExtractionResult
 local function extract_all_entities(entities)
@@ -256,13 +414,15 @@ local function extract_all_entities(entities)
         machines = {},
         drills = {},
         inserters = {},
-        unit_number_to_id = {}
+        belts = {},
+        unit_number_to_id = {},
+        belt_unit_number_to_id = {}
     }
     
     -- First pass: extract machines and build unit_number -> id mapping
     local machine_id = 0
     for _, entity in pairs(entities) do
-        if entity.type ~= "mining-drill" and entity.type ~= "inserter" then
+        if entity.type ~= "mining-drill" and entity.type ~= "inserter" and entity.type ~= "transport-belt" then
             local data, entity_category = extract_machine_data(entity)
             if data and entity_category == "machine" then
                 machine_id = machine_id + 1
@@ -275,7 +435,51 @@ local function extract_all_entities(entities)
         end
     end
     
-    -- Second pass: extract drills (now we have the unit_number mapping)
+    -- Second pass: extract belts and build belt unit_number -> id mapping
+    -- Consolidate belts by their ingredient set (belts with same ingredients are treated as one)
+    local belt_id = 0
+    local ingredient_signature_to_belt = {}  -- Maps "ingredient1|ingredient2" to {belt_id, data}
+    
+    for _, entity in pairs(entities) do
+        local belt_data = extract_belt_data(entity)
+        if belt_data then
+            -- Create a signature based on the unique set of ingredients (sorted for consistency)
+            local ingredient_set = {}
+            for _, lane in ipairs(belt_data.lanes) do
+                if lane.ingredient and lane.ingredient ~= "" then
+                    ingredient_set[lane.ingredient] = true
+                end
+            end
+            -- Convert set to sorted array
+            local ingredients = {}
+            for ingredient, _ in pairs(ingredient_set) do
+                table.insert(ingredients, ingredient)
+            end
+            table.sort(ingredients)
+            local signature = table.concat(ingredients, "|")
+            
+            local existing = ingredient_signature_to_belt[signature]
+            if existing then
+                -- Map this belt to the existing belt with same ingredients
+                if entity.unit_number then
+                    result.belt_unit_number_to_id[entity.unit_number] = existing.belt_id
+                end
+            else
+                -- New unique belt line
+                belt_id = belt_id + 1
+                ingredient_signature_to_belt[signature] = {
+                    belt_id = belt_id,
+                    data = belt_data
+                }
+                table.insert(result.belts, belt_data)
+                if entity.unit_number then
+                    result.belt_unit_number_to_id[entity.unit_number] = belt_id
+                end
+            end
+        end
+    end
+    
+    -- Third pass: extract drills (now we have the unit_number mapping)
     for _, entity in pairs(entities) do
         if entity.type == "mining-drill" then
             local data = extract_mining_drill_data(entity)
@@ -285,7 +489,7 @@ local function extract_all_entities(entities)
         end
     end
     
-    -- Third pass: extract inserters
+    -- Fourth pass: extract inserters
     for _, entity in pairs(entities) do
         if entity.type == "inserter" then
             local data = extract_inserter_data(entity)
@@ -309,7 +513,8 @@ local function to_export_json(result)
     local export = {
         machines = {},
         drills = {},
-        inserters = {}
+        inserters = {},
+        belts = {}
     }
     
     -- Format machines for clock-generator
@@ -320,6 +525,23 @@ local function to_export_json(result)
             crafting_speed = machine.crafting_speed,
             productivity = machine.productivity,
             type = machine.type
+        })
+    end
+    
+    -- Format belts for clock-generator
+    for i, belt in ipairs(result.belts) do
+        local lanes = {}
+        for _, lane in ipairs(belt.lanes) do
+            table.insert(lanes, {
+                ingredient = lane.ingredient or "",
+                stack_size = lane.stack_size
+            })
+        end
+        
+        table.insert(export.belts, {
+            id = i,
+            type = belt.belt_type,
+            lanes = lanes
         })
     end
     
@@ -348,14 +570,23 @@ local function to_export_json(result)
     
     -- Format inserters for clock-generator
     for _, inserter in ipairs(result.inserters) do
-        -- Resolve source target ID
+        -- Resolve source target ID (machines or belts)
         local source_config = nil
         if inserter.source then
             local source_id = 1 -- Default fallback
             if inserter.source.unit_number then
-                local mapped_id = result.unit_number_to_id[inserter.source.unit_number]
-                if mapped_id then
-                    source_id = mapped_id
+                if inserter.source.type == "belt" then
+                    -- Look up belt ID
+                    local mapped_id = result.belt_unit_number_to_id[inserter.source.unit_number]
+                    if mapped_id then
+                        source_id = mapped_id
+                    end
+                else
+                    -- Look up machine/chest ID
+                    local mapped_id = result.unit_number_to_id[inserter.source.unit_number]
+                    if mapped_id then
+                        source_id = mapped_id
+                    end
                 end
             end
             source_config = {
@@ -364,14 +595,23 @@ local function to_export_json(result)
             }
         end
         
-        -- Resolve sink target ID
+        -- Resolve sink target ID (machines or belts)
         local sink_config = nil
         if inserter.sink then
             local sink_id = 1 -- Default fallback
             if inserter.sink.unit_number then
-                local mapped_id = result.unit_number_to_id[inserter.sink.unit_number]
-                if mapped_id then
-                    sink_id = mapped_id
+                if inserter.sink.type == "belt" then
+                    -- Look up belt ID
+                    local mapped_id = result.belt_unit_number_to_id[inserter.sink.unit_number]
+                    if mapped_id then
+                        sink_id = mapped_id
+                    end
+                else
+                    -- Look up machine/chest ID
+                    local mapped_id = result.unit_number_to_id[inserter.sink.unit_number]
+                    if mapped_id then
+                        sink_id = mapped_id
+                    end
                 end
             end
             sink_config = {
@@ -388,9 +628,25 @@ local function to_export_json(result)
                 stack_size = inserter.stack_size
             }
             
-            -- Add filters if any exist
+            -- Determine filters - use explicit filters first, then infer from source
+            local filters = {}
             if #inserter.filters > 0 then
-                inserter_export.filters = inserter.filters
+                filters = inserter.filters
+            elseif inserter.source_recipe_outputs and #inserter.source_recipe_outputs > 0 then
+                -- Infer from source machine's recipe outputs
+                filters = inserter.source_recipe_outputs
+            elseif inserter.source_belt_lanes and #inserter.source_belt_lanes > 0 then
+                -- Infer from source belt's lane contents
+                for _, lane_data in ipairs(inserter.source_belt_lanes) do
+                    if lane_data.ingredient then
+                        table.insert(filters, lane_data.ingredient)
+                    end
+                end
+            end
+            
+            -- Add filters if any exist (including inferred ones)
+            if #filters > 0 then
+                inserter_export.filters = filters
             end
             
             table.insert(export.inserters, inserter_export)
@@ -498,7 +754,7 @@ local function create_gui(player, result)
     -- Remove existing GUI
     destroy_gui(player)
 
-    local total_count = #result.machines + #result.drills + #result.inserters
+    local total_count = #result.machines + #result.drills + #result.inserters + #result.belts
 
     -- Main frame
     local frame = player.gui.screen.add({
@@ -522,7 +778,7 @@ local function create_gui(player, result)
 
     header.add({
         type = "label",
-        caption = { "clock-generator-sidecar.machine-count", total_count },
+        caption = { "clock-generator-sidecar.entity-count", total_count },
         style = "heading_2_label"
     })
 
@@ -532,8 +788,8 @@ local function create_gui(player, result)
         direction = "vertical",
         style = "inside_shallow_frame_with_padding"
     })
-    content_frame.style.minimal_width = 550
-    content_frame.style.maximal_height = 450
+    content_frame.style.minimal_width = 600
+    content_frame.style.maximal_height = 500
 
     if total_count == 0 then
         content_frame.add({
@@ -549,7 +805,7 @@ local function create_gui(player, result)
             vertical_scroll_policy = "auto",
             horizontal_scroll_policy = "never"
         })
-        scroll.style.maximal_height = 400
+        scroll.style.maximal_height = 500
 
         -- Display machines if any
         if #result.machines > 0 then
@@ -695,6 +951,64 @@ local function create_gui(player, result)
                     sink_text = inserter.sink.type
                 end
                 inserter_table.add({ type = "label", caption = sink_text })
+            end
+            
+            -- Add spacing if belts follow
+            if #result.belts > 0 then
+                local spacer = scroll.add({ type = "flow" })
+                spacer.style.height = 16
+            end
+        end
+        
+        -- Display belts if any
+        if #result.belts > 0 then
+            local belts_header = scroll.add({
+                type = "label",
+                caption = "Transport Belts (" .. #result.belts .. ")",
+                style = "heading_2_label"
+            })
+            belts_header.style.bottom_margin = 4
+
+            local belt_table = scroll.add({
+                type = "table",
+                column_count = 4,
+                draw_horizontal_lines = true,
+                draw_vertical_lines = false
+            })
+            belt_table.style.horizontal_spacing = 16
+            belt_table.style.column_alignments[1] = "center"
+            belt_table.style.column_alignments[2] = "left"
+            belt_table.style.column_alignments[3] = "left"
+            belt_table.style.column_alignments[4] = "left"
+
+            -- Header labels for belts
+            local b_headers = { "#", "Type", "Lane 1", "Lane 2" }
+            for _, h in ipairs(b_headers) do
+                belt_table.add({
+                    type = "label",
+                    caption = h,
+                    style = "bold_label"
+                })
+            end
+
+            -- Belt rows
+            for i, belt in ipairs(result.belts) do
+                belt_table.add({ type = "label", caption = tostring(i) })
+                belt_table.add({ type = "label", caption = belt.belt_type })
+                
+                -- Lane 1 (right lane)
+                local lane1_text = "(empty)"
+                if belt.lanes[1] and belt.lanes[1].ingredient then
+                    lane1_text = belt.lanes[1].ingredient
+                end
+                belt_table.add({ type = "label", caption = lane1_text })
+                
+                -- Lane 2 (left lane)
+                local lane2_text = "(empty)"
+                if belt.lanes[2] and belt.lanes[2].ingredient then
+                    lane2_text = belt.lanes[2].ingredient
+                end
+                belt_table.add({ type = "label", caption = lane2_text })
             end
         end
     end

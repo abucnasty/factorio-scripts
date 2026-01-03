@@ -160,6 +160,7 @@ export interface UseConfigFormResult {
     addBelt: () => void;
     updateBelt: (index: number, updates: Partial<BeltFormData>) => void;
     removeBelt: (index: number) => void;
+    replaceBelts: (belts: BeltFormData[]) => void;
     
     // Chests
     addChest: () => void;
@@ -337,6 +338,13 @@ export function useConfigForm(): UseConfigFormResult {
         setConfig((prev) => ({
             ...prev,
             belts: prev.belts.filter((_, i) => i !== index),
+        }));
+    }, []);
+
+    const replaceBelts = useCallback((newBelts: BeltFormData[]) => {
+        setConfig((prev) => ({
+            ...prev,
+            belts: newBelts,
         }));
     }, []);
 
@@ -615,6 +623,7 @@ export function useConfigForm(): UseConfigFormResult {
         addBelt,
         updateBelt,
         removeBelt,
+        replaceBelts,
         addChest,
         updateChest,
         removeChest,

@@ -15,13 +15,13 @@ data:extend({
             border_color = { r = 0, g = 1, b = 0.5 },
             cursor_box_type = "copy",
             mode = { "buildable-type", "same-force" },
-            entity_type_filters = { "assembling-machine", "furnace", "mining-drill", "lab", "inserter" }
+            entity_type_filters = { "assembling-machine", "furnace", "mining-drill", "lab", "inserter", "transport-belt", "underground-belt", "splitter" }
         },
         alt_select = {
             border_color = { r = 1, g = 0.5, b = 0 },
             cursor_box_type = "copy",
             mode = { "buildable-type", "same-force" },
-            entity_type_filters = { "assembling-machine", "furnace", "mining-drill", "lab", "inserter" }
+            entity_type_filters = { "assembling-machine", "furnace", "mining-drill", "lab", "inserter", "transport-belt", "underground-belt", "splitter" }
         },
         flags = { "only-in-cursor", "spawnable" }
     },

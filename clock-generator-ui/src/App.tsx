@@ -90,6 +90,7 @@ function App() {
         addBelt,
         updateBelt,
         removeBelt,
+        replaceBelts,
         addChest,
         updateChest,
         removeChest,
@@ -169,6 +170,7 @@ function App() {
                             onReplaceMachines={replaceMachines}
                             onReplaceDrills={replaceDrills}
                             onReplaceInserters={replaceInserters}
+                            onReplaceBelts={replaceBelts}
                             parseConfig={parseConfig}
                         />
                         <Tooltip title="Reset all configuration to defaults">
