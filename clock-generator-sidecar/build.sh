@@ -44,13 +44,16 @@ rm -rf "$TEMP_DIR"
 echo ""
 echo "✅ Built: $OUTPUT_FILE"
 echo ""
-echo "To install:"
-echo "  1. Copy $OUTPUT_FILE to your Factorio mods folder:"
-echo "     macOS:   ~/Library/Application Support/factorio/mods/"
-echo "     Linux:   ~/.factorio/mods/"
-echo "     Windows: %APPDATA%\\Factorio\\mods\\"
-echo ""
-echo "  2. Or run: ./build.sh --install"
+
+if [[ "$1" != "--install" ]]; then
+    echo "To install:"
+    echo "  1. Copy $OUTPUT_FILE to your Factorio mods folder:"
+    echo "     macOS:   ~/Library/Application Support/factorio/mods/"
+    echo "     Linux:   ~/.factorio/mods/"
+    echo "     Windows: %APPDATA%\\Factorio\\mods\\"
+    echo ""
+    echo "  2. Or run: ./build.sh --install"
+fi
 
 # Handle --install flag
 if [[ "$1" == "--install" ]]; then
