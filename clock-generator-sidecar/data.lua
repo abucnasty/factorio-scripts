@@ -6,7 +6,7 @@ data:extend({
     {
         type = "selection-tool",
         name = "clock-generator-sidecar",
-        icon = "__base__/graphics/icons/blueprint.png",
+        icon = "__clock-generator-sidecar__/graphics/bbq_right.png",
         icon_size = 64,
         subgroup = "tool",
         order = "c[automated-construction]-d[clock-generator-sidecar]",
@@ -32,9 +32,9 @@ data:extend({
         name = "clock-generator-sidecar-shortcut",
         action = "spawn-item",
         item_to_spawn = "clock-generator-sidecar",
-        icon = "__base__/graphics/icons/blueprint.png",
+        icon = "__clock-generator-sidecar__/graphics/bbq_right.png",
         icon_size = 64,
-        small_icon = "__base__/graphics/icons/blueprint.png",
+        small_icon = "__clock-generator-sidecar__/graphics/bbq_right.png",
         small_icon_size = 64,
         associated_control_input = "clock-generator-sidecar-toggle"
     },

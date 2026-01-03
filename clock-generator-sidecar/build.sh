@@ -32,6 +32,7 @@ cp info.json "$MOD_DIR/"
 cp data.lua "$MOD_DIR/"
 cp control.lua "$MOD_DIR/"
 cp -r locale "$MOD_DIR/"
+cp -r graphics "$MOD_DIR/"
 
 # Create the zip file
 cd "$TEMP_DIR"
