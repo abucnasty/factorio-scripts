@@ -42,7 +42,7 @@ export function OverridesForm({
                             )
                         }
                         slotProps={{ htmlInput: { min: 1 } }}
-                        sx={{ width: 150 }}
+                        sx={{ width: 200 }}
                         size="small"
                         helperText="Override the calculated LCM"
                     />
