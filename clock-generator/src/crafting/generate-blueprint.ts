@@ -176,6 +176,17 @@ export function generateClockForConfig(
     const recipe_lcm = config.overrides?.lcm ?? EntityTransferCountMap.lcm(swing_counts);
     logger.log(`Simulation context ingredient LCM: ${recipe_lcm}`);
 
+    logger.log("\n--- Swing Distributions ---");
+    if (crafting_cycle_plan.swing_distribution) {
+        for (const [entityId, dist] of crafting_cycle_plan.swing_distribution.entries()) {
+            logger.log(`Entity "${entityId}":`);
+            logger.log(`  Total swings: ${dist.total_swings}`);
+            logger.log(`  Swings per sub-cycle: [${dist.swings_per_subcycle.join(', ')}]`);
+        }
+    } else {
+        logger.log("No swing distribution");
+    }
+
     // Create resettable registry for centralized reset management
     const resettable_registry = new ResettableRegistry();
 
@@ -223,7 +234,7 @@ export function generateClockForConfig(
     const duration: Duration = Duration.ofTicks(crafting_cycle_plan.total_duration.ticks * recipe_lcm);
 
     assert(warmup_period.ticks < MAX_SIMULATION_TICKS, `Warmup period of ${warmup_period.ticks} ticks exceeds maximum allowed ${MAX_SIMULATION_TICKS} ticks`);
-
+    logger.log(`Base Cycle Ticks: ${crafting_cycle_plan.total_duration.ticks}`);
     logger.log(`Warm up period: ${warmup_period.ticks} ticks`);
     logger.log(`Simulation period: ${duration.ticks} ticks`);
 
@@ -271,6 +282,7 @@ export function generateClockForConfig(
     );
     const final_history = trimmed_history;
 
+    logger.log("\n--- Transfer History ---");
     InventoryTransferHistory.print(final_history, logger);
 
     // Create blueprint - use target output item name (same for all output machines)

@@ -5,11 +5,32 @@ import { TargetProductionRate } from "../../target-production-rate";
 import { EntityTransferCountMap } from "./swing-counts";
 import { Entity, ReadableEntityRegistry } from "../../../entities";
 import { ConfigOverrides } from "../../../config";
+import { SwingDistribution, SwingDistributionMap } from "./swing-distribution";
 
 export interface CraftingCyclePlan {
+    /** Duration of a single base cycle (before LCM multiplication) */
     readonly total_duration: Duration;
+    /** Map of entity IDs to their transfer counts per base cycle */
     readonly entity_transfer_map: EntityTransferCountMap;
+    /** Target production rate configuration */
     readonly production_rate: TargetProductionRate;
+    /** 
+     * Whether fractional swings are enabled.
+     * When true, swing_distribution will contain per-sub-cycle swing counts.
+     */
+    readonly fractional_swings_enabled: boolean;
+    /**
+     * Swing distribution map for fractional swings.
+     * Only populated when fractional_swings_enabled is true.
+     * Maps entity ID string to SwingDistribution containing per-sub-cycle counts.
+     */
+    readonly swing_distribution?: SwingDistributionMap;
+    /**
+     * The cycle multiplier (LCM of swing denominators) for fractional swings.
+     * Represents how many sub-cycles make up the full extended period.
+     * Only set when fractional_swings_enabled is true.
+     */
+    readonly cycle_multiplier?: number;
 }
 
 export const CraftingCyclePlan = {
@@ -73,38 +94,78 @@ function createPlan(
             .toDecimal()
     )
 
-    let swings_per_single_cycle = 1;
-
-    if (max_possible_swings.toDecimal() >= 2) {
-        swings_per_single_cycle = Math.floor(max_possible_swings.toDecimal());
+    const use_fractional_swings = config_overrides.use_fractional_swings ?? false;
+    
+    // Determine swings per cycle - either fractional or integer
+    let swings_per_cycle: Fraction;
+    
+    if (use_fractional_swings) {
+        // Fractional mode: use the raw fraction without rounding
+        if (config_overrides.terminal_swing_count !== undefined) {
+            swings_per_cycle = fraction(config_overrides.terminal_swing_count);
+        } else {
+            swings_per_cycle = max_possible_swings;
+        }
     } else {
-        // only single swing outputs are supported when max swings are less than 2
-        // in order to support fractional swings, the timing is going to have to be scheduled based on the crafting
-        // speed of the machine in order for it to be fully stable
-        swings_per_single_cycle = 1;
+        // Integer mode: floor to integer (original behavior)
+        let swings_per_single_cycle = 1;
+
+        if (max_possible_swings.toDecimal() >= 2) {
+            swings_per_single_cycle = Math.floor(max_possible_swings.toDecimal());
+        } else {
+            // only single swing outputs are supported when max swings are less than 2
+            // in order to support fractional swings, the timing is going to have to be scheduled based on the crafting
+            // speed of the machine in order for it to be fully stable
+            swings_per_single_cycle = 1;
+        }
+
+        if (config_overrides.terminal_swing_count !== undefined) {
+            swings_per_single_cycle = config_overrides.terminal_swing_count;
+        }
+
+        assert(Number.isInteger(swings_per_single_cycle), `Swings per single cycle must be an integer but got ${swings_per_single_cycle}`);
+        swings_per_cycle = fraction(swings_per_single_cycle);
     }
 
-    if (config_overrides.terminal_swing_count !== undefined) {
-        swings_per_single_cycle = config_overrides.terminal_swing_count;
-    }
-
-    assert(Number.isInteger(swings_per_single_cycle), `Swings per single cycle must be an integer but got ${swings_per_single_cycle}`);
-
-    const final_period_duration = Duration.ofTicks(single_swing_period_duration.ticks * swings_per_single_cycle)
+    const final_period_duration = Duration.ofTicks(single_swing_period_duration.ticks * swings_per_cycle.toDecimal())
 
     // Compute swing counts for all output machines
     // Each output machine handles the same swing count per machine
     const swing_counts = EntityTransferCountMap.create(
         output_machines,
         entity_registry,
-        fraction(swings_per_single_cycle),
+        swings_per_cycle,
         output_stack_size
     )
+
+    // Compute swing distributions if fractional swings are enabled
+    if (use_fractional_swings) {
+        const cycle_multiplier = EntityTransferCountMap.lcm(swing_counts);
+        
+        // Only compute distributions if there are actual fractional swings (LCM > 1)
+        if (cycle_multiplier > 1) {
+            const swing_distribution = SwingDistribution.computeSwingDistributions(
+                swing_counts,
+                entity_registry,
+                cycle_multiplier
+            );
+
+            return {
+                total_duration: final_period_duration,
+                entity_transfer_map: swing_counts.clone(),
+                production_rate: target_production_rate,
+                fractional_swings_enabled: true,
+                swing_distribution,
+                cycle_multiplier
+            }
+        }
+    }
 
     return {
         total_duration: final_period_duration,
         entity_transfer_map: swing_counts.clone(),
-        production_rate: target_production_rate
+        production_rate: target_production_rate,
+        fractional_swings_enabled: false
     }
 }
 

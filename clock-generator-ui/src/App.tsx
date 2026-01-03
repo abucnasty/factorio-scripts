@@ -259,6 +259,7 @@ function App() {
                                 <OverridesForm
                                     lcm={config.overrides?.lcm}
                                     terminalSwingCount={config.overrides?.terminal_swing_count}
+                                    useFractionalSwings={config.overrides?.use_fractional_swings}
                                     onUpdate={updateOverrides}
                                 />
                             </Box>

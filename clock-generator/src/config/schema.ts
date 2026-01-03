@@ -271,7 +271,20 @@ export type ChestConfig = z.infer<typeof ChestConfigSchema>;
 
 export const ConfigOverridesSchema = z.object({
     lcm: z.number().int().positive().optional(),
-    terminal_swing_count: z.number().int().positive().optional()
+    terminal_swing_count: z.number().int().positive().optional(),
+    /**
+     * Enable fractional swing support for inserters.
+     * 
+     * When enabled, inserters with fractional swing counts (e.g., 3/2 swings per cycle)
+     * will have their cycles extended to distribute swings across multiple sub-cycles.
+     * For example, 3/2 swings becomes 1 swing in the first sub-cycle and 2 swings in the second.
+     * 
+     * The swing distribution uses a back-loaded strategy to maximize items available
+     * before swinging, while respecting automated_insertion_limit constraints.
+     * 
+     * @default false
+     */
+    use_fractional_swings: z.boolean().optional()
 });
 
 export type ConfigOverrides = z.infer<typeof ConfigOverridesSchema>;

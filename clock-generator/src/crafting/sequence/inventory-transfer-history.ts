@@ -196,13 +196,15 @@ function printInventoryTransfers(
                 .forEach((transfer) => {
                     const start_inclusive = transfer.tick_range.start_inclusive;
                     const end_inclusive = transfer.tick_range.end_inclusive;
+                    const amount = transfer.amount;
                     if (relative_tick_mod > 0) {
                         const start_mod = start_inclusive % relative_tick_mod;
                         const end_mod = end_inclusive % relative_tick_mod;
-                        logger.log(`- [${start_inclusive} - ${end_inclusive}](${start_mod} - ${end_mod}) (${transfer.tick_range.duration().ticks} ticks) ${transfer.item_name}`);
+                        
+                        logger.log(`- [${start_inclusive} - ${end_inclusive}](${start_mod} - ${end_mod}) (${transfer.tick_range.duration().ticks} ticks) ${transfer.item_name} x${amount}`);
                         return;
                     }
-                    logger.log(`- [${start_inclusive} - ${end_inclusive}] (${transfer.tick_range.duration().ticks} ticks) ${transfer.item_name}`);
+                    logger.log(`- [${start_inclusive} - ${end_inclusive}] (${transfer.tick_range.duration().ticks} ticks) ${transfer.item_name} x${amount}`);
                 })
         })
 }
@@ -256,6 +258,7 @@ function computeLastSwingOffsetDuration(
     if (mode === SimulationMode.PREVENT_DESYNCS || mode === SimulationMode.LOW_INSERTION_LIMITS) {
         const inserter_stack_size = inserter.metadata.stack_size;
         const amount_per_craft_int = Math.ceil(source_machine.output.amount_per_craft.toDecimal());
+        return Duration.ofTicks(5);
         /**
          * okay... so...
          * this is going to look like magic because, it is.
