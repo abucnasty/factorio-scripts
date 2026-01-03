@@ -28,8 +28,12 @@ export function OverridesForm({
             </AccordionSummary>
             <AccordionDetails>
                 <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                    These options allow you to manually override calculated values. Leave empty to use automatic calculation.
+                    These options allow you to manually override calculated values.
+                    Leave empty to use automatic calculation.
+                    <br />
+                    
                 </Typography>
+                
                 <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
                     <TextField
                         label="LCM Override"
@@ -62,6 +66,9 @@ export function OverridesForm({
                         helperText="Override max swings per cycle"
                     />
                 </Box>
+                <Typography variant="caption" color="text.secondary" sx={{ mb: 2 }}>
+                    Note: If the final output machine has more than 1 inserter, the terminal swing count will be devided equally between them.
+                </Typography>
             </AccordionDetails>
         </Accordion>
     );

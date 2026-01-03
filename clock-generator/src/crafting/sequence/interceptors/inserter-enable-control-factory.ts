@@ -717,20 +717,22 @@ export class EnableControlFactory {
 
     /**
      * Find all inserters that take output from terminal machines.
-     * Each terminal machine must have exactly one dedicated output inserter.
+     * Multiple output inserters per terminal machine are supported (they work in parallel).
      */
     private findFinalInserters(): Set<InserterState> {
         const final_inserters = new Set<InserterState>();
         for (const terminal_machine of this.terminal_machine_states) {
-            const inserter = this.entity_state_registry
+            const inserters = this.entity_state_registry
                 .getAllStates()
                 .filter(EntityState.isInserter)
-                .find(s => s.inserter.source.entity_id.id === terminal_machine.entity_id.id);
+                .filter(s => s.inserter.source.entity_id.id === terminal_machine.entity_id.id);
             assert(
-                inserter !== undefined,
+                inserters.length >= 1,
                 `No inserter found taking output from terminal machine ${terminal_machine.entity_id.id}`
             );
-            final_inserters.add(inserter);
+            for (const inserter of inserters) {
+                final_inserters.add(inserter);
+            }
         }
         return final_inserters;
     }
