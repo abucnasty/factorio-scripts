@@ -55,7 +55,7 @@ function computeInserterSwingCountsForMultipleMachines(
 ): EntityTransferCountMap {
     assert(output_machines.length > 0, "At least one output machine is required");
     
-    // Validate that each output machine has exactly one dedicated output inserter
+    // Find all output inserters for each machine
     const output_inserters_by_machine = new Map<string, Inserter[]>();
     for (const machine of output_machines) {
         const inserters = entity_registry.getAll()
@@ -64,18 +64,29 @@ function computeInserterSwingCountsForMultipleMachines(
         output_inserters_by_machine.set(machine.entity_id.id, inserters);
     }
     
-    // Check for machines without dedicated inserters
+    // Validate each machine has at least one output inserter and all have the same stack size
     for (const machine of output_machines) {
         const inserters = output_inserters_by_machine.get(machine.entity_id.id) ?? [];
         assert(
-            inserters.length === 1,
-            `Output machine ${machine.entity_id.id} must have exactly one dedicated output inserter, ` +
-            `but found ${inserters.length}. Each output machine requires its own output inserter.`
+            inserters.length >= 1,
+            `Output machine ${machine.entity_id.id} must have at least one dedicated output inserter, ` +
+            `but found ${inserters.length}.`
         );
+        
+        // Validate all output inserters have the same stack size
+        const first_stack_size = inserters[0].metadata.stack_size;
+        for (const inserter of inserters) {
+            assert(
+                inserter.metadata.stack_size === first_stack_size,
+                `All output inserters from machine ${machine.entity_id.id} must have the same stack size. ` +
+                `Found ${inserter.metadata.stack_size} but expected ${first_stack_size}.`
+            );
+        }
     }
     
-    // If only one output machine, use the original function directly
-    if (output_machines.length === 1) {
+    // If only one output machine with one inserter, use the original function directly
+    const first_machine_inserters = output_inserters_by_machine.get(output_machines[0].entity_id.id) ?? [];
+    if (output_machines.length === 1 && first_machine_inserters.length === 1) {
         return computeInserterSwingCounts(
             output_machines[0],
             entity_registry,
@@ -84,17 +95,26 @@ function computeInserterSwingCountsForMultipleMachines(
         );
     }
     
-    // For multiple output machines, compute swing counts for each and merge
+    // For multiple output machines (or multiple inserters), compute swing counts for each and merge
     const combined_result = new EntityTransferCountMap();
     
     for (const machine of output_machines) {
-        const machine_swing_counts = computeInserterSwingCounts(
-            machine,
-            entity_registry,
-            output_swing_count_per_machine,
-            output_stack_size,
-            new EntityTransferCountMap()
-        );
+        const inserters = output_inserters_by_machine.get(machine.entity_id.id) ?? [];
+        const num_output_inserters = inserters.length;
+        
+        // Divide the swing count among multiple output inserters (they work in parallel)
+        const swing_count_per_inserter = output_swing_count_per_machine.divide(num_output_inserters);
+        
+        // Compute swing counts for each output inserter
+        for (const output_inserter of inserters) {
+            const machine_swing_counts = computeInserterSwingCounts(
+                machine,
+                entity_registry,
+                swing_count_per_inserter,
+                output_stack_size,
+                new EntityTransferCountMap(),
+                output_inserter  // Pass the specific output inserter
+            );
         
         // Merge into combined result
         for (const [entity_id, transfer_count] of machine_swing_counts.entries()) {
@@ -120,6 +140,7 @@ function computeInserterSwingCountsForMultipleMachines(
                 combined_result.set(entity_id, transfer_count);
             }
         }
+        }  // End of inserter loop
     }
     
     return combined_result;
