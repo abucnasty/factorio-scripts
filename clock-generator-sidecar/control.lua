@@ -672,6 +672,7 @@ local function destroy_gui(player)
     end
     if storage[player.index] then
         storage[player.index].gui = nil
+        storage[player.index].extraction_result = nil
     end
 end
 
