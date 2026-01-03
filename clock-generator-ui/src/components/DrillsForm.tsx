@@ -83,7 +83,7 @@ export function DrillsForm({
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, width: '100%' }}>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                         <Typography variant="h6">
-                            Mining Drills (Optional)
+                            Mining Drills
                         </Typography>
                         <IconButton 
                             size="small" 
