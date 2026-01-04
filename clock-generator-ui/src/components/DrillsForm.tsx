@@ -3,7 +3,6 @@ import {
     Accordion,
     AccordionDetails,
     AccordionSummary,
-    Autocomplete,
     Box,
     Button,
     FormControl,
@@ -22,6 +21,7 @@ import { useState } from 'react';
 import type { DrillFormData, EnableControlOverride } from '../hooks/useConfigForm';
 import { EnableControlModal } from './EnableControlModal';
 import { FactorioIcon } from './FactorioIcon';
+import { ItemSelector } from './ItemSelector';
 
 const DRILL_TYPES = [
     { value: 'electric-mining-drill', label: 'Electric Mining Drill' },
@@ -225,42 +225,15 @@ export function DrillsForm({
                                         ))}
                                     </Select>
                                 </FormControl>
-                                <Autocomplete
-                                    sx={{ minWidth: 200, flex: 1 }}
-                                    options={resourceNames}
-                                    value={drill.mined_item_name || null}
-                                    onChange={(_, newValue) =>
-                                        onUpdate(index, { mined_item_name: newValue || '' })
-                                    }
-                                    renderInput={(params) => (
-                                        <TextField
-                                            {...params}
-                                            label="Mined Resource"
-                                            placeholder="Search resources..."
-                                            size="small"
-                                            slotProps={{
-                                                input: {
-                                                    ...params.InputProps,
-                                                    startAdornment: drill.mined_item_name ? (
-                                                        <Box sx={{ display: 'flex', alignItems: 'center', ml: 1 }}>
-                                                            <FactorioIcon name={drill.mined_item_name} size={20} />
-                                                        </Box>
-                                                    ) : null,
-                                                },
-                                            }}
-                                        />
-                                    )}
-                                    renderOption={(props, option) => {
-                                        const { key, ...rest } = props;
-                                        return (
-                                            <Box component="li" key={key} {...rest} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                                <FactorioIcon name={option} size={20} />
-                                                {option}
-                                            </Box>
-                                        );
+                                <ItemSelector
+                                    value={drill.mined_item_name || ''}
+                                    onChange={(newValue) => {
+                                        if (newValue) {
+                                            onUpdate(index, { mined_item_name: newValue });
+                                        }
                                     }}
-                                    freeSolo
-                                    autoHighlight
+                                    options={resourceNames}
+                                    label="Mined Resource"
                                 />
                                 <TextField
                                     label="Speed Bonus"

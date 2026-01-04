@@ -1,6 +1,5 @@
 import { Add, Delete } from '@mui/icons-material';
 import {
-    Autocomplete,
     Box,
     Button,
     IconButton,
@@ -9,7 +8,7 @@ import {
     Typography,
 } from '@mui/material';
 import type { ChestFormData } from '../hooks/useConfigForm';
-import { FactorioIcon } from './FactorioIcon';
+import { ItemSelector } from './ItemSelector';
 
 interface ChestsFormProps {
     chests: ChestFormData[];
@@ -77,43 +76,11 @@ export function ChestsForm({
                         size="small"
                     />
 
-                    <Autocomplete
-                        size="small"
-                        sx={{ minWidth: 200 }}
-                        options={itemNames}
+                    <ItemSelector
                         value={chest.item_filter || null}
-                        onChange={(_, newValue) => onUpdate(index, { item_filter: newValue || '' })}
-                        renderInput={(params) => (
-                            <TextField
-                                {...params}
-                                label="Item Filter"
-                                slotProps={{
-                                    input: {
-                                        ...params.InputProps,
-                                        startAdornment: chest.item_filter ? (
-                                            <Box sx={{ display: 'flex', alignItems: 'center', ml: 1 }}>
-                                                <FactorioIcon name={chest.item_filter} size={20} />
-                                            </Box>
-                                        ) : null,
-                                    },
-                                }}
-                            />
-                        )}
-                        renderOption={(props, option) => {
-                            const { key, ...rest } = props;
-                            return (
-                                <Box
-                                    component="li"
-                                    key={key}
-                                    {...rest}
-                                    sx={{ display: 'flex', alignItems: 'center', gap: 1 }}
-                                >
-                                    <FactorioIcon name={option} size={20} />
-                                    {option}
-                                </Box>
-                            );
-                        }}
-                        autoHighlight
+                        options={itemNames}
+                        onChange={(newValue) => onUpdate(index, { item_filter: newValue || '' })}
+                        label="Item Filter"
                     />
 
                     <Box sx={{ flex: 1 }} />
