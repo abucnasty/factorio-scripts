@@ -220,7 +220,8 @@ export function generateClockForConfig(
         simulation_context.state_registry,
         crafting_cycle_plan,
         relative_tick_provider,
-        resettable_registry
+        resettable_registry,
+        logger
     );
 
     // Clone simulation context with interceptors

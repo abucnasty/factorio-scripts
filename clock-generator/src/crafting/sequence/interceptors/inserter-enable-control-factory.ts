@@ -8,6 +8,7 @@ import { computeSimulationMode, SimulationMode, simulationModeForInput } from ".
 import { CraftingCyclePlan } from "../cycle/crafting-cycle";
 import { Duration, OpenRange } from "../../../data-types";
 import { SwingDistribution } from "../cycle/swing-distribution";
+import { Logger } from "../../../common/logger";
 
 export class EnableControlFactory {
 
@@ -20,7 +21,8 @@ export class EnableControlFactory {
         private readonly entity_state_registry: ReadableEntityStateRegistry,
         private readonly crafting_cycle_plan: CraftingCyclePlan,
         private readonly tick_provider: TickProvider,
-        private readonly resettable_registry: ResettableRegistry
+        private readonly resettable_registry: ResettableRegistry,
+        private readonly logger: Logger
     ) {
         this.target_output_item_name = this.crafting_cycle_plan.production_rate.machine_production_rate.item;
         this.entity_transfer_map = this.crafting_cycle_plan.entity_transfer_map;
@@ -233,7 +235,10 @@ export class EnableControlFactory {
         // For fractional swings, use clocked control to schedule inserters at end of subcycle
         if (this.crafting_cycle_plan.fractional_swings_enabled) {
             const enabled_ranges = this.computeInputInserterEnableRanges(inserter)
-            console.log(`Fractional swings enabled for inserter ${inserter.entity_id.id}, enabled ranges:`, enabled_ranges);
+            this.logger.log(`Fractional swings enabled for inserter ${inserter.entity_id.id}, enabled ranges:`);
+            enabled_ranges.forEach(range => {
+                this.logger.log(`  [${range.start_inclusive},${range.end_inclusive}]`);
+            });
             const clocked_control = this.clockedForCycle(
                 this.computeInputInserterEnableRanges(inserter)
             );
