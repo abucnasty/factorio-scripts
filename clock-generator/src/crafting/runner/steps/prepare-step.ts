@@ -1,5 +1,5 @@
 import { CompositeControlLogic, ControlLogic, EnableControl, TickControlLogic } from "../../../control-logic";
-import { EntityId } from "../../../entities";
+import { assertIsChest, EntityId } from "../../../entities";
 import { ChestState, EntityState, MachineStatus } from "../../../state";
 import { cloneSimulationContextWithInterceptors, SimulationContext } from "../../sequence";
 import { InserterInterceptor } from "../../sequence/interceptors/inserter-interceptor";
@@ -95,11 +95,19 @@ export class PrepareStep implements RunnerStep {
         )
         
         // Inserters that drop into chests (buffer fillers)
-        const chest_sink_inserters = context.inserters
+        const buffer_chest_sink_inserters = context.inserters
             .filter(it => EntityId.isChest(it.inserter_state.inserter.sink.entity_id))
+            .filter(it => {
+                const chest = context.entity_registry.getEntityByIdOrThrow(it.inserter_state.inserter.sink.entity_id)
+                assertIsChest(chest);
+                const is_buffer_chest = context.inserters.some(other_inserter_state_machine =>
+                    other_inserter_state_machine.inserter_state.inserter.source.entity_id.id === chest.entity_id.id
+                )
+                return is_buffer_chest;
+            })
         
         const chest_sink_inserter_ids = new Set(
-            chest_sink_inserters.map(it => it.inserter_state.inserter.entity_id.id)
+            buffer_chest_sink_inserters.map(it => it.inserter_state.inserter.entity_id.id)
         )
 
         const cloned_context = cloneSimulationContextWithInterceptors(context, {
