@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { MiningDrillType, BeltType } from "../common/entity-types";
+import { MiningDrillType, BeltType, ChestType } from "../common/entity-types";
 
 // ============================================================================
 // Primitive Types
@@ -253,7 +253,9 @@ export type BeltConfig = z.infer<typeof BeltConfigSchema>;
 // Chest Configuration
 // ============================================================================
 
-export const ChestConfigSchema = z.object({
+export const BufferChestConfigSchema = z.object({
+    type: z.literal(ChestType.BUFFER_CHEST),
+
     id: z.number().int().positive(),
     storage_size: z.number().int().positive(),
     /**
@@ -262,6 +264,41 @@ export const ChestConfigSchema = z.object({
      */
     item_filter: z.string()
 });
+
+export type BufferChestConfig = z.infer<typeof BufferChestConfigSchema>;
+
+
+export const InfinityFilterConfigSchema = z.object({
+    /**
+     * The entity name of the item to request
+     */
+    item_name: z.string(),
+    /**
+     * The count of items to request from the infinity chest each time.
+     */
+    request_count: z.number().int().positive()
+});
+
+export type InfinityFilterConfig = z.infer<typeof InfinityFilterConfigSchema>;
+/**
+ * This configuration is for chests that have no input inserters.
+ * 
+ * This can be a requester chest, an infinity chest, a buffer chest, etc.
+ * 
+ * It can also be used to mock an input to a machine that is always available.
+ */
+export const InfinityChestConfigSchema = z.object({
+    type: z.literal(ChestType.INFINITY_CHEST),
+    id: z.number().int().positive(),
+    item_filter: z.array(InfinityFilterConfigSchema).min(1)
+});
+
+export type InfinityChestConfig = z.infer<typeof InfinityChestConfigSchema>;
+
+export const ChestConfigSchema = z.discriminatedUnion("type", [
+    BufferChestConfigSchema,
+    InfinityChestConfigSchema
+]);
 
 export type ChestConfig = z.infer<typeof ChestConfigSchema>;
 

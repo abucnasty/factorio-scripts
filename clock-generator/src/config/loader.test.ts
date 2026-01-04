@@ -28,6 +28,7 @@ describe("parseConfig", () => {
             expect(config.belts).toEqual([]);
             expect(config.drills).toBeUndefined();
             expect(config.overrides).toBeUndefined();
+            expect(config.chests).toBeUndefined();
         });
 
         it("should parse a config with machines", async () => {
