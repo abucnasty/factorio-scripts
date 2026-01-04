@@ -53,6 +53,10 @@ const darkTheme = createTheme({
             main: '#ff5958'
         }
     },
+    shape: {
+        borderRadius: 0,
+    },
+    spacing: (factor: number) => factor * 7,
 });
 
 
