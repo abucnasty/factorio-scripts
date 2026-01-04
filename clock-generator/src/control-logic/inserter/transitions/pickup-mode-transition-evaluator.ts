@@ -1,4 +1,4 @@
-import { EntityState, InserterState, MachineState } from "../../../state";
+import { EntityState, InserterState } from "../../../state";
 import { EnableControl } from "../../enable-control";
 import { ModeTransition, ModeTransitionEvaluator } from "../../mode";
 import { InserterIdleMode, InserterMode } from "../modes";
@@ -24,14 +24,6 @@ export class PickupModeTransitionEvaluator implements ModeTransitionEvaluator<In
 
         if (this.heldItemQuantity() === this.inserterState.inserter.metadata.stack_size) {
             return ModeTransition.transition(this.swing_mode, `Picked up full stack of ${this.heldItemName()}`);
-        }
-
-        const maybe_machine = this.sinkEntityState
-
-        if (EntityState.isMachine(maybe_machine) && this.heldItemName() != "nothing") {
-            if (MachineState.machineInputIsBlocked(maybe_machine, this.heldItemName())) {
-                return ModeTransition.transition(this.idle_mode, `Inserter is disabled due to sink item ${this.heldItemName()} being input blocked`)
-            }
         }
 
         if (!this.enable_control.isEnabled()) {
