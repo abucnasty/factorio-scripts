@@ -176,7 +176,7 @@ export interface UseConfigFormResult {
     removeDrill: (index: number) => void;
     
     // Overrides
-    updateOverrides: (field: keyof NonNullable<ConfigFormData['overrides']>, value: number | boolean | null) => void;
+    updateOverrides: (field: keyof NonNullable<ConfigFormData['overrides']>, value: number | boolean | undefined) => void;
     
     // Import/Export
     importConfig: (config: Config) => void;
@@ -429,7 +429,7 @@ export function useConfigForm(): UseConfigFormResult {
     // Overrides
     const updateOverrides = useCallback((
         field: keyof NonNullable<ConfigFormData['overrides']>,
-        value: number | boolean | null
+        value: number | boolean | undefined
     ) => {
         setConfig((prev) => {
             const newOverrides = {

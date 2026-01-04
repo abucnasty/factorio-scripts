@@ -15,7 +15,7 @@ interface OverridesFormProps {
     lcm?: number;
     terminalSwingCount?: number;
     useFractionalSwings?: boolean;
-    onUpdate: (field: 'lcm' | 'terminal_swing_count' | 'use_fractional_swings', value: number | boolean | null) => void;
+    onUpdate: (field: 'lcm' | 'terminal_swing_count' | 'use_fractional_swings', value: number | boolean | undefined) => void;
 }
 
 export function OverridesForm({
@@ -47,7 +47,7 @@ export function OverridesForm({
                         onChange={(e) =>
                             onUpdate(
                                 'lcm',
-                                e.target.value ? parseInt(e.target.value) : null
+                                e.target.value ? parseInt(e.target.value) : undefined
                             )
                         }
                         slotProps={{ htmlInput: { min: 1 } }}
@@ -58,11 +58,11 @@ export function OverridesForm({
                     <TextField
                         label="Terminal Swing Count"
                         type="number"
-                        value={terminalSwingCount ?? null}
+                        value={terminalSwingCount ?? undefined}
                         onChange={(e) =>
                             onUpdate(
                                 'terminal_swing_count',
-                                e.target.value ? parseInt(e.target.value) : null
+                                e.target.value ? parseInt(e.target.value) : undefined
                             )
                         }
                         slotProps={{ htmlInput: { min: 1 } }}
@@ -82,7 +82,7 @@ export function OverridesForm({
                                     onChange={(e) =>
                                         onUpdate(
                                             'use_fractional_swings',
-                                            e.target.checked ? true : null
+                                            e.target.checked ? true : undefined
                                         )
                                     }
                                 />
