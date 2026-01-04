@@ -191,7 +191,7 @@ export function InsertersForm({
                 <Typography variant="h6">
                     Inserters ({inserters.length})
                 </Typography>
-                <Button startIcon={<Add />} onClick={onAdd} variant="outlined" size="small">
+                <Button startIcon={<Add />} onClick={onAdd} variant="text" size="small">
                     Add Inserter
                 </Button>
             </Box>
