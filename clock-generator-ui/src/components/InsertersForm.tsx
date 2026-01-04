@@ -15,6 +15,7 @@ import type { BeltFormData, ChestFormData, EnableControlOverride, InserterFormDa
 import { EnableControlModal } from './EnableControlModal';
 import type { RecipeInfo } from '../hooks/useSimulationWorker';
 import { FactorioIcon } from './FactorioIcon';
+import { ItemSelector } from './ItemSelector';
 
 interface EntityOption {
     type: 'machine' | 'belt' | 'chest';
@@ -542,7 +543,6 @@ export function InsertersForm({
                 </Typography>
             )}
 
-            {/* Item Selection Popover */}
             <Popover
                 open={Boolean(anchorEl)}
                 anchorEl={anchorEl}
@@ -557,39 +557,16 @@ export function InsertersForm({
                 }}
             >
                 <Box sx={{ p: 2, width: 300 }}>
-                    <Autocomplete
+                    <ItemSelector
+                        value={null}
                         options={itemNames}
-                        autoFocus
-                        openOnFocus
-                        onChange={(_, newValue) => {
+                        onChange={(newValue) => {
                             if (newValue) {
                                 handleItemSelect(newValue);
                             }
                         }}
-                        renderInput={(params) => (
-                            <TextField
-                                {...params}
-                                label="Select Item"
-                                placeholder="Search items..."
-                                size="small"
-                                autoFocus
-                            />
-                        )}
-                        renderOption={(props, option) => {
-                            const { key, ...rest } = props;
-                            return (
-                                <Box
-                                    component="li"
-                                    key={key}
-                                    {...rest}
-                                    sx={{ display: 'flex', alignItems: 'center', gap: 1 }}
-                                >
-                                    <FactorioIcon name={option} size={20} />
-                                    {option}
-                                </Box>
-                            );
-                        }}
-                        autoHighlight
+                        label="Select Item"
+                        minWidth={268}
                     />
                 </Box>
             </Popover>
