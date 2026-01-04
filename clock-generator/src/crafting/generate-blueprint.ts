@@ -131,6 +131,20 @@ export function generateClockForConfig(
         output_machine_state_machines.length > 0,
         `No machine with output item ${target_production_rate.machine_production_rate.item} found`
     );
+    
+    // Clear final output machine buffers to prevent OUTPUT_FULL during simulation start
+    // This is especially important for fractional swing scenarios where the machine
+    // produces slightly more than what gets cleared per sub-cycle
+    logger.log("Clearing final output machine buffers before warmup...");
+    output_machine_state_machines.forEach(machine_sm => {
+        const machine_state = machine_sm.machine_state;
+        const output_item = machine_state.machine.output.item_name;
+        const current_qty = machine_state.inventoryState.getQuantity(output_item);
+        if (current_qty > 0) {
+            logger.log(`  Clearing ${current_qty} ${output_item} from ${machine_state.machine.entity_id}`);
+            machine_state.inventoryState.setQuantity(output_item, 0);
+        }
+    });
 
     // validate target production rate can be met
     const total_output_capacity_per_second = output_machine_state_machines
