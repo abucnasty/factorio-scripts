@@ -35,12 +35,6 @@ async function main() {
     
     const config: Config = await loadConfigFromFile(configPath);
     
-    // Enable fractional swings for testing
-    config.overrides = {
-        ...config.overrides,
-        use_fractional_swings: true
-    };
-    
     console.log("Loaded config:");
     console.log("----------------------");
     console.log(JSON.stringify(config, null, 2));
