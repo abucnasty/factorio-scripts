@@ -1,0 +1,196 @@
+{
+  "target_output": {
+    "recipe": "metallurgic-science-pack",
+    "items_per_second": 45,
+    "copies": 1
+  },
+  "machines": [
+    {
+      "id": 1,
+      "recipe": "carbon",
+      "productivity": 200,
+      "crafting_speed": 68.89999866485596,
+      "type": "machine"
+    },
+    {
+      "id": 2,
+      "recipe": "tungsten-carbide",
+      "productivity": 100,
+      "crafting_speed": 40.312498807907104,
+      "type": "machine"
+    },
+    {
+      "id": 3,
+      "recipe": "metallurgic-science-pack",
+      "productivity": 150,
+      "crafting_speed": 180.79999923706055,
+      "type": "machine"
+    },
+    {
+      "id": 4,
+      "recipe": "tungsten-plate",
+      "productivity": 150,
+      "crafting_speed": 191.49999618530273,
+      "type": "machine"
+    }
+  ],
+  "inserters": [
+    {
+      "source": {
+        "type": "machine",
+        "id": 1
+      },
+      "sink": {
+        "type": "machine",
+        "id": 2
+      },
+      "stack_size": 16,
+      "filters": [
+        "carbon"
+      ]
+    },
+    {
+      "source": {
+        "type": "machine",
+        "id": 2
+      },
+      "sink": {
+        "type": "machine",
+        "id": 3
+      },
+      "stack_size": 16,
+      "filters": [
+        "tungsten-carbide"
+      ]
+    },
+    {
+      "source": {
+        "type": "machine",
+        "id": 3
+      },
+      "sink": {
+        "type": "chest",
+        "id": 1
+      },
+      "stack_size": 16,
+      "filters": [
+        "metallurgic-science-pack"
+      ]
+    },
+    {
+      "source": {
+        "type": "belt",
+        "id": 1
+      },
+      "sink": {
+        "type": "machine",
+        "id": 2
+      },
+      "stack_size": 16,
+      "filters": [
+        "tungsten-ore",
+        "tungsten-ore"
+      ]
+    },
+    {
+      "source": {
+        "type": "belt",
+        "id": 1
+      },
+      "sink": {
+        "type": "machine",
+        "id": 2
+      },
+      "stack_size": 16,
+      "filters": [
+        "tungsten-ore",
+        "tungsten-ore"
+      ]
+    },
+    {
+      "source": {
+        "type": "belt",
+        "id": 2
+      },
+      "sink": {
+        "type": "machine",
+        "id": 1
+      },
+      "stack_size": 16,
+      "filters": [
+        "coal",
+        "coal"
+      ]
+    },
+    {
+      "source": {
+        "type": "belt",
+        "id": 1
+      },
+      "sink": {
+        "type": "machine",
+        "id": 4
+      },
+      "stack_size": 16,
+      "filters": [
+        "tungsten-ore",
+        "tungsten-ore"
+      ]
+    },
+    {
+      "source": {
+        "type": "machine",
+        "id": 4
+      },
+      "sink": {
+        "type": "machine",
+        "id": 3
+      },
+      "stack_size": 16,
+      "filters": [
+        "tungsten-plate"
+      ]
+    }
+  ],
+  "belts": [
+    {
+      "id": 1,
+      "type": "turbo-transport-belt",
+      "lanes": [
+        {
+          "ingredient": "tungsten-ore",
+          "stack_size": 4
+        },
+        {
+          "ingredient": "tungsten-ore",
+          "stack_size": 4
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "type": "turbo-transport-belt",
+      "lanes": [
+        {
+          "ingredient": "coal",
+          "stack_size": 4
+        },
+        {
+          "ingredient": "coal",
+          "stack_size": 4
+        }
+      ]
+    }
+  ],
+  "chests": [
+    {
+      "id": 1,
+      "storage_size": 480,
+      "item_filter": "metallurgic-science-pack"
+    }
+  ],
+  "overrides": {
+    "terminal_swing_count": 3,
+    "lcm": 5
+  }
+}
