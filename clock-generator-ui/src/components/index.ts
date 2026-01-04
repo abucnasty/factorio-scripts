@@ -10,3 +10,4 @@ export { BlueprintOutput } from './BlueprintOutput';
 export { DebugPanel } from './DebugPanel';
 export { StateTransitionTimeline } from './StateTransitionTimeline';
 export { ItemSelector } from './ItemSelector';
+export { FilterSlotSelector } from './FilterSlotSelector';
