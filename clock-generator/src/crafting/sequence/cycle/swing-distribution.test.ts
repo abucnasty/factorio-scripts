@@ -29,8 +29,11 @@ describe('computeMaxSwingsPerSubCycle', () => {
         const result = computeMaxSwingsPerSubCycle(constraints);
         // Items consumed per swing = 0.5 * 12 = 6
         // Net items per swing = 16 - 6 = 10
-        // Max swings = floor(32 / 10) = 3
-        expect(result).toBe(3);
+        // Peak after swing 1: 16 items
+        // Peak after swing 2: 16 + 10 = 26 items (ok)
+        // Peak after swing 3: 16 + 20 = 36 items (exceeds 32)
+        // Max swings = 1 + floor((32 - 16) / 10) = 2
+        expect(result).toBe(2);
     });
 
     it('should return 1 when insertion limit equals stack size', () => {

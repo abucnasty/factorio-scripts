@@ -2,6 +2,9 @@ import assert from "../../../common/assert";
 import { EntityId, Inserter, Machine, ReadableEntityRegistry } from "../../../entities";
 import { EntityTransferCount, EntityTransferCountMap } from "./swing-counts";
 
+/** Practical upper limit when swings are effectively unlimited */
+const MAX_SWINGS_UNLIMITED = 100;
+
 /**
  * Represents the distribution of swings across multiple sub-cycles.
  * For a fraction like 3/2, this would contain [1, 2] meaning:
@@ -40,6 +43,14 @@ export interface SwingCapacityConstraints {
  * The key insight is that during each swing animation, the machine consumes items,
  * freeing up inventory space for subsequent swings.
  * 
+ * Peak inventory occurs right after a swing completes insertion, before consumption
+ * during the next swing:
+ * - After swing 1: effective_stack_size items (peak before any consumption)
+ * - After swing N: N * effective_stack_size - (N-1) * items_consumed_per_swing
+ * 
+ * Note: effective_stack_size is min(stack_size, automated_insertion_limit) because
+ * inserters will only transfer up to the available space in the machine.
+ * 
  * @param constraints The capacity constraints for this inserter/machine pair
  * @returns Maximum swings that can occur in a single sub-cycle without overflow
  */
@@ -51,40 +62,35 @@ export function computeMaxSwingsPerSubCycle(constraints: SwingCapacityConstraint
         animation_total_ticks 
     } = constraints;
 
-    // Special case: if consumption is fast enough, we can swing many times
+    // Inserters only transfer up to the available space, so effective stack size
+    // is capped by the automated insertion limit
+    const effective_stack_size = Math.min(stack_size, automated_insertion_limit);
+    
+    // If effective stack size is 0, no swings are possible
+    if (effective_stack_size <= 0) {
+        return 0;
+    }
+
     // Items consumed during one full swing animation
     const items_consumed_per_swing = consumption_rate_per_tick * animation_total_ticks;
     
-    // If consumption per swing >= stack_size, we can swing continuously
-    if (items_consumed_per_swing >= stack_size) {
-        // Effectively unlimited - return a large number (practical limit)
-        return 100;
+    // If consumption per swing >= effective_stack_size, inventory never accumulates
+    if (items_consumed_per_swing >= effective_stack_size) {
+        return MAX_SWINGS_UNLIMITED;
     }
 
-    // Calculate max swings where inventory never exceeds insertion limit
-    // After N swings starting from 0 inventory:
-    // - We've inserted: N * stack_size items
-    // - Machine has consumed: consumption_rate_per_tick * animation_total_ticks * (N-1) items
-    //   (N-1 because consumption happens during swings after the first)
-    // - Net inventory: N * stack_size - consumption_rate_per_tick * animation_total_ticks * (N-1)
-    // 
-    // We need: N * stack_size - items_consumed_per_swing * (N-1) <= automated_insertion_limit
-    // Solving: N * stack_size - N * items_consumed_per_swing + items_consumed_per_swing <= limit
-    //          N * (stack_size - items_consumed_per_swing) <= limit - items_consumed_per_swing
-    //          N <= (limit - items_consumed_per_swing) / (stack_size - items_consumed_per_swing)
+    // Net inventory increase per swing after the first
+    const net_items_per_swing = effective_stack_size - items_consumed_per_swing;
     
-    const net_items_per_swing = stack_size - items_consumed_per_swing;
+    // Peak inventory after N swings: effective_stack_size + (N-1) * net_items_per_swing
+    // Constraint: effective_stack_size + (N-1) * net_items_per_swing <= automated_insertion_limit
+    // Solving: N <= 1 + (automated_insertion_limit - effective_stack_size) / net_items_per_swing
     
-    if (net_items_per_swing <= 0) {
-        // Consumption outpaces insertion, can swing continuously
-        return 100;
-    }
+    const additional_swings = Math.floor(
+        (automated_insertion_limit - effective_stack_size) / net_items_per_swing
+    );
     
-    // We start from empty inventory at the beginning of each sub-cycle
-    // So we can insert up to the full limit
-    const max_swings = Math.floor(automated_insertion_limit / net_items_per_swing);
-    
-    return Math.max(1, max_swings);
+    return 1 + additional_swings;
 }
 
 /**

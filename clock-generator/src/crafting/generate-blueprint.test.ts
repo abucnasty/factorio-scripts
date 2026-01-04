@@ -240,16 +240,7 @@ describe("generateClockForConfig", () => {
 
     describe("fractional swings", () => {
         describe("PRODUCTION_SCIENCE_SHARED with fractional swings enabled", async () => {
-            const config = await loadConfigFromFile(ConfigPaths.PRODUCTION_SCIENCE_SHARED_JSON);
-            
-            // Enable fractional swings
-            const configWithFractionalSwings = {
-                ...config,
-                overrides: {
-                    ...config.overrides,
-                    use_fractional_swings: true
-                }
-            };
+            const configWithFractionalSwings = await loadConfigFromFile(ConfigPaths.PRODUCTION_SCIENCE_SHARED_JSON);
             
             const result = generateClockForConfig(configWithFractionalSwings);
 
@@ -299,9 +290,16 @@ describe("generateClockForConfig", () => {
             });
         });
 
-        describe("PRODUCTION_SCIENCE_SHARED without fractional swings (default)", async () => {
+        describe("PRODUCTION_SCIENCE_SHARED without fractional swings without fractional swings", async () => {
             const config = await loadConfigFromFile(ConfigPaths.PRODUCTION_SCIENCE_SHARED_JSON);
-            const result = generateClockForConfig(config);
+            const configWithoutFractionalSwings = {
+                ...config,
+                overrides: {
+                    ...config.overrides,
+                    use_fractional_swings: false
+                }
+            };
+            const result = generateClockForConfig(configWithoutFractionalSwings);
 
             it("has fractional_swings_enabled set to false", () => {
                 expect(result.crafting_cycle_plan.fractional_swings_enabled).toBe(false);
