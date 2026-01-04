@@ -10,6 +10,7 @@ export interface UseSimulationWorkerResult {
     isInitialized: boolean;
     isRunning: boolean;
     recipeNames: string[];
+    itemNames: string[];
     resourceNames: string[];
     logs: LogMessage[];
     blueprintString: string | null;
@@ -34,6 +35,7 @@ export function useSimulationWorker(): UseSimulationWorkerResult {
     const [isInitialized, setIsInitialized] = useState(false);
     const [isRunning, setIsRunning] = useState(false);
     const [recipeNames, setRecipeNames] = useState<string[]>([]);
+    const [itemNames, setItemNames] = useState<string[]>([]);
     const [resourceNames, setResourceNames] = useState<string[]>([]);
     const [logs, setLogs] = useState<LogMessage[]>([]);
     const [blueprintString, setBlueprintString] = useState<string | null>(null);
@@ -59,6 +61,7 @@ export function useSimulationWorker(): UseSimulationWorkerResult {
             FactorioDataService.initialize(data);
 
             setRecipeNames(FactorioDataService.getAllRecipeNames());
+            setItemNames(FactorioDataService.getAllItemNames());
             setResourceNames(FactorioDataService.getAllResourceNames());
             setIsInitialized(true);
         } catch (err) {
@@ -142,6 +145,7 @@ export function useSimulationWorker(): UseSimulationWorkerResult {
         isRunning,
         recipeNames,
         resourceNames,
+        itemNames,
         logs,
         blueprintString,
         transferHistory,
