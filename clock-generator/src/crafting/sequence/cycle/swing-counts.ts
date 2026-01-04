@@ -1,5 +1,5 @@
 import Fraction from "fractionability";
-import { Entity, EntityId, Inserter, InserterStackSize, Machine, MiningDrill, ReadableEntityRegistry } from "../../../entities";
+import { Chest, Entity, EntityId, Inserter, InserterStackSize, Machine, MiningDrill, ReadableEntityRegistry } from "../../../entities";
 import assert from "../../../common/assert";
 import { MachineIngredientRatios } from "./machine-ratios";
 import * as math from "mathjs"
@@ -270,7 +270,7 @@ function computeInserterSwingCounts(
                 stack_size: inserter.metadata.stack_size
             });
 
-            // Check if the source is a machine - if so, recursively compute its swing counts
+            // Check if the source is a machine or chest - if so, recursively compute its swing counts
             const source_entity = entity_registry.getAll()
                 .find(e => e.entity_id.id === inserter.source.entity_id.id);
 
@@ -287,6 +287,18 @@ function computeInserterSwingCounts(
                     inserter.metadata.stack_size,
                     result,
                     inserter  // Pass the inserter that triggered this recursion
+                );
+            } else if (source_entity && Entity.isChest(source_entity)) {
+                // The source is a chest - find inserters that fill this chest and continue recursion
+                // A chest acts as a passthrough buffer, so the upstream inserter(s) filling it
+                // need the same transfer count as the downstream inserter pulling from it
+                computeSwingCountsThroughChest(
+                    source_entity,
+                    entity_registry,
+                    total_transfer_count,
+                    inserter.metadata.stack_size,
+                    item_transfers,
+                    result
                 );
             }
         }
@@ -322,6 +334,106 @@ function computeInserterSwingCounts(
     }
 
     return result;
+}
+
+/**
+ * Computes swing counts for inserters that fill a chest.
+ * A chest acts as a passthrough buffer, so the upstream inserter(s) filling it
+ * need the same transfer count as the downstream inserter pulling from it.
+ * 
+ * This function finds all inserters that dump into the chest and:
+ * 1. Adds them to the result with the appropriate transfer counts
+ * 2. Continues the recursion if those inserters have machines as sources
+ * 
+ * @param chest - The chest being used as a buffer
+ * @param entity_registry - Registry containing all entities
+ * @param downstream_transfer_count - The total transfer count from the downstream inserter
+ * @param downstream_stack_size - The stack size of the downstream inserter
+ * @param downstream_item_transfers - The item transfers from the downstream inserter
+ * @param result - Accumulated results to add to
+ */
+function computeSwingCountsThroughChest(
+    chest: Chest,
+    entity_registry: ReadableEntityRegistry,
+    downstream_transfer_count: Fraction,
+    downstream_stack_size: number,
+    downstream_item_transfers: ItemTransfer[],
+    result: EntityTransferCountMap
+): void {
+    // Find all inserters that fill this chest (sink is this chest)
+    const chest_filling_inserters = entity_registry.getAll()
+        .filter(Entity.isInserter)
+        .filter(inserter => inserter.sink.entity_id.id === chest.entity_id.id);
+
+    if (chest_filling_inserters.length === 0) {
+        // No inserters fill this chest - it may be pre-filled or filled from an external source
+        return;
+    }
+
+    // Calculate how to distribute the transfer count among the filling inserters
+    const num_fillers = chest_filling_inserters.length;
+
+    for (const filler_inserter of chest_filling_inserters) {
+        // The filler inserter needs to provide the same items that the downstream inserter pulls
+        // Calculate item transfers based on what the downstream inserter needs
+        const filler_item_transfers: ItemTransfer[] = [];
+        let filler_total_transfer_count = new Fraction(0);
+
+        for (const downstream_transfer of downstream_item_transfers) {
+            // Check if this filler inserter handles this item (via its filter)
+            if (filler_inserter.filtered_items.has(downstream_transfer.item_name)) {
+                // Divide the transfer count by the number of fillers for this item
+                // For now, we assume all fillers can provide all items - more sophisticated
+                // logic would track which fillers provide which items
+                const transfer_per_filler = downstream_transfer.transfer_count.divide(num_fillers);
+                
+                // Adjust for stack size differences between filler and downstream inserters
+                // If filler has different stack size, it needs proportionally different swings
+                const stack_size_ratio = downstream_stack_size / filler_inserter.metadata.stack_size;
+                const adjusted_transfer = transfer_per_filler.multiply(stack_size_ratio);
+
+                filler_item_transfers.push({
+                    item_name: downstream_transfer.item_name,
+                    transfer_count: adjusted_transfer
+                });
+                filler_total_transfer_count = filler_total_transfer_count.add(adjusted_transfer);
+            }
+        }
+
+        if (filler_item_transfers.length > 0) {
+            result.set(filler_inserter.entity_id, {
+                entity: filler_inserter,
+                item_transfers: filler_item_transfers,
+                total_transfer_count: filler_total_transfer_count,
+                stack_size: filler_inserter.metadata.stack_size
+            });
+
+            // Continue recursion: check if the filler inserter's source is a machine
+            const filler_source = entity_registry.getAll()
+                .find(e => e.entity_id.id === filler_inserter.source.entity_id.id);
+
+            if (filler_source && Entity.isMachine(filler_source)) {
+                computeInserterSwingCounts(
+                    filler_source,
+                    entity_registry,
+                    filler_total_transfer_count,
+                    filler_inserter.metadata.stack_size,
+                    result,
+                    filler_inserter  // Pass the filler inserter as the known output inserter
+                );
+            } else if (filler_source && Entity.isChest(filler_source)) {
+                // Handle chained chests (chest → chest → machine)
+                computeSwingCountsThroughChest(
+                    filler_source,
+                    entity_registry,
+                    filler_total_transfer_count,
+                    filler_inserter.metadata.stack_size,
+                    filler_item_transfers,
+                    result
+                );
+            }
+        }
+    }
 }
 
 function divideTransfers(
