@@ -183,8 +183,22 @@ export function InsertersForm({
 
     const handleRemoveFilter = (inserterIndex: number, slotIndex: number) => {
         const inserter = inserters[inserterIndex];
-        const filters = [...(inserter.filters || [])];
+        let filters = [...(inserter.filters || [])];
+        
+        // If removing an auto-assigned filter (no explicit filters exist), convert all to explicit first
+        if (filters.length === 0) {
+            const inferredFilters = getInferredFilters(inserter);
+            filters = [...inferredFilters];
+        }
+        
+        // Remove the specified slot
         filters.splice(slotIndex, 1);
+        
+        // Clean up empty trailing slots
+        while (filters.length > 0 && !filters[filters.length - 1]) {
+            filters.pop();
+        }
+        
         onUpdate(inserterIndex, { filters: filters.length > 0 ? filters : undefined });
     };
 
