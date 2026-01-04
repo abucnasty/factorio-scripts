@@ -681,8 +681,8 @@ export class EnableControlFactory {
             //   Swing 1: starts at 0
             //   Swing 2: starts at T
             //   Swing N: starts at (N-1)*T
-            // So the window needs to be [(N-1)*T] ticks wide (inclusive on both ends).
-            // The +1 is because OpenRange is inclusive: [start, start + duration] = duration+1 ticks
+            // OpenRange is inclusive on both ends, so [start, start + duration] spans duration+1 distinct ticks.
+            // Thus we use (N-1)*T for the duration parameter to get a span of (N-1)*T + 1 ticks, allowing N swings to start.
             const window_duration = (swings_in_subcycle - 1) * ticks_per_swing;
             
             // The subcycle boundary (end of this subcycle)
