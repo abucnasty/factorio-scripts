@@ -123,6 +123,13 @@ export function FilterSlotSelector({
                                         e.stopPropagation();
                                         onRemoveFilter(slotIndex);
                                     }}
+                                    onKeyDown={(e) => {
+                                        if (e.key === 'Enter' || e.key === ' ') {
+                                            e.preventDefault();
+                                            e.stopPropagation();
+                                            onRemoveFilter(slotIndex);
+                                        }
+                                    }}
                                     sx={{
                                         position: 'absolute',
                                         top: -8,
