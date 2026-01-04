@@ -73,6 +73,7 @@ export function FilterSlotSelector({
                         key={slotIndex}
                         tabIndex={0}
                         role="button"
+                        margin={0.6}
                         aria-label={
                             displayFilter
                                 ? `Filter ${slotIndex + 1}: ${displayFilter}${isAutoAssigned ? ' (auto)' : ''}`
@@ -89,7 +90,7 @@ export function FilterSlotSelector({
                             width: 36,
                             height: 36,
                             border: '2px solid',
-                            borderStyle: isAutoAssigned ? 'dashed' : 'solid',
+                            borderStyle: isAutoAssigned ? 'hidden' : 'solid',
                             borderColor: displayFilter
                                 ? isAutoAssigned
                                     ? 'secondary.main'
@@ -132,8 +133,8 @@ export function FilterSlotSelector({
                                             bottom: -8,
                                             left: '50%',
                                             transform: 'translateX(-50%)',
-                                            bgcolor: 'secondary.main',
-                                            color: 'secondary.contrastText',
+                                            bgcolor: 'common.black',
+                                            color: 'secondary.light',
                                             fontSize: '8px',
                                             fontWeight: 'bold',
                                             px: 0.5,
