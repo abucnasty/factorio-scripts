@@ -258,7 +258,6 @@ function computeLastSwingOffsetDuration(
     if (mode === SimulationMode.PREVENT_DESYNCS || mode === SimulationMode.LOW_INSERTION_LIMITS) {
         const inserter_stack_size = inserter.metadata.stack_size;
         const amount_per_craft_int = Math.ceil(source_machine.output.amount_per_craft.toDecimal());
-        return Duration.ofTicks(5);
         /**
          * okay... so...
          * this is going to look like magic because, it is.
