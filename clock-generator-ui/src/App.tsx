@@ -83,12 +83,14 @@ function App() {
         addMachine,
         updateMachine,
         removeMachine,
+        replaceMachines,
         addInserter,
         updateInserter,
         removeInserter,
         addBelt,
         updateBelt,
         removeBelt,
+        replaceBelts,
         addChest,
         updateChest,
         removeChest,
@@ -98,6 +100,8 @@ function App() {
         addDrill,
         updateDrill,
         removeDrill,
+        replaceDrills,
+        replaceInserters,
         updateOverrides,
         importConfig,
         exportConfig,
@@ -163,6 +167,11 @@ function App() {
                         <ConfigImportExport
                             config={exportConfig()}
                             onImport={handleImportConfig}
+                            onReplaceMachines={replaceMachines}
+                            onReplaceDrills={replaceDrills}
+                            onReplaceInserters={replaceInserters}
+                            onReplaceBelts={replaceBelts}
+                            onUpdateMiningProductivityLevel={(level) => updateDrillsConfig('mining_productivity_level', level)}
                             parseConfig={parseConfig}
                         />
                         <Tooltip title="Reset all configuration to defaults">
