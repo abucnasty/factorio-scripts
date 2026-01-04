@@ -1,5 +1,5 @@
 import assert from "../../../common/assert";
-import { EntityId, Inserter, Machine, ReadableEntityRegistry } from "../../../entities";
+import { assertIsInserter, assertIsMachine, Entity, EntityId, ReadableEntityRegistry } from "../../../entities";
 import { EntityTransferCount, EntityTransferCountMap } from "./swing-counts";
 
 /** Practical upper limit when swings are effectively unlimited */
@@ -210,13 +210,12 @@ function computeSwingDistributionForEntity(
     const total_swings = Math.round(total_swings_fraction.toDecimal());
     
     // For output inserters (belt sink), there's no insertion limit constraint
-    const is_inserter = 'animation' in entity;
-    if (!is_inserter) {
+    if (Entity.isDrill(entity)) {
         // Mining drill - use simpler distribution without capacity constraints
         const distribution = createAlternatingDistribution(
             total_swings,
             cycle_multiplier,
-            100 // No practical limit for drills
+            MAX_SWINGS_UNLIMITED // No practical limit for drills
         );
         
         return {
@@ -227,17 +226,21 @@ function computeSwingDistributionForEntity(
         };
     }
     
-    const inserter = entity as Inserter;
+    const inserter = entity;
+    assertIsInserter(inserter);
     
     // Check if sink is a machine (has insertion limits) or belt (no limits)
     const sink_entity = entity_registry.getEntityByIdOrThrow(inserter.sink.entity_id);
     
-    if (!('inputs' in sink_entity)) {
+    if (Entity.isBelt(sink_entity) || Entity.isChest(sink_entity)) {
         // Sink is a belt or chest, no insertion limit constraints
         const distribution = createAlternatingDistribution(
             total_swings,
             cycle_multiplier,
-            100 // No practical limit for belts
+            // No practical limit for belts or chests
+            // Belts could in theory have a constraint but that depends on eventually
+            // modellling the spacing between belts appropriately or take into account the speed of the belt
+            MAX_SWINGS_UNLIMITED
         );
         
         return {
@@ -249,7 +252,8 @@ function computeSwingDistributionForEntity(
     }
     
     // Sink is a machine - compute constraints
-    const sink_machine = sink_entity as Machine;
+    const sink_machine = sink_entity;
+    assertIsMachine(sink_machine);
     
     // Find the relevant input item (use first item transfer as primary)
     const primary_item = transfer_count.item_transfers[0]?.item_name;
