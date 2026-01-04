@@ -30,21 +30,6 @@
       "crafting_speed": 66.5
     }
   ],
-  "drills": {
-    "mining_productivity_level": 8000,
-    "configs": [
-      {
-        "id": 1,
-        "type": "electric-mining-drill",
-        "mined_item_name": "stone",
-        "speed_bonus": 8.84,
-        "target": {
-          "type": "machine",
-          "id": 2
-        }
-      }
-    ]
-  },
   "inserters": [
     {
       "source": {
@@ -124,5 +109,24 @@
         }
       ]
     }
-  ]
+  ],
+  "chests": [],
+  "drills": {
+    "mining_productivity_level": 8000,
+    "configs": [
+      {
+        "id": 1,
+        "type": "electric-mining-drill",
+        "mined_item_name": "stone",
+        "speed_bonus": 8.84,
+        "target": {
+          "type": "machine",
+          "id": 2
+        }
+      }
+    ]
+  },
+  "overrides": {
+    "use_fractional_swings": true
+  }
 }
