@@ -1,4 +1,5 @@
 import assert from "../../common/assert"
+import { ControlLogic } from "../control-logic";
 import { ModePlugin, ModeStateMachine, ModeTransitionEvaluator } from "../mode";
 import { InserterDropMode, InserterIdleMode, InserterMode, InserterPickupMode, InserterSwingMode } from "./modes";
 import { InserterTargetFullMode } from "./modes/target-full-mode";
@@ -21,9 +22,19 @@ export class InserterStateMachine extends ModeStateMachine<InserterMode> {
         transitionGraph: Map<InserterMode, ModeTransitionEvaluator<InserterMode>>,
         plugins: ModePlugin<InserterMode>[] = [],
         public readonly inserter_state: InserterState,
+        private readonly enable_control?: EnableControl,
     ) {
         super(initialMode, transitionGraph, plugins);
         this.entity_id = inserter_state.entity_id;
+    }
+
+    public override executeForTick(): void {
+        // If the enable control implements ControlLogic, execute it each tick
+        // This allows controls like FractionalSwingEnableControl to track state transitions
+        if (this.enable_control && 'executeForTick' in this.enable_control) {
+            (this.enable_control as ControlLogic).executeForTick();
+        }
+        super.executeForTick();
     }
 };
 
@@ -117,6 +128,7 @@ function createInserterStateMachine(args: {
         graph,
         [inserter_status_plugin, ...plugins],
         inserter_state,
+        enable_control,
     );
 }
 

@@ -7,6 +7,7 @@ import { Config } from './config/schema';
 import { RunnerStepType } from './crafting/runner';
 import fs from 'fs/promises'
 
+
 /**
  * utility function to quickly convert all HOCON configs to JSON files
  */
@@ -26,16 +27,17 @@ async function saveAllHoconConfigsToJson() {
 }
 
 async function main() {
-    // Accept config path from command line argument, default to CHEMICAL_SCIENCE_ENGINES
+    // Accept config path from command line argument, default to PRODUCTION_SCIENCE_SHARED_JSON
     const configArg = process.argv.find(arg => arg.startsWith('--config='));
     const configPath = configArg 
         ? configArg.split('=')[1] 
-        : ConfigPaths.CHEMICAL_SCIENCE_ENGINES;
+        : ConfigPaths.PRODUCTION_SCIENCE_SHARED_JSON;
     
     const config: Config = await loadConfigFromFile(configPath);
+    
     console.log("Loaded config:");
     console.log("----------------------");
-    console.log(JSON.stringify(config));
+    console.log(JSON.stringify(config, null, 2));
     console.log("----------------------");
 
     const debug = DebugSettingsProvider.mutable();
@@ -59,7 +61,8 @@ async function main() {
 
     const result = generateClockForConfig(config, options);
 
-    console.log("----------------------");
+    console.log("\n----------------------");
+    console.log("Blueprint string:");
     console.log(encodeBlueprintFile({
         blueprint: result.blueprint
     }));

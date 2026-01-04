@@ -91,6 +91,7 @@ export interface ConfigFormData {
     overrides?: {
         lcm?: number;
         terminal_swing_count?: number;
+        use_fractional_swings?: boolean;
     };
 }
 
@@ -175,7 +176,7 @@ export interface UseConfigFormResult {
     removeDrill: (index: number) => void;
     
     // Overrides
-    updateOverrides: (field: keyof NonNullable<ConfigFormData['overrides']>, value: number | undefined) => void;
+    updateOverrides: (field: keyof NonNullable<ConfigFormData['overrides']>, value: number | boolean | undefined) => void;
     
     // Import/Export
     importConfig: (config: Config) => void;
@@ -428,16 +429,17 @@ export function useConfigForm(): UseConfigFormResult {
     // Overrides
     const updateOverrides = useCallback((
         field: keyof NonNullable<ConfigFormData['overrides']>,
-        value: number | undefined
+        value: number | boolean | undefined
     ) => {
         setConfig((prev) => {
             const newOverrides = {
                 ...prev.overrides,
                 [field]: value,
             };
-            // Remove undefined values
+            // Remove null/undefined values
             Object.keys(newOverrides).forEach((key) => {
-                if (newOverrides[key as keyof typeof newOverrides] === undefined) {
+                const val = newOverrides[key as keyof typeof newOverrides];
+                if (val === undefined || val === null) {
                     delete newOverrides[key as keyof typeof newOverrides];
                 }
             });

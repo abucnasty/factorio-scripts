@@ -237,4 +237,81 @@ describe("generateClockForConfig", () => {
             expect(() => generateClockForConfig(config)).toThrowError();
         })
     })
+
+    describe("fractional swings", () => {
+        describe("PRODUCTION_SCIENCE_SHARED with fractional swings enabled", async () => {
+            const configWithFractionalSwings = await loadConfigFromFile(ConfigPaths.PRODUCTION_SCIENCE_SHARED_JSON);
+            
+            const result = generateClockForConfig(configWithFractionalSwings);
+
+            it("has fractional_swings_enabled set to true", () => {
+                expect(result.crafting_cycle_plan.fractional_swings_enabled).toBe(true);
+            });
+
+            it("has a cycle_multiplier defined", () => {
+                expect(result.crafting_cycle_plan.cycle_multiplier).toBeDefined();
+                expect(result.crafting_cycle_plan.cycle_multiplier).toBeGreaterThan(1);
+            });
+
+            it("has swing_distribution defined", () => {
+                expect(result.crafting_cycle_plan.swing_distribution).toBeDefined();
+                expect(result.crafting_cycle_plan.swing_distribution!.size).toBeGreaterThan(0);
+            });
+
+            it("swing distributions sum to correct totals", () => {
+                const distribution = result.crafting_cycle_plan.swing_distribution!;
+                const cycle_multiplier = result.crafting_cycle_plan.cycle_multiplier!;
+                
+                for (const [entityId, swingDist] of distribution.entries()) {
+                    const sum = swingDist.swings_per_subcycle.reduce((a, b) => a + b, 0);
+                    expect(sum).toBe(swingDist.total_swings);
+                    expect(swingDist.swings_per_subcycle.length).toBe(cycle_multiplier);
+                }
+            });
+
+            it("output inserter has fractional swing distribution", () => {
+                const distribution = result.crafting_cycle_plan.swing_distribution!;
+                const outputInserterDist = distribution.get("inserter:1");
+                
+                expect(outputInserterDist).toBeDefined();
+                // Should have alternating distribution (values differ by at most 1)
+                const swings = outputInserterDist!.swings_per_subcycle;
+                const min = Math.min(...swings);
+                const max = Math.max(...swings);
+                expect(max - min).toBeLessThanOrEqual(1);
+            });
+
+            it("simulation duration is extended by cycle_multiplier", () => {
+                const base_duration = result.crafting_cycle_plan.total_duration.ticks;
+                const cycle_multiplier = result.crafting_cycle_plan.cycle_multiplier!;
+                const expected_simulation_duration = base_duration * cycle_multiplier;
+                
+                expect(result.simulation_duration.ticks).toBe(expected_simulation_duration);
+            });
+        });
+
+        describe("PRODUCTION_SCIENCE_SHARED without fractional swings without fractional swings", async () => {
+            const config = await loadConfigFromFile(ConfigPaths.PRODUCTION_SCIENCE_SHARED_JSON);
+            const configWithoutFractionalSwings = {
+                ...config,
+                overrides: {
+                    ...config.overrides,
+                    use_fractional_swings: false
+                }
+            };
+            const result = generateClockForConfig(configWithoutFractionalSwings);
+
+            it("has fractional_swings_enabled set to false", () => {
+                expect(result.crafting_cycle_plan.fractional_swings_enabled).toBe(false);
+            });
+
+            it("does not have swing_distribution defined", () => {
+                expect(result.crafting_cycle_plan.swing_distribution).toBeUndefined();
+            });
+
+            it("does not have cycle_multiplier defined", () => {
+                expect(result.crafting_cycle_plan.cycle_multiplier).toBeUndefined();
+            });
+        });
+    });
 });

@@ -131,6 +131,20 @@ export function generateClockForConfig(
         output_machine_state_machines.length > 0,
         `No machine with output item ${target_production_rate.machine_production_rate.item} found`
     );
+    
+    // Clear final output machine buffers to prevent OUTPUT_FULL during simulation start
+    // This is especially important for fractional swing scenarios where the machine
+    // produces slightly more than what gets cleared per sub-cycle
+    logger.log("Clearing final output machine buffers before warmup...");
+    output_machine_state_machines.forEach(machine_sm => {
+        const machine_state = machine_sm.machine_state;
+        const output_item = machine_state.machine.output.item_name;
+        const current_qty = machine_state.inventoryState.getQuantity(output_item);
+        if (current_qty > 0) {
+            logger.log(`  Clearing ${current_qty} ${output_item} from ${machine_state.machine.entity_id}`);
+            machine_state.inventoryState.setQuantity(output_item, 0);
+        }
+    });
 
     // validate target production rate can be met
     const total_output_capacity_per_second = output_machine_state_machines
@@ -176,6 +190,17 @@ export function generateClockForConfig(
     const recipe_lcm = config.overrides?.lcm ?? EntityTransferCountMap.lcm(swing_counts);
     logger.log(`Simulation context ingredient LCM: ${recipe_lcm}`);
 
+    logger.log("\n--- Swing Distributions ---");
+    if (crafting_cycle_plan.swing_distribution) {
+        for (const [entityId, dist] of crafting_cycle_plan.swing_distribution.entries()) {
+            logger.log(`Entity "${entityId}":`);
+            logger.log(`  Total swings: ${dist.total_swings}`);
+            logger.log(`  Swings per sub-cycle: [${dist.swings_per_subcycle.join(', ')}]`);
+        }
+    } else {
+        logger.log("No swing distribution");
+    }
+
     // Create resettable registry for centralized reset management
     const resettable_registry = new ResettableRegistry();
 
@@ -195,7 +220,8 @@ export function generateClockForConfig(
         simulation_context.state_registry,
         crafting_cycle_plan,
         relative_tick_provider,
-        resettable_registry
+        resettable_registry,
+        logger
     );
 
     // Clone simulation context with interceptors
@@ -223,7 +249,7 @@ export function generateClockForConfig(
     const duration: Duration = Duration.ofTicks(crafting_cycle_plan.total_duration.ticks * recipe_lcm);
 
     assert(warmup_period.ticks < MAX_SIMULATION_TICKS, `Warmup period of ${warmup_period.ticks} ticks exceeds maximum allowed ${MAX_SIMULATION_TICKS} ticks`);
-
+    logger.log(`Base Cycle Ticks: ${crafting_cycle_plan.total_duration.ticks}`);
     logger.log(`Warm up period: ${warmup_period.ticks} ticks`);
     logger.log(`Simulation period: ${duration.ticks} ticks`);
 
@@ -271,6 +297,7 @@ export function generateClockForConfig(
     );
     const final_history = trimmed_history;
 
+    logger.log("\n--- Transfer History ---");
     InventoryTransferHistory.print(final_history, logger);
 
     // Create blueprint - use target output item name (same for all output machines)

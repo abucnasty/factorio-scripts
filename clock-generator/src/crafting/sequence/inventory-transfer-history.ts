@@ -196,13 +196,15 @@ function printInventoryTransfers(
                 .forEach((transfer) => {
                     const start_inclusive = transfer.tick_range.start_inclusive;
                     const end_inclusive = transfer.tick_range.end_inclusive;
+                    const amount = transfer.amount;
                     if (relative_tick_mod > 0) {
                         const start_mod = start_inclusive % relative_tick_mod;
                         const end_mod = end_inclusive % relative_tick_mod;
-                        logger.log(`- [${start_inclusive} - ${end_inclusive}](${start_mod} - ${end_mod}) (${transfer.tick_range.duration().ticks} ticks) ${transfer.item_name}`);
+                        
+                        logger.log(`- [${start_inclusive} - ${end_inclusive}](${start_mod} - ${end_mod}) (${transfer.tick_range.duration().ticks} ticks) ${transfer.item_name} x${amount}`);
                         return;
                     }
-                    logger.log(`- [${start_inclusive} - ${end_inclusive}] (${transfer.tick_range.duration().ticks} ticks) ${transfer.item_name}`);
+                    logger.log(`- [${start_inclusive} - ${end_inclusive}] (${transfer.tick_range.duration().ticks} ticks) ${transfer.item_name} x${amount}`);
                 })
         })
 }
