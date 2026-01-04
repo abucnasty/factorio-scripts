@@ -25,10 +25,12 @@ export class PrepareStep implements RunnerStep {
         const control_logic = this.control_logic;
         const context = this.simulation_context;
         
-        // Get all chest states for checking if they're full
-        const chest_states = context.state_registry
+        // Only check for full buffer chests that have both an input and output inserter
+        const buffer_chests = context.state_registry
             .getAllStates()
-            .filter(EntityState.isChest);
+            .filter(EntityState.isChest)
+            .filter(chest => context.inserters.some(inserter_state_machine => inserter_state_machine.inserter_state.inserter.source.entity_id.id === chest.entity_id.id))
+            .filter(chest => context.inserters.some(inserter_state_machine => inserter_state_machine.inserter_state.inserter.sink.entity_id.id === chest.entity_id.id))
         
         while (true) {
             control_logic.executeForTick();
@@ -50,7 +52,7 @@ export class PrepareStep implements RunnerStep {
                     console.error(`Machine ${it.machine_state.machine.entity_id} output: ${output_item}=${output_qty}, status=${it.machine_state.status}`);
                 })
                 
-                const chests_not_full = chest_states.filter(it => !it.isFull());
+                const chests_not_full = buffer_chests.filter(it => !it.isFull());
                 chests_not_full.forEach(it => {
                     console.error(`Chest ${it.entity_id} not full: ${it.getCurrentQuantity()}/${it.getCapacity()}`);
                 })
@@ -72,7 +74,7 @@ export class PrepareStep implements RunnerStep {
             }
             
             // Check all buffer chests are full
-            if (chest_states.some(it => !it.isFull())) {
+            if (buffer_chests.some(it => !it.isFull())) {
                 continue;
             }
 
