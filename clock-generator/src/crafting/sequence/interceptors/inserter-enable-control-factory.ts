@@ -97,6 +97,10 @@ export class EnableControlFactory {
             ]);
         }
 
+        if (EntityState.isChest(source_state) && EntityState.isChest(sink_state)) {
+            return this.fromChestToChest(entity_state.inserter, source_state, sink_state);
+        }
+
         return AlwaysEnabledControl
     }
 
@@ -114,7 +118,7 @@ export class EnableControlFactory {
         const buffer_multiplier = 2
 
         const mode: SimulationMode = computeSimulationMode(
-            sink_state.machine, 
+            sink_state.machine,
             inserter,
             this.entity_transfer_map.getOrThrow(inserter.entity_id),
         );
@@ -162,7 +166,7 @@ export class EnableControlFactory {
     ): EnableControl {
         const source_item_name = source_state.machine.output.item_name;
         const stack_size = inserter.metadata.stack_size;
-        
+
         return EnableControl.latched({
             base: EnableControl.lambda(() => {
                 // Enable when chest has space for at least one stack and source has items
@@ -174,6 +178,69 @@ export class EnableControlFactory {
                 // Release when chest is full
                 return sink_state.isFull();
             })
+        });
+    }
+
+    public fromChestToChest(
+        inserter: Inserter,
+        source_state: ChestState,
+        sink_state: ChestState,
+    ): EnableControl {
+        // Find all inserters pulling from this source chest
+        const inserters_from_source = this.entity_state_registry
+            .getAllStates()
+            .filter(EntityState.isInserter)
+            .filter(i => i.inserter.source.entity_id.id === source_state.entity_id.id);
+
+        // Optimization: if only one inserter, use simple logic
+        if (inserters_from_source.length === 1) {
+            return this.fromChestToChestSingleInserter(inserter, source_state);
+        }
+
+        return this.fromChestToChestMultipleInserters(inserters_from_source, source_state);
+    }
+
+    /**
+     * Enable control for chest → chest with a single inserter.
+     * Simple check: enable when chest has enough items for one stack.
+     */
+    private fromChestToChestSingleInserter(
+        inserter: Inserter,
+        source_state: ChestState,
+    ): EnableControl {
+        const stack_size = inserter.metadata.stack_size;
+        return EnableControl.lambda(() => {
+            const source_quantity = source_state.getCurrentQuantity();
+            return source_quantity >= stack_size;
+        });
+    }
+
+    /**
+     * Enable control for chest → chest with multiple inserters pulling from the same chest.
+     * Accounts for items in all inserter hands to handle sequential evaluation in the same tick.
+     */
+    private fromChestToChestMultipleInserters(
+        inserters_from_source: InserterState[],
+        source_state: ChestState,
+    ): EnableControl {
+        const total_stack_size = inserters_from_source.reduce(
+            (sum, i) => sum + i.inserter.metadata.stack_size,
+            0
+        );
+
+        return EnableControl.lambda(() => {
+            const source_quantity = source_state.getCurrentQuantity();
+
+            // Sum items currently held by all inserters pulling from this chest
+            const items_in_hands = inserters_from_source.reduce(
+                (sum, i) => sum + (i.held_item?.quantity ?? 0),
+                0
+            );
+
+            // Total available = chest quantity + items in all inserter hands
+            const total_available = source_quantity + items_in_hands;
+
+            return total_available >= total_stack_size;
         });
     }
 
@@ -191,17 +258,17 @@ export class EnableControlFactory {
     ): EnableControl {
         const source_item_name = source_state.getItemFilter();
         const buffer_multiplier = 2;
-        
+
         // Get sink machine's input info for this item
         const sink_input = sink_state.machine.inputs.get(source_item_name);
         if (!sink_input) {
             // This item isn't needed by the sink machine, always disabled
             return EnableControl.never;
         }
-        
+
         const minimum_required = sink_input.consumption_rate.amount_per_craft;
         const automated_insertion_limit = sink_input.automated_insertion_limit.quantity;
-        
+
         return EnableControl.latched({
             base: EnableControl.lambda(() => {
                 // Enable when sink needs items (below buffer threshold) AND chest has items
@@ -242,7 +309,7 @@ export class EnableControlFactory {
             const clocked_control = this.clockedForCycle(
                 this.computeInputInserterEnableRanges(inserter)
             );
-            
+
             return EnableControl.all([
                 clocked_control,
                 this.sourceIsGreaterThanStackSize(
@@ -400,7 +467,7 @@ export class EnableControlFactory {
         // swings may need to happen before the machine has time to replenish inventory.
         if (this.crafting_cycle_plan.fractional_swings_enabled && this.crafting_cycle_plan.swing_distribution) {
             const distribution = this.crafting_cycle_plan.swing_distribution.get(inserter_state.inserter.entity_id.id);
-            
+
             if (distribution) {
                 const enabled_ranges = this.computeOutputInserterEnableRanges(inserter_state, distribution);
                 return this.clockedForCycle(enabled_ranges);
@@ -446,7 +513,7 @@ export class EnableControlFactory {
     ): OpenRange[] {
         const swing_distribution = this.crafting_cycle_plan.swing_distribution;
         const cycle_multiplier = this.crafting_cycle_plan.cycle_multiplier;
-        
+
         if (!swing_distribution || !cycle_multiplier) {
             // Fallback to single range if no distribution available
             return [this.computeEnableRangeFromMachine(inserter_state, source_state)];
@@ -454,7 +521,7 @@ export class EnableControlFactory {
 
         const entity_id = inserter_state.inserter.entity_id.id;
         const distribution = swing_distribution.get(entity_id);
-        
+
         if (!distribution) {
             // Fallback to single range if entity not in distribution map
             return [this.computeEnableRangeFromMachine(inserter_state, source_state)];
@@ -471,14 +538,14 @@ export class EnableControlFactory {
         // Generate enable ranges for each sub-cycle based on the swing distribution
         for (let subcycle_index = 0; subcycle_index < cycle_multiplier; subcycle_index++) {
             const swings_in_subcycle = distribution.swings_per_subcycle[subcycle_index];
-            
+
             if (swings_in_subcycle === 0) {
                 continue; // No swings in this sub-cycle
             }
 
             const subcycle_offset = subcycle_index * base_cycle_duration;
             const subcycle_end = subcycle_offset + base_cycle_duration;
-            
+
             // Cover the entire sub-cycle - let the inventory check determine actual swing timing
             ranges.push(OpenRange.from(subcycle_offset, subcycle_end));
         }
@@ -493,51 +560,51 @@ export class EnableControlFactory {
         const transfer_count = this.entity_transfer_map.getOrThrow(inserter_state.inserter.entity_id);
         const animation = inserter_state.inserter.animation;
         const base_cycle_duration = this.crafting_cycle_plan.total_duration.ticks;
-        
+
         // For non-fractional swings, use the original logic
         if (!this.crafting_cycle_plan.fractional_swings_enabled) {
             return this.computeEnableRangesToMachineNonFractional(inserter_state, sink_state);
         }
-        
+
         // For fractional swings, compute ranges at the END of each sub-cycle
         // Input inserters should swing right before the output inserters of their sink machine
         const cycle_multiplier = this.crafting_cycle_plan.cycle_multiplier ?? 1;
-        
+
         // Get the swing distribution for this inserter if available
         const swing_distribution = this.crafting_cycle_plan.swing_distribution?.get(inserter_state.inserter.entity_id.id);
-        
+
         // Time per swing cycle
         const ticks_per_swing = animation.total.ticks + 1;
-        
+
         // Calculate swings per subcycle if no distribution is available
         // Distribute the total transfer count evenly across subcycles
         const total_swings = Math.ceil(transfer_count.total_transfer_count.toDecimal());
         const swings_per_subcycle_default = Math.ceil(total_swings / cycle_multiplier);
-        
+
         const all_ranges: OpenRange[] = [];
-        
+
         for (let subcycle = 0; subcycle < cycle_multiplier; subcycle++) {
             const subcycle_offset = subcycle * base_cycle_duration;
-            
+
             // Get the number of swings for this sub-cycle from the distribution
             // If no distribution, distribute evenly across subcycles
-            const swings_in_subcycle = swing_distribution 
+            const swings_in_subcycle = swing_distribution
                 ? swing_distribution.swings_per_subcycle[subcycle]
                 : swings_per_subcycle_default;
-            
+
             if (swings_in_subcycle === 0) {
                 continue; // No swings in this sub-cycle
             }
-            
+
             // Duration needed for all swings (no extra buffer)
             const swing_duration = ticks_per_swing * swings_in_subcycle;
-            
+
             // Back-load: enable window positioned at end of subcycle
             const subcycle_end = subcycle_offset + base_cycle_duration;
             const range_start = Math.max(subcycle_offset, subcycle_end - swing_duration);
             // End tick is exactly start + duration (not the full subcycle end)
             const range_end = range_start + swing_duration;
-            
+
             all_ranges.push(OpenRange.from(range_start, range_end));
         }
 
@@ -548,7 +615,7 @@ export class EnableControlFactory {
             OpenRange.fromStartAndDuration(0, base_cycle_duration)
         ];
     }
-    
+
     /**
      * Original logic for computing enable ranges to machine (non-fractional swings).
      */
@@ -615,31 +682,31 @@ export class EnableControlFactory {
         const animation = inserter_state.inserter.animation;
         const base_cycle_duration = this.crafting_cycle_plan.total_duration.ticks;
         const cycle_multiplier = this.crafting_cycle_plan.cycle_multiplier ?? 1;
-        
+
         // Time for a complete swing cycle: pickup + swing + drop + swing back
         // We use (total + 1) as the swing duration to account for the pickup tick
         const ticks_per_swing = animation.total.ticks + 1;
-        
+
         const ranges: OpenRange[] = [];
-        
+
         for (let subcycle = 0; subcycle < cycle_multiplier; subcycle++) {
             const swings_in_subcycle = distribution.swings_per_subcycle[subcycle] ?? 0;
-            
+
             if (swings_in_subcycle === 0) {
                 continue; // No swings in this sub-cycle
             }
-            
+
             const subcycle_offset = subcycle * base_cycle_duration;
-            
+
             // Enable window starts at beginning of subcycle
             const start_tick = subcycle_offset;
             // Duration based on number of swings + some buffer
             const duration = ticks_per_swing * swings_in_subcycle + 4;
             const end_tick = start_tick + duration;
-            
+
             ranges.push(OpenRange.from(start_tick, end_tick));
         }
-        
+
         return ranges.length > 0 ? ranges : [OpenRange.from(0, base_cycle_duration)];
     }
 
@@ -662,25 +729,25 @@ export class EnableControlFactory {
         const animation = inserter.animation;
         const base_cycle_duration = this.crafting_cycle_plan.total_duration.ticks;
         const cycle_multiplier = this.crafting_cycle_plan.cycle_multiplier ?? 1;
-        
+
         // Get the swing distribution for this inserter
         const distribution = this.crafting_cycle_plan.swing_distribution?.get(inserter.entity_id.id);
-        
+
         // Time for a complete swing cycle
         const ticks_per_swing = animation.total.ticks + 1;
-        
+
         const ranges: OpenRange[] = [];
-        
+
         for (let subcycle = 0; subcycle < cycle_multiplier; subcycle++) {
             // Get swings for this subcycle from the distribution
             const swings_in_subcycle = distribution?.swings_per_subcycle[subcycle] ?? 0;
-            
+
             if (swings_in_subcycle === 0) {
                 continue; // No swings in this sub-cycle
             }
-            
+
             const subcycle_offset = subcycle * base_cycle_duration;
-            
+
             // Duration of the enable window to allow exactly N swings to START.
             // If each swing takes T ticks, swing starts are spaced T ticks apart:
             //   Swing 1: starts at 0
@@ -689,20 +756,20 @@ export class EnableControlFactory {
             // OpenRange is inclusive on both ends, so [start, start + duration] spans duration+1 distinct ticks.
             // Thus we use (N-1)*T for the duration parameter to get a span of (N-1)*T + 1 ticks, allowing N swings to start.
             const window_duration = (swings_in_subcycle - 1) * ticks_per_swing;
-            
+
             // The subcycle boundary (end of this subcycle)
             const subcycle_end = subcycle_offset + base_cycle_duration;
-            
+
             // Position the window so the LAST swing starts ticks_per_swing before the boundary
             // This ensures the last swing COMPLETES right at the boundary
             const last_swing_start = subcycle_end - ticks_per_swing;
             const start_tick = Math.max(subcycle_offset, last_swing_start - window_duration);
             // End tick is positioned so exactly N swings can START within [start_tick, end_tick]
             const end_tick = start_tick + window_duration;
-            
+
             ranges.push(OpenRange.from(start_tick, end_tick));
         }
-        
+
         return ranges.length > 0 ? ranges : [OpenRange.from(0, base_cycle_duration)];
     }
 
@@ -741,7 +808,7 @@ export class EnableControlFactory {
         const stack_size = inserter.metadata.stack_size;
         const ticks_to_stack = this.ticksToProduceStack(source_machine, stack_size);
         const cycle_duration = this.crafting_cycle_plan.total_duration.ticks;
-        
+
         // Check if this is a fractional swing case (cycle produces less than a full stack).
         // In fractional swing cases, the cycle duration is artificially shorter than what 
         // the machine can produce, and we should NOT apply buffer-in-hand strategy.
@@ -753,7 +820,7 @@ export class EnableControlFactory {
         // A fractional swing case has ticks_to_stack slightly > cycle_duration but the 
         // items actually fit within the larger timing window.
         const items_produced_per_cycle = (source_machine.output.amount_per_craft.toDecimal() / source_machine.crafting_rate.ticks_per_craft) * cycle_duration;
-        
+
         // If the continuous rate produces at least a stack, but discrete timing takes
         // slightly longer than the cycle, this is a fractional case - not slow machine.
         // The key insight: if items_produced_per_cycle >= stack_size, the machine is 
@@ -762,12 +829,12 @@ export class EnableControlFactory {
             // Fractional swing case or near-match - don't use buffer-in-hand
             return false;
         }
-        
+
         if (items_produced_per_cycle < stack_size) {
             // Fractional swing case - not a "slow machine", just an intentionally short cycle
             return false;
         }
-        
+
         // A machine is "slow" if it can't produce a full stack within the cycle duration.
         // This means the inserter would need to start late in the cycle (or wrap around)
         // to pick up items, requiring the buffer-in-hand strategy.
@@ -777,10 +844,10 @@ export class EnableControlFactory {
         if (total_transfer_count <= 1) {
             return ticks_to_stack > cycle_duration;
         }
-        
+
         // Multiple swings: slow if machine can't keep up with continuous pickup
         const total_items_needed = stack_size * total_transfer_count;
-        
+
         // Machine is slow if it can't produce enough items in one cycle
         return items_produced_per_cycle < total_items_needed;
     }
@@ -813,7 +880,7 @@ export class EnableControlFactory {
             const total_swing_duration = Duration.ofTicks(
                 (animation.total.ticks + 1) * total_transfer_count
             );
-            
+
             // For slow machines, use "buffer in hand" strategy:
             // The inserter starts when items will be ready for the first pickup.
             // Subsequent swings happen as items continue to be produced.
@@ -822,7 +889,7 @@ export class EnableControlFactory {
                 const cycle_duration = this.crafting_cycle_plan.total_duration.ticks;
                 const stack_size = inserter_state.inserter.metadata.stack_size;
                 const ticks_to_stack = this.ticksToProduceStack(source_state.machine, stack_size);
-                
+
                 // Calculate when the inserter should start (when first stack is ready)
                 // The inserter is already at the source after its previous swing, so when 
                 // enabled it will immediately go to IDLE and start PICKUP on the next tick.
@@ -833,7 +900,7 @@ export class EnableControlFactory {
                 // This handles the edge case where the machine can't produce a full stack in one cycle.
                 const raw_pickup_start = Math.max(0, ticks_to_stack + 1);
                 const pickup_start = raw_pickup_start % cycle_duration;
-                
+
                 // For multiple swings, we need continuous production.
                 // The machine produces items at rate: amount_per_craft / ticks_per_craft
                 // After picking up stack_size, it takes ticks_to_stack to replenish.
@@ -846,13 +913,13 @@ export class EnableControlFactory {
                     ticks_per_swing_with_wait * total_transfer_count + 4,
                     cycle_duration // Cap at cycle duration to avoid exceeding bounds
                 );
-                
+
                 return OpenRange.fromStartAndDuration(
                     pickup_start,
                     extended_duration
                 )
             }
-            
+
             return OpenRange.fromStartAndDuration(
                 0,
                 total_swing_duration.ticks + 4
