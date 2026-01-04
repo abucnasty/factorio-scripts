@@ -74,7 +74,7 @@ export function BeltsForm({
                 <Typography variant="h6">
                     Belts ({belts.length})
                 </Typography>
-                <Button startIcon={<Add />} onClick={onAdd} variant="outlined" size="small">
+                <Button startIcon={<Add />} onClick={onAdd} variant="text" size="small">
                     Add Belt
                 </Button>
             </Box>

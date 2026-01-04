@@ -79,6 +79,7 @@ export function OverridesForm({
                             control={
                                 <Switch
                                     checked={useFractionalSwings ?? false}
+                                    color="primary"
                                     onChange={(e) =>
                                         onUpdate(
                                             'use_fractional_swings',

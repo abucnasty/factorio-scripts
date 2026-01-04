@@ -827,10 +827,12 @@ export function StateTransitionTimeline({ stateTransitionHistory }: StateTransit
                 onClose={() => setIsModalOpen(false)}
                 maxWidth={false}
                 fullScreen
-                PaperProps={{
-                    sx: {
-                        bgcolor: 'background.default',
-                    },
+                slotProps={{
+                    paper: {
+                        sx: {
+                            bgcolor: 'common.black',
+                        },
+                    }
                 }}
             >
                 <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>

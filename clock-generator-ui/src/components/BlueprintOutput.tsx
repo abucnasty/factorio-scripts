@@ -51,6 +51,7 @@ export function BlueprintOutput({
                 <Button
                     variant="contained"
                     onClick={onGenerate}
+                    color="secondary"
                     disabled={disabled || isLoading}
                     startIcon={isLoading ? <CircularProgress size={20} color="inherit" /> : undefined}
                 >

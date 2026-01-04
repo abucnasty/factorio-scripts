@@ -99,7 +99,7 @@ export function MachinesForm({
                         </Box>
                     </Popover>
                 </Box>
-                <Button startIcon={<Add />} onClick={onAdd} variant="outlined" size="small">
+                <Button startIcon={<Add />} onClick={onAdd} variant="text" size="small">
                     Add Machine
                 </Button>
             </Box>

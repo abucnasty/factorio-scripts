@@ -31,7 +31,7 @@ export function ChestsForm({
                 <Typography variant="h6">
                     Buffer Chests ({chests.length})
                 </Typography>
-                <Button startIcon={<Add />} onClick={onAdd} variant="outlined" size="small">
+                <Button startIcon={<Add />} onClick={onAdd} variant="text" size="small">
                     Add Chest
                 </Button>
             </Box>
@@ -81,6 +81,8 @@ export function ChestsForm({
                         options={itemNames}
                         onChange={(newValue) => onUpdate(index, { item_filter: newValue || '' })}
                         label="Item Filter"
+                        size="small"
+                        minWidth={300}
                     />
 
                     <Box sx={{ flex: 1 }} />

@@ -92,7 +92,7 @@ export function FilterSlotSelector({
                             borderStyle: isAutoAssigned ? 'dashed' : 'solid',
                             borderColor: displayFilter
                                 ? isAutoAssigned
-                                    ? 'warning.main'
+                                    ? 'secondary.main'
                                     : 'primary.main'
                                 : 'divider',
                             borderRadius: 1,
@@ -107,7 +107,7 @@ export function FilterSlotSelector({
                             '&:hover, &:focus': {
                                 borderColor: displayFilter
                                     ? isAutoAssigned
-                                        ? 'warning.dark'
+                                        ? 'secondary.dark'
                                         : 'primary.light'
                                     : 'primary.light',
                                 bgcolor: 'action.hover',
@@ -132,8 +132,8 @@ export function FilterSlotSelector({
                                             bottom: -8,
                                             left: '50%',
                                             transform: 'translateX(-50%)',
-                                            bgcolor: 'warning.main',
-                                            color: 'warning.contrastText',
+                                            bgcolor: 'secondary.main',
+                                            color: 'secondary.contrastText',
                                             fontSize: '8px',
                                             fontWeight: 'bold',
                                             px: 0.5,

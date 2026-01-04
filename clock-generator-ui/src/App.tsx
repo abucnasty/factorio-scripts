@@ -35,17 +35,26 @@ const darkTheme = createTheme({
     palette: {
         mode: 'dark',
         primary: {
-            main: '#ff9800', // Factorio orange
+            main: '#fca300',
+            light: '#ffba37',
         },
         secondary: {
-            main: '#4caf50',
+            main: '#5eb664',
+            light: '#81d99a',
         },
         background: {
-            default: '#121212',
-            paper: '#1e1e1e',
+            default: '#404040',
+            paper: '#232323',
         },
+        common: {
+            black: '#121212',
+        },
+        error: {
+            main: '#ff5958'
+        }
     },
 });
+
 
 // Simple HOCON parsing fallback - in real scenario use the browser config loader
 async function parseConfig(content: string): Promise<Config> {
