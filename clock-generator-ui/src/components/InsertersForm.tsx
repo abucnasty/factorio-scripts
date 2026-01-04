@@ -5,7 +5,6 @@ import {
     Button,
     IconButton,
     Paper,
-    Popover,
     TextField,
     Tooltip,
     Typography,
@@ -15,7 +14,6 @@ import type { BeltFormData, ChestFormData, EnableControlOverride, InserterFormDa
 import { EnableControlModal } from './EnableControlModal';
 import type { RecipeInfo } from '../hooks/useSimulationWorker';
 import { FactorioIcon } from './FactorioIcon';
-import { ItemSelector } from './ItemSelector';
 import { FilterSlotSelector } from './FilterSlotSelector';
 
 interface EntityOption {
@@ -50,8 +48,6 @@ export function InsertersForm({
     onUpdate,
     onRemove,
 }: InsertersFormProps) {
-    const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
-    const [activeSlot, setActiveSlot] = useState<{ inserterIndex: number; slotIndex: number } | null>(null);
     const [enableControlModalInserterIndex, setEnableControlModalInserterIndex] = useState<number | null>(null);
 
     // Build entity options for the dropdown
@@ -157,28 +153,15 @@ export function InsertersForm({
         return sourceItems.filter(item => sinkNeeds.includes(item));
     };
 
-    const handleSlotClick = (inserterIndex: number, slotIndex: number, element: HTMLElement) => {
-        setAnchorEl(element);
-        setActiveSlot({ inserterIndex, slotIndex });
-    };
-
-    const handleClose = () => {
-        setAnchorEl(null);
-        setActiveSlot(null);
-    };
-
-    const handleItemSelect = (item: string) => {
-        if (activeSlot) {
-            const inserter = inserters[activeSlot.inserterIndex];
-            const filters = [...(inserter.filters || [])];
-            filters[activeSlot.slotIndex] = item;
-            // Remove empty trailing slots
-            while (filters.length > 0 && !filters[filters.length - 1]) {
-                filters.pop();
-            }
-            onUpdate(activeSlot.inserterIndex, { filters: filters.length > 0 ? filters : undefined });
+    const handleFilterChange = (inserterIndex: number, slotIndex: number, item: string) => {
+        const inserter = inserters[inserterIndex];
+        const filters = [...(inserter.filters || [])];
+        filters[slotIndex] = item;
+        // Remove empty trailing slots
+        while (filters.length > 0 && !filters[filters.length - 1]) {
+            filters.pop();
         }
-        handleClose();
+        onUpdate(inserterIndex, { filters: filters.length > 0 ? filters : undefined });
     };
 
     const handleRemoveFilter = (inserterIndex: number, slotIndex: number) => {
@@ -419,7 +402,8 @@ export function InsertersForm({
                     <FilterSlotSelector
                         filters={inserter.filters}
                         inferredFilters={getInferredFilters(inserter)}
-                        onSlotClick={(slotIndex, element) => handleSlotClick(index, slotIndex, element)}
+                        itemNames={itemNames}
+                        onFilterChange={(slotIndex, item) => handleFilterChange(index, slotIndex, item)}
                         onRemoveFilter={(slotIndex) => handleRemoveFilter(index, slotIndex)}
                         maxSlots={5}
                     />
@@ -445,34 +429,6 @@ export function InsertersForm({
                     No inserters configured. Add at least one inserter to transfer items.
                 </Typography>
             )}
-
-            <Popover
-                open={Boolean(anchorEl)}
-                anchorEl={anchorEl}
-                onClose={handleClose}
-                anchorOrigin={{
-                    vertical: 'bottom',
-                    horizontal: 'left',
-                }}
-                transformOrigin={{
-                    vertical: 'top',
-                    horizontal: 'left',
-                }}
-            >
-                <Box sx={{ p: 2, width: 300 }}>
-                    <ItemSelector
-                        value={activeSlot ? (inserters[activeSlot.inserterIndex]?.filters?.[activeSlot.slotIndex] || getInferredFilters(inserters[activeSlot.inserterIndex])[activeSlot.slotIndex] || null) : null}
-                        options={itemNames}
-                        onChange={(newValue) => {
-                            if (newValue) {
-                                handleItemSelect(newValue);
-                            }
-                        }}
-                        label="Select Item"
-                        minWidth={268}
-                    />
-                </Box>
-            </Popover>
 
             {/* Enable Control Modal */}
             <EnableControlModal

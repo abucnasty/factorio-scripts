@@ -1,14 +1,18 @@
 import { Add, Close } from '@mui/icons-material';
-import { Box, IconButton, Typography } from '@mui/material';
+import { Box, IconButton, Typography, Popover } from '@mui/material';
+import { useState } from 'react';
 import { FactorioIcon } from './FactorioIcon';
+import { ItemSelector } from './ItemSelector';
 
 interface FilterSlotSelectorProps {
     /** Explicit filters set by the user */
     filters?: string[];
     /** Inferred/auto-populated filters from source/sink analysis */
     inferredFilters?: string[];
-    /** Callback when a slot is clicked to set/change a filter */
-    onSlotClick: (slotIndex: number, element: HTMLElement) => void;
+    /** Available item names for selection */
+    itemNames: string[];
+    /** Callback when a filter is updated */
+    onFilterChange: (slotIndex: number, item: string) => void;
     /** Callback when a filter is removed */
     onRemoveFilter: (slotIndex: number) => void;
     /** Number of filter slots to display */
@@ -18,12 +22,37 @@ interface FilterSlotSelectorProps {
 export function FilterSlotSelector({
     filters = [],
     inferredFilters = [],
-    onSlotClick,
+    itemNames,
+    onFilterChange,
     onRemoveFilter,
     maxSlots = 5,
 }: FilterSlotSelectorProps) {
     const hasExplicitFilters = filters.length > 0;
     const shouldShowInferred = !hasExplicitFilters && inferredFilters.length > 0;
+    const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
+    const [activeSlotIndex, setActiveSlotIndex] = useState<number | null>(null);
+
+    const handleSlotClick = (slotIndex: number, element: HTMLElement) => {
+        setAnchorEl(element);
+        setActiveSlotIndex(slotIndex);
+    };
+
+    const handleClose = () => {
+        setAnchorEl(null);
+        setActiveSlotIndex(null);
+    };
+
+    const handleItemSelect = (item: string | null) => {
+        if (activeSlotIndex !== null && item) {
+            onFilterChange(activeSlotIndex, item);
+        }
+        handleClose();
+    };
+
+    const getCurrentValue = () => {
+        if (activeSlotIndex === null) return null;
+        return filters[activeSlotIndex] || inferredFilters[activeSlotIndex] || null;
+    };
 
     return (
         <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center' }}>
@@ -49,11 +78,11 @@ export function FilterSlotSelector({
                                 ? `Filter ${slotIndex + 1}: ${displayFilter}${isAutoAssigned ? ' (auto)' : ''}`
                                 : `Add filter ${slotIndex + 1}`
                         }
-                        onClick={(e) => onSlotClick(slotIndex, e.currentTarget)}
+                        onClick={(e) => handleSlotClick(slotIndex, e.currentTarget)}
                         onKeyDown={(e) => {
                             if (e.key === 'Enter' || e.key === ' ') {
                                 e.preventDefault();
-                                onSlotClick(slotIndex, e.currentTarget);
+                                handleSlotClick(slotIndex, e.currentTarget);
                             }
                         }}
                         sx={{
@@ -156,6 +185,31 @@ export function FilterSlotSelector({
                     +{inferredFilters.length - maxSlots} more
                 </Typography>
             )}
+
+            {/* Item selector popover */}
+            <Popover
+                open={Boolean(anchorEl)}
+                anchorEl={anchorEl}
+                onClose={handleClose}
+                anchorOrigin={{
+                    vertical: 'bottom',
+                    horizontal: 'left',
+                }}
+                transformOrigin={{
+                    vertical: 'top',
+                    horizontal: 'left',
+                }}
+            >
+                <Box sx={{ p: 2, width: 300 }}>
+                    <ItemSelector
+                        value={getCurrentValue()}
+                        options={itemNames}
+                        onChange={handleItemSelect}
+                        label="Select Item"
+                        minWidth={268}
+                    />
+                </Box>
+            </Popover>
         </Box>
     );
 }
