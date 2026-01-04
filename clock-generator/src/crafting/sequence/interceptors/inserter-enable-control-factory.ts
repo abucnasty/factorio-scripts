@@ -7,7 +7,7 @@ import { ItemName } from "../../../data";
 import { computeSimulationMode, SimulationMode, simulationModeForInput } from "../simulation-mode";
 import { CraftingCyclePlan } from "../cycle/crafting-cycle";
 import { Duration, OpenRange } from "../../../data-types";
-import { SwingDistribution, SwingDistributionMap } from "../cycle/swing-distribution";
+import { SwingDistribution } from "../cycle/swing-distribution";
 
 export class EnableControlFactory {
 

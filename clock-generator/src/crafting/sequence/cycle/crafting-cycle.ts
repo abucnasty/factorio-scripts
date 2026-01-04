@@ -99,15 +99,14 @@ function createPlan(
     // Determine swings per cycle - either fractional or integer
     let swings_per_cycle: Fraction;
     
-    if (use_fractional_swings) {
+    if (use_fractional_swings) { // fractional swing strategy
         // Fractional mode: use the raw fraction without rounding
         if (config_overrides.terminal_swing_count !== undefined) {
             swings_per_cycle = fraction(config_overrides.terminal_swing_count);
         } else {
             swings_per_cycle = max_possible_swings;
         }
-    } else {
-        // Integer mode: floor to integer (original behavior)
+    } else { // integer swing strategy        
         let swings_per_single_cycle = 1;
 
         if (max_possible_swings.toDecimal() >= 2) {

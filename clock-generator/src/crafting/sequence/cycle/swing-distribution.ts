@@ -1,6 +1,5 @@
-import Fraction, { fraction } from "fractionability";
 import assert from "../../../common/assert";
-import { EntityId, Inserter, Machine, MiningDrill, ReadableEntityRegistry } from "../../../entities";
+import { EntityId, Inserter, Machine, ReadableEntityRegistry } from "../../../entities";
 import { EntityTransferCount, EntityTransferCountMap } from "./swing-counts";
 
 /**
