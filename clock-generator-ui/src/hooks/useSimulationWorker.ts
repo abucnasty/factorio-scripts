@@ -1,5 +1,6 @@
 import { useCallback, useState } from 'react';
 import type { Config, DebugSteps, LogMessage, FactorioData, SerializableTransferHistory, SerializableStateTransitionHistory } from 'clock-generator/browser';
+import { initializeMachineFacts } from './useMachineFacts';
 
 export interface RecipeInfo {
     ingredients: string[];
@@ -63,6 +64,10 @@ export function useSimulationWorker(): UseSimulationWorkerResult {
             setRecipeNames(FactorioDataService.getAllRecipeNames());
             setItemNames(FactorioDataService.getAllItemNames());
             setResourceNames(FactorioDataService.getAllResourceNames());
+            
+            // Initialize machine facts module
+            await initializeMachineFacts();
+            
             setIsInitialized(true);
         } catch (err) {
             console.error('Failed to initialize:', err);

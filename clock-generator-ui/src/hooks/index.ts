@@ -11,3 +11,6 @@ export type {
     BeltLaneFormData,
     DrillFormData,
 } from './useConfigForm';
+
+export { useMachineFacts, initializeMachineFacts, isMachineFactsReady } from './useMachineFacts';
+export type { UseMachineFactsParams, UseMachineFactsResult } from './useMachineFacts';
