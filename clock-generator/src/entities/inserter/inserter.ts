@@ -67,7 +67,7 @@ export class InserterFactory {
         if (source.type === EntityType.CHEST) {
             const chest = this.entity_registry.getEntityByIdOrThrow(EntityId.forChest(source.id))
             assertIsChest(chest)
-            source_provided_items.add(chest.item_filter)
+            chest.getItemFilters().forEach(item => source_provided_items.add(item))
         }
 
         if (sink.type === EntityType.BELT) {
@@ -85,7 +85,7 @@ export class InserterFactory {
         if (sink.type === EntityType.CHEST) {
             const chest = this.entity_registry.getEntityByIdOrThrow(EntityId.forChest(sink.id))
             assertIsChest(chest)
-            sink_consumed_items.add(chest.item_filter)
+            chest.getItemFilters().forEach(item => sink_consumed_items.add(item))
         }
 
 

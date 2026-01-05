@@ -1,61 +1,51 @@
-import { FactorioDataService, ItemName } from "../../data";
-import { ChestConfig } from "../../config/schema";
+import { ChestType } from "../../common/entity-types";
+import { ChestConfig } from "../../config";
+import { ItemName } from "../../data";
 import { Entity } from "../entity";
 import { EntityId } from "../entity-id";
+import { BufferChest } from "./buffer-chest";
+import { InfinityChest } from "./infinity-chest";
 
 /**
  * Chest entity interface.
  * 
  * A chest is considered just a blob that can hold inventory.
- * 
- * The storage_size is the total number of item slots the chest can hold.
- * 
- * For example, if a chest has 12 slots and we fill it with iron ore which
- * has a stack size of 50, the chest can hold up to 600 iron ore.
- * 
- * The item_filter restricts the chest to holding only a single item type.
- * This simplifies capacity calculations since we only need to track one
- * stack size.
  */
-export class Chest implements Entity {
-
-    public static fromConfig = fromConfig;
-
-    constructor(
-        public readonly entity_id: EntityId,
-        /**
-         * The total number of inventory slots in this chest.
-         */
-        public readonly storage_size: number,
-        /**
-         * The single item type this chest is filtered to hold.
-         * Chests only support one item type for simplicity.
-         */
-        public readonly item_filter: ItemName,
-        /**
-         * The stack size of the filtered item (cached for capacity calculations).
-         */
-        public readonly item_stack_size: number,
-    ) { }
+export interface Chest extends Entity {
+    readonly entity_id: EntityId;
+    readonly chest_type: ChestType;
 
     /**
      * Get the maximum capacity of this chest in items.
      */
-    public getCapacity(): number {
-        return this.storage_size * this.item_stack_size;
-    }
+    getCapacity(): number;
 
-    public toString(): string {
-        return `Chest(${this.entity_id.id}, item=${this.item_filter}, capacity=${this.getCapacity()})`;
+    /**
+     * Get all item types this chest is filtered to hold.
+     */
+    getItemFilters(): ItemName[];
+}
+
+function createChestFromConfig(config: ChestConfig): Chest {
+    // Handle discriminated union - route based on type
+    switch(config.type) {
+        case ChestType.BUFFER_CHEST:
+            return BufferChest.fromConfig(config);
+        case ChestType.INFINITY_CHEST:
+            return InfinityChest.fromConfig(config);
     }
 }
 
-function fromConfig(config: ChestConfig): Chest {
-    const item = FactorioDataService.findItemOrThrow(config.item_filter);
-    return new Chest(
-        EntityId.forChest(config.id),
-        config.storage_size,
-        config.item_filter,
-        item.stack_size,
-    );
+function isBufferChest(chest: Chest): chest is BufferChest {
+    return chest.chest_type === ChestType.BUFFER_CHEST;
 }
+
+function isInfinityChest(chest: Chest): chest is InfinityChest {
+    return chest.chest_type === ChestType.INFINITY_CHEST;
+}
+
+export const Chest = {
+    isBufferChest,
+    isInfinityChest,
+    fromConfig: createChestFromConfig
+};
