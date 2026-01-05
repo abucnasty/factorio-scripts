@@ -1,5 +1,6 @@
 import { parse as parseHocon, HoconParseOptions } from "@pushcorn/hocon-parser";
 import { ZodError } from "zod";
+import { ChestType } from "../common/entity-types";
 import { Config, ConfigSchema } from "./schema";
 import { ConfigValidationError } from "./errors";
 import * as fs from "fs";
@@ -115,8 +116,11 @@ export async function parseConfig(
     // Parse HOCON to plain object
     const parsed = await parseHocon(hoconOptions);
 
+    // Normalize config for backwards compatibility
+    const normalized = normalizeConfig(parsed);
+
     // Validate against schema
-    const result = ConfigSchema.safeParse(parsed);
+    const result = ConfigSchema.safeParse(normalized);
 
     if (!result.success) {
         throw new ConfigValidationError(result.error);
@@ -282,6 +286,58 @@ export function createBrowserConfigLoader(
 }
 
 // ============================================================================
+// Config Normalization Functions
+// ============================================================================
+
+/**
+ * Normalize a raw config object for backwards compatibility.
+ * 
+ * This function applies the following transformations:
+ * - Adds `type: "buffer-chest"` to chest configs missing the type field
+ * 
+ * @param rawConfig - The raw parsed config object (before Zod validation)
+ * @returns The normalized config object
+ */
+function normalizeConfig(rawConfig: unknown): unknown {
+    if (typeof rawConfig !== "object" || rawConfig === null) {
+        return rawConfig;
+    }
+
+    const config = rawConfig as Record<string, unknown>;
+    
+    // Normalize chest configs
+    if (Array.isArray(config.chests)) {
+        config.chests = config.chests.map(normalizeChestConfig);
+    }
+
+    return config;
+}
+
+/**
+ * Normalize a single chest config.
+ * 
+ * If the chest config is missing the `type` field, defaults to "buffer-chest"
+ * for backwards compatibility with existing configs.
+ */
+function normalizeChestConfig(chestConfig: unknown): unknown {
+    if (typeof chestConfig !== "object" || chestConfig === null) {
+        return chestConfig;
+    }
+
+    const chest = chestConfig as Record<string, unknown>;
+    
+    // If no type specified, default to buffer-chest for backwards compatibility
+    if (!("type" in chest)) {
+        return {
+            ...chest,
+            type: ChestType.BUFFER_CHEST
+        };
+    }
+
+    return chest;
+}
+
+// ============================================================================
 // Config Validation Functions
 // ============================================================================
 
@@ -289,8 +345,9 @@ export function createBrowserConfigLoader(
  * Validate config for chest usage constraints.
  * 
  * Throws an error if:
- * - A chest is used only as a source without being a sink for another inserter
+ * - A buffer chest is used only as a source without being a sink for another inserter
  *   (the chest would start empty and never be filled)
+ * - Infinity chests are exempt from this validation as they are infinite sources
  * 
  * @param config - The parsed config to validate
  * @throws {Error} If validation fails
@@ -320,9 +377,16 @@ export function validateChestUsage(config: Config): void {
     for (const chestId of chestIdsUsedAsSource) {
         if (!chestIdsUsedAsSink.has(chestId)) {
             const chest = chests.find(c => c.id === chestId);
+            
+            // Infinity chests are exempt - they are infinite sources by design
+            if (chest && chest.type === ChestType.INFINITY_CHEST) {
+                continue;
+            }
+            
             throw new Error(
-                `Chest with id ${chestId} is used as a source but is never filled by any inserter. ` +
-                `A chest must be used as a sink by at least one inserter before it can be used as a source.`
+                `Buffer chest with id ${chestId} is used as a source but is never filled by any inserter. ` +
+                `A buffer chest must be used as a sink by at least one inserter before it can be used as a source. ` +
+                `Use an infinity chest instead if you need an infinite source.`
             );
         }
     }
