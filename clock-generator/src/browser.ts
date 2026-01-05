@@ -176,3 +176,17 @@ export {
 export {
     EntityType,
 } from './entities/entity-type';
+
+// ============================================================================
+// Machine Facts (for on-the-fly computation in UI)
+// ============================================================================
+
+export {
+    SerializableMachineFacts,
+    SerializableMachineInput,
+} from './data-types';
+
+export {
+    Machine,
+    ComputeMachineFactsParams,
+} from './entities/machine';

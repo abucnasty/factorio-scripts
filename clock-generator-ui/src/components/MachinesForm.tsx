@@ -15,7 +15,9 @@ import {
 } from '@mui/material';
 import { useState } from 'react';
 import type { MachineFormData } from '../hooks/useConfigForm';
+import { useMachineFacts } from '../hooks/useMachineFacts';
 import { FactorioIcon } from './FactorioIcon';
+import { MachineFactsAccordion } from './MachineFactsAccordion';
 
 interface MachinesFormProps {
     machines: MachineFormData[];
@@ -99,123 +101,160 @@ export function MachinesForm({
                         </Box>
                     </Popover>
                 </Box>
-                <Button startIcon={<Add />} onClick={onAdd} variant="outlined" size="small">
+                <Button startIcon={<Add />} onClick={onAdd} variant="text" size="small">
                     Add Machine
                 </Button>
             </Box>
 
             {machines.map((machine, index) => (
-                <Box
+                <MachineRow
                     key={`machine-${index}`}
-                    sx={{
-                        display: 'flex',
-                        gap: 2,
-                        alignItems: 'center',
-                        mb: 2,
-                        p: 2,
-                        bgcolor: 'action.hover',
-                        borderRadius: 1,
-                        flexWrap: 'wrap',
-                    }}
-                >
-                    <TextField
-                        label="ID"
-                        type="number"
-                        value={machine.id}
-                        onChange={(e) => onUpdate(index, 'id', parseInt(e.target.value) || 1)}
-                        inputProps={{ min: 1 }}
-                        sx={{ width: 80 }}
-                        size="small"
-                    />
-                    <Autocomplete
-                        sx={{ minWidth: 250, flex: 1 }}
-                        options={recipeNames}
-                        value={machine.recipe || null}
-                        onChange={(_, newValue) => onUpdate(index, 'recipe', newValue || '')}
-                        renderInput={(params) => (
-                            <TextField
-                                {...params}
-                                label="Recipe"
-                                placeholder="Search recipes..."
-                                size="small"
-                                slotProps={{
-                                    input: {
-                                        ...params.InputProps,
-                                        startAdornment: machine.recipe ? (
-                                            <Box sx={{ display: 'flex', alignItems: 'center', ml: 1 }}>
-                                                <FactorioIcon name={machine.recipe} size={20} />
-                                            </Box>
-                                        ) : null,
-                                    },
-                                }}
-                            />
-                        )}
-                        renderOption={(props, option) => {
-                            const { key, ...rest } = props;
-                            return (
-                                <Box component="li" key={key} {...rest} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                    <FactorioIcon name={option} size={20} />
-                                    {option}
-                                </Box>
-                            );
-                        }}
-                        freeSolo
-                        autoHighlight
-                    />
-                    <TextField
-                        label="Productivity (%)"
-                        type="number"
-                        value={machine.productivity}
-                        onChange={(e) => onUpdate(index, 'productivity', parseFloat(e.target.value) || 0)}
-                        slotProps={{ htmlInput: { step: 1, min: 0 } }}
-                        sx={{ width: 130 }}
-                        size="small"
-                    />
-                    <TextField
-                        label="Crafting Speed"
-                        type="number"
-                        value={machine.crafting_speed}
-                        onChange={(e) => onUpdate(index, 'crafting_speed', Number(e.target.value) || 1)}
-                        slotProps={{ htmlInput: { step: 0.1, min: 0 } }}
-                        sx={{ width: 180 }}
-                        size="small"
-                    />
-                    <FormControl size="small" sx={{ minWidth: 140 }}>
-                        <InputLabel>Type</InputLabel>
-                        <Select
-                            value={machine.type || 'machine'}
-                            label="Type"
-                            onChange={(e) => onUpdate(index, 'type', e.target.value as 'machine' | 'furnace')}
-                            renderValue={(selected) => (
-                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                    <FactorioIcon name={selected === 'furnace' ? 'electric-furnace' : 'assembling-machine-3'} size={20} />
-                                    {selected === 'furnace' ? 'Furnace' : 'Machine'}
-                                </Box>
-                            )}
-                        >
-                            <MenuItem value="machine">
-                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                    <FactorioIcon name="assembling-machine-3" size={20} />
-                                    Machine
-                                </Box>
-                            </MenuItem>
-                            <MenuItem value="furnace">
-                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                    <FactorioIcon name="electric-furnace" size={20} />
-                                    Furnace
-                                </Box>
-                            </MenuItem>
-                        </Select>
-                    </FormControl>
-                    <IconButton
-                        onClick={() => onRemove(index)}
-                        color="error"
-                        disabled={machines.length <= 1}
-                    >
-                        <Delete />
-                    </IconButton>
-                </Box>
+                    machine={machine}
+                    index={index}
+                    recipeNames={recipeNames}
+                    canDelete={machines.length > 1}
+                    onUpdate={onUpdate}
+                    onRemove={onRemove}
+                />
             ))}
         </Paper>
+    );
+}
+
+interface MachineRowProps {
+    machine: MachineFormData;
+    index: number;
+    recipeNames: string[];
+    canDelete: boolean;
+    onUpdate: (index: number, field: keyof MachineFormData, value: string | number) => void;
+    onRemove: (index: number) => void;
+}
+
+function MachineRow({ machine, index, recipeNames, canDelete, onUpdate, onRemove }: MachineRowProps) {
+    const { facts, error } = useMachineFacts({
+        recipe: machine.recipe,
+        productivity: machine.productivity,
+        crafting_speed: machine.crafting_speed,
+        type: machine.type,
+    });
+
+    return (
+        <Box
+            sx={{
+                mb: 2,
+                p: 2,
+                bgcolor: 'action.hover',
+                borderRadius: 1,
+            }}
+        >
+            <Box
+                sx={{
+                    display: 'flex',
+                    gap: 2,
+                    alignItems: 'center',
+                    flexWrap: 'wrap',
+                }}
+            >
+                <TextField
+                    label="ID"
+                    type="number"
+                    value={machine.id}
+                    onChange={(e) => onUpdate(index, 'id', parseInt(e.target.value) || 1)}
+                    inputProps={{ min: 1 }}
+                    sx={{ width: 80 }}
+                    size="small"
+                />
+                <Autocomplete
+                    sx={{ minWidth: 250, flex: 1 }}
+                    options={recipeNames}
+                    value={machine.recipe || null}
+                    onChange={(_, newValue) => onUpdate(index, 'recipe', newValue || '')}
+                    renderInput={(params) => (
+                        <TextField
+                            {...params}
+                            label="Recipe"
+                            placeholder="Search recipes..."
+                            size="small"
+                            slotProps={{
+                                input: {
+                                    ...params.InputProps,
+                                    startAdornment: machine.recipe ? (
+                                        <Box sx={{ display: 'flex', alignItems: 'center', ml: 1 }}>
+                                            <FactorioIcon name={machine.recipe} size={20} />
+                                        </Box>
+                                    ) : null,
+                                },
+                            }}
+                        />
+                    )}
+                    renderOption={(props, option) => {
+                        const { key, ...rest } = props;
+                        return (
+                            <Box component="li" key={key} {...rest} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                <FactorioIcon name={option} size={20} />
+                                {option}
+                            </Box>
+                        );
+                    }}
+                    freeSolo
+                    autoHighlight
+                />
+                <TextField
+                    label="Productivity (%)"
+                    type="number"
+                    value={machine.productivity}
+                    onChange={(e) => onUpdate(index, 'productivity', parseFloat(e.target.value) || 0)}
+                    slotProps={{ htmlInput: { step: 1, min: 0 } }}
+                    sx={{ width: 130 }}
+                    size="small"
+                />
+                <TextField
+                    label="Crafting Speed"
+                    type="number"
+                    value={machine.crafting_speed}
+                    onChange={(e) => onUpdate(index, 'crafting_speed', Number(e.target.value) || 1)}
+                    slotProps={{ htmlInput: { step: 0.1, min: 0 } }}
+                    sx={{ width: 180 }}
+                    size="small"
+                />
+                <FormControl size="small" sx={{ minWidth: 140 }}>
+                    <InputLabel>Type</InputLabel>
+                    <Select
+                        value={machine.type || 'machine'}
+                        label="Type"
+                        onChange={(e) => onUpdate(index, 'type', e.target.value as 'machine' | 'furnace')}
+                        renderValue={(selected) => (
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                <FactorioIcon name={selected === 'furnace' ? 'electric-furnace' : 'assembling-machine-3'} size={20} />
+                                {selected === 'furnace' ? 'Furnace' : 'Machine'}
+                            </Box>
+                        )}
+                    >
+                        <MenuItem value="machine">
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                <FactorioIcon name="assembling-machine-3" size={20} />
+                                Machine
+                            </Box>
+                        </MenuItem>
+                        <MenuItem value="furnace">
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                <FactorioIcon name="electric-furnace" size={20} />
+                                Furnace
+                            </Box>
+                        </MenuItem>
+                    </Select>
+                </FormControl>
+                <IconButton
+                    onClick={() => onRemove(index)}
+                    color="error"
+                    disabled={!canDelete}
+                >
+                    <Delete />
+                </IconButton>
+            </Box>
+            {machine.recipe && (
+                <MachineFactsAccordion facts={facts} error={error} />
+            )}
+        </Box>
     );
 }
