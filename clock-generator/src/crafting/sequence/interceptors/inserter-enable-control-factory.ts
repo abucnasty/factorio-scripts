@@ -256,13 +256,35 @@ export class EnableControlFactory {
         source_state: ChestState,
         sink_state: MachineState,
     ): EnableControl {
-        const source_item_name = source_state.getItemFilter();
+        // Find all item types from the chest that the machine needs
+        const item_filters = source_state.getItemFilters();
+        const per_item_controls: EnableControl[] = [];
+
+        for (const item_name of item_filters) {
+            if (sink_state.machine.inputs.has(item_name)) {
+                per_item_controls.push(
+                    this.fromChestToMachineForItem(source_state, sink_state, item_name)
+                );
+            }
+        }
+
+        if (per_item_controls.length === 0) {
+            // No items from this chest are needed by the sink machine
+            return EnableControl.never;
+        }
+
+        return EnableControl.all(per_item_controls);
+    }
+
+    private fromChestToMachineForItem(
+        source_state: ChestState,
+        sink_state: MachineState,
+        item_name: ItemName,
+    ): EnableControl {
         const buffer_multiplier = 2;
 
-        // Get sink machine's input info for this item
-        const sink_input = sink_state.machine.inputs.get(source_item_name);
+        const sink_input = sink_state.machine.inputs.get(item_name);
         if (!sink_input) {
-            // This item isn't needed by the sink machine, always disabled
             return EnableControl.never;
         }
 
@@ -272,13 +294,13 @@ export class EnableControlFactory {
         return EnableControl.latched({
             base: EnableControl.lambda(() => {
                 // Enable when sink needs items (below buffer threshold) AND chest has items
-                const sink_quantity = sink_state.inventoryState.getQuantity(source_item_name);
-                const chest_has_items = source_state.getCurrentQuantity() > 0;
+                const sink_quantity = sink_state.inventoryState.getQuantity(item_name);
+                const chest_has_items = source_state.getCurrentQuantity(item_name) > 0;
                 return chest_has_items && sink_quantity < minimum_required * buffer_multiplier;
             }),
             release: EnableControl.lambda(() => {
-                // Release when sink is at insertion limit OR chest is empty
-                const sink_quantity = sink_state.inventoryState.getQuantity(source_item_name);
+                // Release when sink is at insertion limit OR chest is empty (for buffer chests)
+                const sink_quantity = sink_state.inventoryState.getQuantity(item_name);
                 const chest_is_empty = source_state.isEmpty();
                 return sink_quantity >= automated_insertion_limit || chest_is_empty;
             })

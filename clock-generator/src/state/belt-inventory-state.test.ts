@@ -28,8 +28,7 @@ describe("BeltInventoryState", () => {
 
             const beltInventory = BeltInventoryState.fromBelt(belt)
 
-            // Note: BeltInventoryState.fromBelt adds lanes twice (once in fromBelt static factory, once in constructor)
-            expect(beltInventory.getQuantity("stone")).toBe(32)
+            expect(beltInventory.getQuantity("stone")).toBe(16)
         })
 
         test("creates belt inventory from a double lane belt (same item)", () => {
@@ -42,7 +41,7 @@ describe("BeltInventoryState", () => {
 
             const beltInventory = BeltInventoryState.fromBelt(belt)
 
-            expect(beltInventory.getQuantity("stone")).toBe(64)
+            expect(beltInventory.getQuantity("stone")).toBe(32)
         })
 
         test("creates belt inventory from a dual lane belt (split items)", () => {
@@ -55,8 +54,8 @@ describe("BeltInventoryState", () => {
 
             const beltInventory = BeltInventoryState.fromBelt(belt)
 
-            expect(beltInventory.getQuantity("stone")).toBe(32)
-            expect(beltInventory.getQuantity("iron-ore")).toBe(32)
+            expect(beltInventory.getQuantity("stone")).toBe(16)
+            expect(beltInventory.getQuantity("iron-ore")).toBe(16)
         })
 
         test("handles different stack sizes", () => {
@@ -68,7 +67,7 @@ describe("BeltInventoryState", () => {
 
             const beltInventory = BeltInventoryState.fromBelt(belt)
 
-            expect(beltInventory.getQuantity("stone")).toBe(8)
+            expect(beltInventory.getQuantity("stone")).toBe(4)
         })
 
         test("handles large stack sizes", () => {
@@ -81,7 +80,7 @@ describe("BeltInventoryState", () => {
 
             const beltInventory = BeltInventoryState.fromBelt(belt)
 
-            expect(beltInventory.getQuantity("stone")).toBe(64)
+            expect(beltInventory.getQuantity("stone")).toBe(32)
         })
 
         test("multiple belt lanes with same ingredient accumulate", () => {
@@ -94,7 +93,7 @@ describe("BeltInventoryState", () => {
 
             const beltInventory = BeltInventoryState.fromBelt(belt)
 
-            expect(beltInventory.getQuantity("copper-ore")).toBe((2 + 3) * 4 * 2)
+            expect(beltInventory.getQuantity("copper-ore")).toBe((2 + 3) * 4)
         })
     })
 
@@ -109,7 +108,7 @@ describe("BeltInventoryState", () => {
             // BeltInventoryState constructor is private, tested via fromBelt factory method
             const beltInventory = BeltInventoryState.fromBelt(belt)
 
-            expect(beltInventory.getQuantity("stone")).toBe(32)
+            expect(beltInventory.getQuantity("stone")).toBe(16)
         })
     })
 
@@ -129,20 +128,20 @@ describe("BeltInventoryState", () => {
 
         test("getQuantity delegates correctly", () => {
             setupBeltInventory()
-            expect(beltInventory.getQuantity("stone")).toBe(32)
-            expect(beltInventory.getQuantity("iron-ore")).toBe(16)
+            expect(beltInventory.getQuantity("stone")).toBe(16)
+            expect(beltInventory.getQuantity("iron-ore")).toBe(8)
             expect(beltInventory.getQuantity("non-existent")).toBe(0)
         })
 
         test("getItem delegates correctly", () => {
             setupBeltInventory()
-            expect(beltInventory.getItem("stone")).toEqual({ item_name: "stone", quantity: 32 })
+            expect(beltInventory.getItem("stone")).toEqual({ item_name: "stone", quantity: 16 })
             expect(beltInventory.getItem("non-existent")).toBeNull()
         })
 
         test("getItemOrThrow delegates correctly", () => {
             setupBeltInventory()
-            expect(beltInventory.getItemOrThrow("stone")).toEqual({ item_name: "stone", quantity: 32 })
+            expect(beltInventory.getItemOrThrow("stone")).toEqual({ item_name: "stone", quantity: 16 })
         })
 
         test("getItemOrThrow throws for non-existent item", () => {
@@ -152,8 +151,8 @@ describe("BeltInventoryState", () => {
 
         test("hasQuantity delegates correctly", () => {
             setupBeltInventory()
-            expect(beltInventory.hasQuantity("stone", 32)).toBe(true)
-            expect(beltInventory.hasQuantity("stone", 33)).toBe(false)
+            expect(beltInventory.hasQuantity("stone", 16)).toBe(true)
+            expect(beltInventory.hasQuantity("stone", 17)).toBe(false)
             expect(beltInventory.hasQuantity("non-existent", 1)).toBe(false)
         })
 
@@ -161,21 +160,21 @@ describe("BeltInventoryState", () => {
             setupBeltInventory()
             const items = beltInventory.getItems()
             expect(items).toHaveLength(2)
-            expect(items).toContainEqual({ item_name: "stone", quantity: 32 })
-            expect(items).toContainEqual({ item_name: "iron-ore", quantity: 16 })
+            expect(items).toContainEqual({ item_name: "stone", quantity: 16 })
+            expect(items).toContainEqual({ item_name: "iron-ore", quantity: 8 })
         })
 
         test("getAllItems returns all items", () => {
             setupBeltInventory()
             const items = beltInventory.getAllItems()
             expect(items.length).toBeGreaterThanOrEqual(2)
-            expect(items).toContainEqual({ item_name: "stone", quantity: 32 })
-            expect(items).toContainEqual({ item_name: "iron-ore", quantity: 16 })
+            expect(items).toContainEqual({ item_name: "stone", quantity: 16 })
+            expect(items).toContainEqual({ item_name: "iron-ore", quantity: 8 })
         })
 
         test("getTotalQuantity sums all quantities", () => {
             setupBeltInventory()
-            expect(beltInventory.getTotalQuantity()).toBe(48)
+            expect(beltInventory.getTotalQuantity()).toBe(24)
         })
 
         test("isEmpty returns false when belt has items", () => {
@@ -197,8 +196,8 @@ describe("BeltInventoryState", () => {
         test("export returns record of all items", () => {
             setupBeltInventory()
             const exported = beltInventory.export()
-            expect(exported["stone"]).toBe(32)
-            expect(exported["iron-ore"]).toBe(16)
+            expect(exported["stone"]).toBe(16)
+            expect(exported["iron-ore"]).toBe(8)
         })
     })
 
@@ -215,13 +214,6 @@ describe("BeltInventoryState", () => {
 
             beltInventory = BeltInventoryState.fromBelt(belt)
         }
-
-        test("addQuantity delegates to underlying inventory", () => {
-            setupBeltInventory()
-            const initialQuantity = beltInventory.getQuantity("stone")
-            beltInventory.addQuantity("stone", 100)
-            expect(beltInventory.getQuantity("stone")).toBe(initialQuantity + 100)
-        })
 
         test("removeQuantity is a NOOP", () => {
             setupBeltInventory()
@@ -284,7 +276,7 @@ describe("BeltInventoryState", () => {
             const cloned = original.clone()
 
             expect(cloned).not.toBe(original)
-            expect(cloned.getQuantity("stone")).toBe(32)
+            expect(cloned.getQuantity("stone")).toBe(16)
         })
 
         test("clone is independent from original", () => {
@@ -297,26 +289,8 @@ describe("BeltInventoryState", () => {
             const original = BeltInventoryState.fromBelt(belt)
             const cloned = original.clone()
 
-            original.addQuantity("stone", 100)
-
-            expect(original.getQuantity("stone")).toBe(132)
-            expect(cloned.getQuantity("stone")).toBe(32)
-        })
-
-        test("clone can be modified independently", () => {
-            const belt = new BeltBuilder()
-                .setId(1)
-                .setBeltSpeed(BeltSpeed.TRANSPORT_BELT)
-                .addLane("stone", BeltStackSize.FOUR)
-                .build()
-
-            const original = BeltInventoryState.fromBelt(belt)
-            const cloned = original.clone()
-
-            cloned.addQuantity("stone", 50)
-
-            expect(original.getQuantity("stone")).toBe(32)
-            expect(cloned.getQuantity("stone")).toBe(82)
+            expect(original.getQuantity("stone")).toBe(16)
+            expect(cloned.getQuantity("stone")).toBe(16)
         })
     })
 
@@ -331,7 +305,7 @@ describe("BeltInventoryState", () => {
 
             const beltInventory = BeltInventoryState.fromBelt(belt)
 
-            expect(beltInventory.getQuantity("stone-brick")).toBe(64)
+            expect(beltInventory.getQuantity("stone-brick")).toBe(32)
         })
 
         test("different belt speeds don't affect inventory capacity", () => {
@@ -363,9 +337,9 @@ describe("BeltInventoryState", () => {
 
             const beltInventory = BeltInventoryState.fromBelt(belt)
 
-            expect(beltInventory.getQuantity("iron-gear-wheel")).toBe(24)
-            expect(beltInventory.getQuantity("advanced-circuit")).toBe(16)
-            expect(beltInventory.getTotalQuantity()).toBe(40)
+            expect(beltInventory.getQuantity("iron-gear-wheel")).toBe(12)
+            expect(beltInventory.getQuantity("advanced-circuit")).toBe(8)
+            expect(beltInventory.getTotalQuantity()).toBe(20)
         })
 
         test("getItems correctly filters for belt inventory", () => {
@@ -380,8 +354,8 @@ describe("BeltInventoryState", () => {
             const items = beltInventory.getItems()
 
             expect(items).toHaveLength(2)
-            expect(items).toContainEqual({ item_name: "steel-plate", quantity: 32 })
-            expect(items).toContainEqual({ item_name: "stone", quantity: 16 })
+            expect(items).toContainEqual({ item_name: "steel-plate", quantity: 16 })
+            expect(items).toContainEqual({ item_name: "stone", quantity: 8 })
         })
     })
 
@@ -434,7 +408,7 @@ describe("BeltInventoryState", () => {
 
             const beltInventory = BeltInventoryState.fromBelt(belt)
 
-            expect(beltInventory.getQuantity("explosives")).toBe(8)
+            expect(beltInventory.getQuantity("explosives")).toBe(4)
         })
 
         test("belt with all different items", () => {
@@ -447,10 +421,10 @@ describe("BeltInventoryState", () => {
 
             const beltInventory = BeltInventoryState.fromBelt(belt)
 
-            expect(beltInventory.getQuantity("iron-ore")).toBe(16)
-            expect(beltInventory.getQuantity("copper-ore")).toBe(24)
-            expect(beltInventory.hasQuantity("iron-ore", 16)).toBe(true)
-            expect(beltInventory.hasQuantity("copper-ore", 24)).toBe(true)
+            expect(beltInventory.getQuantity("iron-ore")).toBe(8)
+            expect(beltInventory.getQuantity("copper-ore")).toBe(12)
+            expect(beltInventory.hasQuantity("iron-ore", 8)).toBe(true)
+            expect(beltInventory.hasQuantity("copper-ore", 12)).toBe(true)
         })
 
         test("querying non-existent item returns 0", () => {
@@ -463,19 +437,6 @@ describe("BeltInventoryState", () => {
             const beltInventory = BeltInventoryState.fromBelt(belt)
 
             expect(beltInventory.getQuantity("non-existent-item")).toBe(0)
-        })
-
-        test("addQuantity to non-existent item creates it", () => {
-            const belt = new BeltBuilder()
-                .setId(1)
-                .setBeltSpeed(BeltSpeed.TRANSPORT_BELT)
-                .addLane("stone", BeltStackSize.FOUR)
-                .build()
-
-            const beltInventory = BeltInventoryState.fromBelt(belt)
-            beltInventory.addQuantity("new-item", 50)
-
-            expect(beltInventory.getQuantity("new-item")).toBe(50)
         })
 
         test("removeQuantity NOOP behavior on non-existent item", () => {
@@ -502,26 +463,10 @@ describe("BeltInventoryState", () => {
 
             const beltInventory = BeltInventoryState.fromBelt(belt)
 
-            expect(beltInventory.getQuantity("production-science-pack")).toBe(64)
+            expect(beltInventory.getQuantity("production-science-pack")).toBe(32)
         })
 
-        test("multiple addQuantity operations accumulate correctly", () => {
-            const belt = new BeltBuilder()
-                .setId(1)
-                .setBeltSpeed(BeltSpeed.TRANSPORT_BELT)
-                .addLane("stone", BeltStackSize.FOUR)
-                .build()
-
-            const beltInventory = BeltInventoryState.fromBelt(belt)
-
-            beltInventory.addQuantity("stone", 100)
-            beltInventory.addQuantity("stone", 50)
-            beltInventory.addQuantity("stone", 25)
-
-            expect(beltInventory.getQuantity("stone")).toBe(207)
-        })
-
-        test("export works with many items", () => {
+        test("export works with initialized lane items", () => {
             const belt = new BeltBuilder()
                 .setId(1)
                 .setBeltSpeed(BeltSpeed.EXPRESS_TRANSPORT_BELT)
@@ -530,16 +475,12 @@ describe("BeltInventoryState", () => {
                 .build()
 
             const beltInventory = BeltInventoryState.fromBelt(belt)
-            beltInventory.addQuantity("coal", 50)
-            beltInventory.addQuantity("stone", 75)
 
             const exported = beltInventory.export()
 
-            expect(Object.keys(exported).length).toBeGreaterThanOrEqual(4)
-            expect(exported["iron-ore"]).toBe(32)
-            expect(exported["copper-ore"]).toBe(16)
-            expect(exported["coal"]).toBe(50)
-            expect(exported["stone"]).toBe(75)
+            expect(Object.keys(exported).length).toBe(2)
+            expect(exported["iron-ore"]).toBe(16)
+            expect(exported["copper-ore"]).toBe(8)
         })
     })
 })

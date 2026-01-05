@@ -1,6 +1,6 @@
 import { CompositeControlLogic, ControlLogic, EnableControl, TickControlLogic } from "../../../control-logic";
 import { assertIsChest, EntityId } from "../../../entities";
-import { ChestState, EntityState, MachineStatus } from "../../../state";
+import { EntityState, MachineStatus } from "../../../state";
 import { cloneSimulationContextWithInterceptors, SimulationContext } from "../../sequence";
 import { InserterInterceptor } from "../../sequence/interceptors/inserter-interceptor";
 import { RunnerStep, RunnerStepType } from "./runner-step";
@@ -28,7 +28,7 @@ export class PrepareStep implements RunnerStep {
         // Only check for full buffer chests that have both an input and output inserter
         const buffer_chests = context.state_registry
             .getAllStates()
-            .filter(EntityState.isChest)
+            .filter(EntityState.isBufferChest)
             .filter(chest => context.inserters.some(inserter_state_machine => inserter_state_machine.inserter_state.inserter.source.entity_id.id === chest.entity_id.id))
             .filter(chest => context.inserters.some(inserter_state_machine => inserter_state_machine.inserter_state.inserter.sink.entity_id.id === chest.entity_id.id))
         

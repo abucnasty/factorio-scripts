@@ -126,20 +126,22 @@ export class InserterPickupMode implements InserterMode {
     }
 
     /**
-     * Pick up items from a chest source.
-     * 
-     * The chest only holds a single item type (item_filter), so we pick up
-     * as many items as possible up to the inserter's stack size.
+     * Order of filtered items matters for inserter pickups from a chest, at least for the simulation.
      */
     private pickupFromChest(state: InserterState, source: ChestState): void {
-        const item_name = source.getItemFilter();
-        const available_quantity = source.getCurrentQuantity();
+        const first_available_item = Array.from(state.inserter.filtered_items).find(it => {
+            return source.getCurrentQuantity(it) > 0 && canPickupItem(state, it);
+        })
+        
+        if (!first_available_item) {
+            return;
+        }
 
-        const held_item = state.held_item ?? { item_name: item_name, quantity: 0 };
+        const held_item = state.held_item ?? { item_name: first_available_item, quantity: 0 };
 
         const pickup_quantity = Math.min(
             state.inserter.metadata.stack_size - held_item.quantity,
-            available_quantity
+            source.getCurrentQuantity(first_available_item)
         );
 
         if (pickup_quantity <= 0) {
@@ -147,8 +149,8 @@ export class InserterPickupMode implements InserterMode {
         }
 
         state.held_item = { item_name: held_item.item_name, quantity: held_item.quantity + pickup_quantity };
-        state.inventoryState.addQuantity(item_name, pickup_quantity);
-        source.inventoryState.removeQuantity(item_name, pickup_quantity);
+        state.inventoryState.addQuantity(first_available_item, pickup_quantity);
+        source.inventoryState.removeQuantity(first_available_item, pickup_quantity);
     }
 
     private hasPickupDurationElapsed(): boolean {
@@ -174,11 +176,13 @@ function canPickupFromEntity(inserter_state: InserterState, entity_state: Entity
     }
 
     if (EntityState.isChest(entity_state)) {
-        const item_name = entity_state.getItemFilter();
-        const available_quantity = entity_state.getCurrentQuantity();
-        // Can pickup if chest has at least 1 item and inserter can pick up this item type
-        if (available_quantity >= 1 && canPickupItem(inserter_state, item_name)) {
-            return true;
+        // Check if any item in the chest can be picked up
+        const item_filters = entity_state.getItemFilters();
+        for (const item_name of item_filters) {
+            const available_quantity = entity_state.getCurrentQuantity(item_name);
+            if (available_quantity >= 1 && canPickupItem(inserter_state, item_name)) {
+                return true;
+            }
         }
     }
 
