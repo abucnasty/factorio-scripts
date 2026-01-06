@@ -107,6 +107,7 @@ function App() {
         replaceBelts,
         addChest,
         updateChest,
+        switchChestType,
         removeChest,
         enableDrills,
         disableDrills,
@@ -259,6 +260,7 @@ function App() {
                                 itemNames={itemNamesComposite}
                                 onAdd={addChest}
                                 onUpdate={updateChest}
+                                onSwitchType={switchChestType}
                                 onRemove={removeChest}
                             />
 

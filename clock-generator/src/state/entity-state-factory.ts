@@ -1,8 +1,9 @@
-import { Belt, Entity, EntityId, ReadableEntityRegistry } from "../entities";
+import { Chest, Entity, EntityId, ReadableEntityRegistry } from "../entities";
 import { BeltState } from "./belt-state";
-import { ChestState } from "./chest-state";
+import { BufferChestState } from "./buffer-chest-state";
 import { DrillState } from "./drill-state";
 import { EntityState } from "./entity-state";
+import { InfinityChestState } from "./infinity-chest-state";
 import { InserterState } from "./inserter-state";
 import { MachineState } from "./machine-state";
 
@@ -33,7 +34,13 @@ export class EntityStateFactory {
         }
 
         if (Entity.isChest(entity)) {
-            return ChestState.forChest(entity);
+            if (Chest.isInfinityChest(entity)) {
+                return InfinityChestState.forChest(entity);
+            }
+            if (Chest.isBufferChest(entity)) {
+                return BufferChestState.forChest(entity);
+            }
+            throw new Error(`Unsupported chest type: ${entity.chest_type}`);
         }
 
         throw new Error(`Cannot create state for unsupported entity type: ${entity.entity_id.type}`);

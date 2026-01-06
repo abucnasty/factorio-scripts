@@ -14,7 +14,7 @@ import {
     TextField,
     Typography,
 } from '@mui/material';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import type { EnableControlMode, EnableControlOverride, EnableControlRange } from '../hooks/useConfigForm';
 
 interface EnableControlModalProps {
@@ -33,37 +33,24 @@ const MODE_DESCRIPTIONS: Record<EnableControlMode, string> = {
     CLOCKED: 'Entity is enabled during specified tick ranges',
 };
 
-export function EnableControlModal({
-    open,
+// Inner component that resets when key changes
+function EnableControlModalContent({
     onClose,
     entityType,
     entityLabel,
     currentOverride,
     onSave,
-}: EnableControlModalProps) {
-    const [mode, setMode] = useState<EnableControlMode>('AUTO');
-    const [ranges, setRanges] = useState<EnableControlRange[]>([{ start: 0, end: 100 }]);
-    const [periodDuration, setPeriodDuration] = useState<string>('');
+}: Omit<EnableControlModalProps, 'open'>) {
+    // Initialize state from currentOverride
+    const initialMode = currentOverride?.mode ?? 'AUTO';
+    const initialRanges = (currentOverride?.mode === 'CLOCKED' && currentOverride?.ranges) 
+        ? currentOverride.ranges 
+        : [{ start: 0, end: 100 }];
+    const initialPeriodDuration = currentOverride?.period_duration_ticks?.toString() ?? '';
 
-    // Initialize state from currentOverride when modal opens
-    useEffect(() => {
-        if (open) {
-            if (currentOverride) {
-                setMode(currentOverride.mode);
-                if (currentOverride.mode === 'CLOCKED' && currentOverride.ranges) {
-                    setRanges(currentOverride.ranges);
-                    setPeriodDuration(currentOverride.period_duration_ticks?.toString() || '');
-                } else {
-                    setRanges([{ start: 0, end: 100 }]);
-                    setPeriodDuration('');
-                }
-            } else {
-                setMode('AUTO');
-                setRanges([{ start: 0, end: 100 }]);
-                setPeriodDuration('');
-            }
-        }
-    }, [open, currentOverride]);
+    const [mode, setMode] = useState<EnableControlMode>(initialMode);
+    const [ranges, setRanges] = useState<EnableControlRange[]>(initialRanges);
+    const [periodDuration, setPeriodDuration] = useState<string>(initialPeriodDuration);
 
     const handleAddRange = () => {
         const lastRange = ranges[ranges.length - 1];
@@ -110,7 +97,7 @@ export function EnableControlModal({
     const hasOverride = currentOverride && currentOverride.mode !== 'AUTO';
 
     return (
-        <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
+        <Dialog open onClose={onClose} maxWidth="sm" fullWidth>
             <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <Box>
                     <Typography variant="h6">Enable Control Override</Typography>
@@ -241,4 +228,15 @@ export function EnableControlModal({
             </DialogActions>
         </Dialog>
     );
+}
+
+export function EnableControlModal({
+    open,
+    ...props
+}: EnableControlModalProps) {
+    // When the dialog is closed (open=false), the content unmounts
+    // When it opens again, a fresh EnableControlModalContent is created with initial state
+    if (!open) return null;
+
+    return <EnableControlModalContent {...props} />;
 }

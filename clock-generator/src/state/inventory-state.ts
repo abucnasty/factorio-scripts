@@ -16,6 +16,8 @@ export interface ReadableInventoryState {
     getAllItems(): InventoryItem[];
     getTotalQuantity(): number;
     isEmpty(): boolean;
+    export(): Record<ItemName, number>;
+    clone(): ReadableInventoryState;
 }
 
 export interface WritableInventoryState extends ReadableInventoryState {
@@ -25,7 +27,6 @@ export interface WritableInventoryState extends ReadableInventoryState {
     clear(): void;
     resetItem(itemName: string): void;
     clone(): WritableInventoryState;
-    export(): Record<ItemName, number>;
 }
 
 export class InventoryState implements WritableInventoryState {
@@ -50,6 +51,14 @@ export class InventoryState implements WritableInventoryState {
 
     public static clone(inventoryState: InventoryState): InventoryState {
         return new InventoryState(inventoryState.export());
+    }
+
+    public static fromRecord(items: Record<string, number>): InventoryState {
+        return new InventoryState(items);
+    }
+
+    public static fromMap(items: Map<string, number>): InventoryState {
+        return new InventoryState(Object.fromEntries(items));
     }
 
     private inventory: Map<string, number>;

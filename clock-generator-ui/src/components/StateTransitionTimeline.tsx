@@ -17,7 +17,7 @@ import {
     Tooltip,
     Typography,
 } from '@mui/material';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import type {
     SerializableStateTransitionHistory,
     SerializableEntityStateTransitions,
@@ -397,7 +397,7 @@ export function StateTransitionTimeline({ stateTransitionHistory }: StateTransit
     }, [sortedEntities]);
 
     // Helper to check if a transition is filtered for a given entity type
-    const isTransitionVisible = (entityType: 'inserter' | 'machine' | 'drill', status: string): boolean => {
+    const isTransitionVisible = useCallback((entityType: 'inserter' | 'machine' | 'drill', status: string): boolean => {
         if (viewMode === 'simplified') {
             const category = statusToCategory(entityType, status);
             return statusFilters.categories.has(category);
@@ -410,7 +410,7 @@ export function StateTransitionTimeline({ stateTransitionHistory }: StateTransit
                 return statusFilters.drillStatuses.has(status);
             }
         }
-    };
+    }, [viewMode, statusFilters]);
 
     // Calculate visible transition counts for section headers
     const transitionCounts = useMemo(() => {
@@ -431,7 +431,7 @@ export function StateTransitionTimeline({ stateTransitionHistory }: StateTransit
             inserters: countForEntities(inserters),
             drills: countForEntities(drills),
         };
-    }, [machines, inserters, drills, viewMode, statusFilters]);
+    }, [machines, inserters, drills, isTransitionVisible]);
 
     // Calculate tick markers
     const tickMarkers: number[] = [];

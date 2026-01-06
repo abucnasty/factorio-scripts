@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import type { Config } from 'clock-generator/browser';
+import { ChestType } from 'clock-generator/browser';
 
 const STORAGE_KEY = 'clock-generator-config';
 
@@ -67,10 +68,37 @@ export interface DrillFormData {
     overrides?: DrillOverrides;
 }
 
-export interface ChestFormData {
+// Infinity chest filter for item_name + request_count pairs
+export interface InfinityFilterFormData {
+    item_name: string;
+    request_count: number;
+}
+
+// Buffer chest form data
+export interface BufferChestFormData {
+    type: typeof ChestType.BUFFER_CHEST;
     id: number;
     storage_size: number;
     item_filter: string;
+}
+
+// Infinity chest form data
+export interface InfinityChestFormData {
+    type: typeof ChestType.INFINITY_CHEST;
+    id: number;
+    item_filter: InfinityFilterFormData[];
+}
+
+// Discriminated union for chest types
+export type ChestFormData = BufferChestFormData | InfinityChestFormData;
+
+// Type guards - handle legacy data without type field (default to buffer chest)
+export function isBufferChest(chest: ChestFormData): chest is BufferChestFormData {
+    return chest.type === ChestType.BUFFER_CHEST || !('type' in chest) || chest.type === undefined;
+}
+
+export function isInfinityChest(chest: ChestFormData): chest is InfinityChestFormData {
+    return chest.type === ChestType.INFINITY_CHEST;
 }
 
 export interface ConfigFormData {
@@ -114,6 +142,24 @@ const createDefaultConfig = (): ConfigFormData => ({
     chests: [],
 });
 
+/** Migrate legacy chest data to include type field */
+function migrateChests(chests: unknown[]): ChestFormData[] {
+    return chests.map((chest: unknown) => {
+        const c = chest as { type?: string; id: number; storage_size?: number; item_filter?: string | InfinityFilterFormData[] };
+        // If already has a valid type, return as-is
+        if (c.type === ChestType.INFINITY_CHEST) {
+            return c as InfinityChestFormData;
+        }
+        // Default to buffer chest (handles legacy data without type)
+        return {
+            type: ChestType.BUFFER_CHEST,
+            id: c.id,
+            storage_size: c.storage_size ?? 1,
+            item_filter: (typeof c.item_filter === 'string' ? c.item_filter : '') as string,
+        };
+    });
+}
+
 /** Load config from localStorage, returns default if not found or invalid */
 function loadConfigFromStorage(): ConfigFormData {
     try {
@@ -122,6 +168,8 @@ function loadConfigFromStorage(): ConfigFormData {
             const parsed = JSON.parse(stored);
             // Basic validation - check if it has the required fields
             if (parsed && parsed.target_output && parsed.machines && parsed.chests) {
+                // Migrate legacy chests
+                parsed.chests = migrateChests(parsed.chests);
                 return parsed as ConfigFormData;
             }
         }
@@ -167,8 +215,9 @@ export interface UseConfigFormResult {
     replaceBelts: (belts: BeltFormData[]) => void;
     
     // Chests
-    addChest: () => void;
+    addChest: (chestType?: ChestType) => void;
     updateChest: (index: number, updates: Partial<ChestFormData>) => void;
+    switchChestType: (index: number, newType: ChestType) => void;
     removeChest: (index: number) => void;
     
     // Drills
@@ -353,19 +402,24 @@ export function useConfigForm(): UseConfigFormResult {
     }, []);
 
     // Chests
-    const addChest = useCallback(() => {
+    const addChest = useCallback((chestType: ChestType = ChestType.BUFFER_CHEST) => {
         setConfig((prev) => {
             const maxId = Math.max(0, ...prev.chests.map((c) => c.id));
+            const newChest: ChestFormData = chestType === ChestType.BUFFER_CHEST
+                ? {
+                    type: ChestType.BUFFER_CHEST,
+                    id: maxId + 1,
+                    storage_size: 1,
+                    item_filter: '',
+                }
+                : {
+                    type: ChestType.INFINITY_CHEST,
+                    id: maxId + 1,
+                    item_filter: [{ item_name: '', request_count: 1 }],
+                };
             return {
                 ...prev,
-                chests: [
-                    ...prev.chests,
-                    {
-                        id: maxId + 1,
-                        storage_size: 1,
-                        item_filter: '',
-                    },
-                ],
+                chests: [...prev.chests, newChest],
             };
         });
     }, []);
@@ -374,8 +428,32 @@ export function useConfigForm(): UseConfigFormResult {
         setConfig((prev) => ({
             ...prev,
             chests: prev.chests.map((c, i) =>
-                i === index ? { ...c, ...updates } : c
+                i === index ? { ...c, ...updates } as ChestFormData : c
             ),
+        }));
+    }, []);
+
+    const switchChestType = useCallback((index: number, newType: ChestType) => {
+        setConfig((prev) => ({
+            ...prev,
+            chests: prev.chests.map((c, i) => {
+                if (i !== index) return c;
+                // Preserve the ID when switching types
+                if (newType === ChestType.BUFFER_CHEST) {
+                    return {
+                        type: ChestType.BUFFER_CHEST,
+                        id: c.id,
+                        storage_size: 1,
+                        item_filter: '',
+                    } as BufferChestFormData;
+                } else {
+                    return {
+                        type: ChestType.INFINITY_CHEST,
+                        id: c.id,
+                        item_filter: [{ item_name: '', request_count: 1 }],
+                    } as InfinityChestFormData;
+                }
+            }),
         }));
     }, []);
 
@@ -399,7 +477,8 @@ export function useConfigForm(): UseConfigFormResult {
 
     const disableDrills = useCallback(() => {
         setConfig((prev) => {
-            const { drills: _, ...rest } = prev;
+            const { drills: _drills, ...rest } = prev;
+            void _drills;
             return rest as ConfigFormData;
         });
     }, []);
@@ -530,7 +609,8 @@ export function useConfigForm(): UseConfigFormResult {
             });
             // If no overrides left, remove the object
             if (Object.keys(newOverrides).length === 0) {
-                const { overrides: _, ...rest } = prev;
+                const { overrides: _overrides, ...rest } = prev;
+                void _overrides;
                 return rest as ConfigFormData;
             }
             return {
@@ -578,11 +658,26 @@ export function useConfigForm(): UseConfigFormResult {
                 type: b.type,
                 lanes: b.lanes as [BeltLaneFormData] | [BeltLaneFormData, BeltLaneFormData],
             })),
-            chests: (imported.chests ?? []).map((c: { id: number; storage_size: number; item_filter: string }) => ({
-                id: c.id,
-                storage_size: c.storage_size,
-                item_filter: c.item_filter,
-            })),
+            chests: (imported.chests ?? []).map((c: { type?: string; id: number; storage_size?: number; item_filter: string | { item_name: string; request_count: number }[] }): ChestFormData => {
+                // Handle infinity chest
+                if (c.type === ChestType.INFINITY_CHEST) {
+                    return {
+                        type: ChestType.INFINITY_CHEST,
+                        id: c.id,
+                        item_filter: (c.item_filter as { item_name: string; request_count: number }[]).map(f => ({
+                            item_name: f.item_name,
+                            request_count: f.request_count,
+                        })),
+                    };
+                }
+                // Default to buffer chest (for backwards compatibility)
+                return {
+                    type: ChestType.BUFFER_CHEST,
+                    id: c.id,
+                    storage_size: c.storage_size ?? 1,
+                    item_filter: c.item_filter as string,
+                };
+            }),
             drills: imported.drills
                 ? {
                     mining_productivity_level: imported.drills.mining_productivity_level,
@@ -631,6 +726,7 @@ export function useConfigForm(): UseConfigFormResult {
         replaceBelts,
         addChest,
         updateChest,
+        switchChestType,
         removeChest,
         enableDrills,
         disableDrills,

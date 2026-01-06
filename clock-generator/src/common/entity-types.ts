@@ -19,3 +19,11 @@ export const BeltType = {
 } as const;
 
 export type BeltType = typeof BeltType[keyof typeof BeltType];
+
+
+export const ChestType = {
+    BUFFER_CHEST: "buffer-chest",
+    INFINITY_CHEST: "infinity-chest"
+} as const;
+
+export type ChestType = typeof ChestType[keyof typeof ChestType];
