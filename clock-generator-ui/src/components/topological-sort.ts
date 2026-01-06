@@ -123,7 +123,7 @@ export function sortByRelationship(
 
     // If there are remaining entities (cycles), add them at the end
     // This handles cases where the graph has cycles
-    for (const [_id, node] of graph) {
+    for (const node of graph.values()) {
         if (!result.includes(node.entity)) {
             result.push(node.entity);
         }

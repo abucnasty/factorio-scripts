@@ -435,7 +435,8 @@ export function useConfigForm(): UseConfigFormResult {
 
     const disableDrills = useCallback(() => {
         setConfig((prev) => {
-            const { drills: _, ...rest } = prev;
+            const { drills: _drills, ...rest } = prev;
+            void _drills;
             return rest as ConfigFormData;
         });
     }, []);
@@ -523,7 +524,8 @@ export function useConfigForm(): UseConfigFormResult {
             });
             // If no overrides left, remove the object
             if (Object.keys(newOverrides).length === 0) {
-                const { overrides: _, ...rest } = prev;
+                const { overrides: _overrides, ...rest } = prev;
+                void _overrides;
                 return rest as ConfigFormData;
             }
             return {

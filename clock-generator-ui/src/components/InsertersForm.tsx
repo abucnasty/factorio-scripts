@@ -10,7 +10,6 @@ import {
     Typography,
 } from '@mui/material';
 import { useMemo, useState } from 'react';
-import { ChestType } from 'clock-generator/browser';
 import type { BeltFormData, ChestFormData, EnableControlOverride, InserterFormData, MachineFormData } from '../hooks/useConfigForm';
 import { isBufferChest, isInfinityChest } from '../hooks/useConfigForm';
 import { EnableControlModal } from './EnableControlModal';
