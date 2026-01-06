@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import type { Config } from 'clock-generator/browser';
+import { ChestType } from 'clock-generator/browser';
 
 const STORAGE_KEY = 'clock-generator-config';
 
@@ -75,7 +76,7 @@ export interface InfinityFilterFormData {
 
 // Buffer chest form data
 export interface BufferChestFormData {
-    type: 'buffer-chest';
+    type: typeof ChestType.BUFFER_CHEST;
     id: number;
     storage_size: number;
     item_filter: string;
@@ -83,7 +84,7 @@ export interface BufferChestFormData {
 
 // Infinity chest form data
 export interface InfinityChestFormData {
-    type: 'infinity-chest';
+    type: typeof ChestType.INFINITY_CHEST;
     id: number;
     item_filter: InfinityFilterFormData[];
 }
@@ -93,11 +94,11 @@ export type ChestFormData = BufferChestFormData | InfinityChestFormData;
 
 // Type guards - handle legacy data without type field (default to buffer chest)
 export function isBufferChest(chest: ChestFormData): chest is BufferChestFormData {
-    return chest.type === 'buffer-chest' || !('type' in chest) || chest.type === undefined;
+    return chest.type === ChestType.BUFFER_CHEST || !('type' in chest) || chest.type === undefined;
 }
 
 export function isInfinityChest(chest: ChestFormData): chest is InfinityChestFormData {
-    return chest.type === 'infinity-chest';
+    return chest.type === ChestType.INFINITY_CHEST;
 }
 
 export interface ConfigFormData {
@@ -146,12 +147,12 @@ function migrateChests(chests: unknown[]): ChestFormData[] {
     return chests.map((chest: unknown) => {
         const c = chest as { type?: string; id: number; storage_size?: number; item_filter?: string | InfinityFilterFormData[] };
         // If already has a valid type, return as-is
-        if (c.type === 'infinity-chest') {
+        if (c.type === ChestType.INFINITY_CHEST) {
             return c as InfinityChestFormData;
         }
         // Default to buffer chest (handles legacy data without type)
         return {
-            type: 'buffer-chest' as const,
+            type: ChestType.BUFFER_CHEST,
             id: c.id,
             storage_size: c.storage_size ?? 1,
             item_filter: (typeof c.item_filter === 'string' ? c.item_filter : '') as string,
@@ -210,9 +211,9 @@ export interface UseConfigFormResult {
     removeBelt: (index: number) => void;
     
     // Chests
-    addChest: (chestType?: 'buffer-chest' | 'infinity-chest') => void;
+    addChest: (chestType?: ChestType) => void;
     updateChest: (index: number, updates: Partial<ChestFormData>) => void;
-    switchChestType: (index: number, newType: 'buffer-chest' | 'infinity-chest') => void;
+    switchChestType: (index: number, newType: ChestType) => void;
     removeChest: (index: number) => void;
     
     // Drills
@@ -359,18 +360,18 @@ export function useConfigForm(): UseConfigFormResult {
     }, []);
 
     // Chests
-    const addChest = useCallback((chestType: 'buffer-chest' | 'infinity-chest' = 'buffer-chest') => {
+    const addChest = useCallback((chestType: ChestType = ChestType.BUFFER_CHEST) => {
         setConfig((prev) => {
             const maxId = Math.max(0, ...prev.chests.map((c) => c.id));
-            const newChest: ChestFormData = chestType === 'buffer-chest'
+            const newChest: ChestFormData = chestType === ChestType.BUFFER_CHEST
                 ? {
-                    type: 'buffer-chest',
+                    type: ChestType.BUFFER_CHEST,
                     id: maxId + 1,
                     storage_size: 1,
                     item_filter: '',
                 }
                 : {
-                    type: 'infinity-chest',
+                    type: ChestType.INFINITY_CHEST,
                     id: maxId + 1,
                     item_filter: [{ item_name: '', request_count: 1 }],
                 };
@@ -390,22 +391,22 @@ export function useConfigForm(): UseConfigFormResult {
         }));
     }, []);
 
-    const switchChestType = useCallback((index: number, newType: 'buffer-chest' | 'infinity-chest') => {
+    const switchChestType = useCallback((index: number, newType: ChestType) => {
         setConfig((prev) => ({
             ...prev,
             chests: prev.chests.map((c, i) => {
                 if (i !== index) return c;
                 // Preserve the ID when switching types
-                if (newType === 'buffer-chest') {
+                if (newType === ChestType.BUFFER_CHEST) {
                     return {
-                        type: 'buffer-chest',
+                        type: ChestType.BUFFER_CHEST,
                         id: c.id,
                         storage_size: 1,
                         item_filter: '',
                     } as BufferChestFormData;
                 } else {
                     return {
-                        type: 'infinity-chest',
+                        type: ChestType.INFINITY_CHEST,
                         id: c.id,
                         item_filter: [{ item_name: '', request_count: 1 }],
                     } as InfinityChestFormData;
@@ -572,9 +573,9 @@ export function useConfigForm(): UseConfigFormResult {
             })),
             chests: (imported.chests ?? []).map((c: { type?: string; id: number; storage_size?: number; item_filter: string | { item_name: string; request_count: number }[] }): ChestFormData => {
                 // Handle infinity chest
-                if (c.type === 'infinity-chest') {
+                if (c.type === ChestType.INFINITY_CHEST) {
                     return {
-                        type: 'infinity-chest',
+                        type: ChestType.INFINITY_CHEST,
                         id: c.id,
                         item_filter: (c.item_filter as { item_name: string; request_count: number }[]).map(f => ({
                             item_name: f.item_name,
@@ -584,7 +585,7 @@ export function useConfigForm(): UseConfigFormResult {
                 }
                 // Default to buffer chest (for backwards compatibility)
                 return {
-                    type: 'buffer-chest',
+                    type: ChestType.BUFFER_CHEST,
                     id: c.id,
                     storage_size: c.storage_size ?? 1,
                     item_filter: c.item_filter as string,

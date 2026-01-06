@@ -1,9 +1,13 @@
-import { Add, Delete } from '@mui/icons-material';
+import { Add, Delete, HelpOutline } from '@mui/icons-material';
 import {
     Box,
     Button,
+    Dialog,
+    DialogContent,
+    DialogTitle,
     FormControl,
     IconButton,
+    InputAdornment,
     InputLabel,
     MenuItem,
     Paper,
@@ -11,16 +15,19 @@ import {
     TextField,
     Typography,
 } from '@mui/material';
-import type { ChestFormData, InfinityFilterFormData } from '../hooks/useConfigForm';
+import { useState } from 'react';
+import { ChestType } from 'clock-generator/browser';
+import type { ChestFormData } from '../hooks/useConfigForm';
 import { isBufferChest, isInfinityChest } from '../hooks/useConfigForm';
+import { ChestFilterSlotSelector, type ChestFilterSlot } from './ChestFilterSlotSelector';
 import { ItemSelector } from './ItemSelector';
 
 interface ChestsFormProps {
     chests: ChestFormData[];
     itemNames: string[];
-    onAdd: (chestType?: 'buffer-chest' | 'infinity-chest') => void;
+    onAdd: (chestType?: ChestType) => void;
     onUpdate: (index: number, updates: Partial<ChestFormData>) => void;
-    onSwitchType: (index: number, newType: 'buffer-chest' | 'infinity-chest') => void;
+    onSwitchType: (index: number, newType: ChestType) => void;
     onRemove: (index: number) => void;
 }
 
@@ -32,41 +39,56 @@ export function ChestsForm({
     onSwitchType,
     onRemove,
 }: ChestsFormProps) {
-    // Helper to update a specific filter in an infinity chest
-    const updateInfinityFilter = (
-        chestIndex: number,
-        filterIndex: number,
-        updates: Partial<InfinityFilterFormData>
-    ) => {
+    const [storageSizeInfoOpen, setStorageSizeInfoOpen] = useState(false);
+
+    // Convert infinity chest to filter slot format
+    const getInfinityChestFilters = (chest: ChestFormData): ChestFilterSlot[] => {
+        if (!isInfinityChest(chest)) return [];
+        return chest.item_filter.map(f => ({
+            item_name: f.item_name,
+            quantity: f.request_count,
+        }));
+    };
+
+    // Handle infinity chest filter change
+    const handleInfinityChestFilterChange = (chestIndex: number, slotIndex: number, filter: ChestFilterSlot) => {
         const chest = chests[chestIndex];
         if (!isInfinityChest(chest)) return;
-        
-        const newFilters = chest.item_filter.map((f, i) =>
-            i === filterIndex ? { ...f, ...updates } : f
-        );
+
+        const newFilters = [...chest.item_filter];
+        newFilters[slotIndex] = {
+            item_name: filter.item_name,
+            request_count: filter.quantity,
+        };
         onUpdate(chestIndex, { item_filter: newFilters });
     };
 
-    // Helper to add a filter to an infinity chest
-    const addInfinityFilter = (chestIndex: number) => {
+    // Handle infinity chest filter remove
+    const handleInfinityChestRemoveFilter = (chestIndex: number, slotIndex: number) => {
         const chest = chests[chestIndex];
         if (!isInfinityChest(chest)) return;
-        
+
+        // Don't allow removing the last filter
+        if (chest.item_filter.length <= 1) {
+            // Clear the filter instead
+            onUpdate(chestIndex, {
+                item_filter: [{ item_name: '', request_count: 1 }],
+            });
+            return;
+        }
+
         onUpdate(chestIndex, {
-            item_filter: [...chest.item_filter, { item_name: '', request_count: 1 }],
+            item_filter: chest.item_filter.filter((_, i) => i !== slotIndex),
         });
     };
 
-    // Helper to remove a filter from an infinity chest
-    const removeInfinityFilter = (chestIndex: number, filterIndex: number) => {
+    // Handle adding a new filter to infinity chest
+    const handleInfinityChestAddFilter = (chestIndex: number) => {
         const chest = chests[chestIndex];
         if (!isInfinityChest(chest)) return;
-        
-        // Don't allow removing the last filter
-        if (chest.item_filter.length <= 1) return;
-        
+
         onUpdate(chestIndex, {
-            item_filter: chest.item_filter.filter((_, i) => i !== filterIndex),
+            item_filter: [...chest.item_filter, { item_name: '', request_count: 1 }],
         });
     };
 
@@ -77,10 +99,10 @@ export function ChestsForm({
                     Chests ({chests.length})
                 </Typography>
                 <Box sx={{ display: 'flex', gap: 1 }}>
-                    <Button startIcon={<Add />} onClick={() => onAdd('buffer-chest')} variant="text" size="small">
+                    <Button startIcon={<Add />} onClick={() => onAdd(ChestType.BUFFER_CHEST)} variant="text" size="small">
                         Buffer Chest
                     </Button>
-                    <Button startIcon={<Add />} onClick={() => onAdd('infinity-chest')} variant="text" size="small">
+                    <Button startIcon={<Add />} onClick={() => onAdd(ChestType.INFINITY_CHEST)} variant="text" size="small">
                         Infinity Chest
                     </Button>
                 </Box>
@@ -94,7 +116,7 @@ export function ChestsForm({
 
             {chests.map((chest, index) => (
                 <Box
-                    key={`chest-\${index}`}
+                    key={`chest-${index}`}
                     sx={{
                         mb: 2,
                         p: 2,
@@ -102,8 +124,8 @@ export function ChestsForm({
                         borderRadius: 1,
                     }}
                 >
-                    {/* Header row with ID, Type, and Delete */}
-                    <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', mb: 2 }}>
+                    {/* Header row with ID, Type, Filters, and Delete */}
+                    <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', flexWrap: 'wrap' }}>
                         <TextField
                             label="ID"
                             type="number"
@@ -119,12 +141,69 @@ export function ChestsForm({
                             <Select
                                 value={chest.type}
                                 label="Type"
-                                onChange={(e) => onSwitchType(index, e.target.value as 'buffer-chest' | 'infinity-chest')}
+                                onChange={(e) => onSwitchType(index, e.target.value)}
                             >
-                                <MenuItem value="buffer-chest">Buffer Chest</MenuItem>
-                                <MenuItem value="infinity-chest">Infinity Chest</MenuItem>
+                                <MenuItem value={ChestType.BUFFER_CHEST}>Buffer Chest</MenuItem>
+                                <MenuItem value={ChestType.INFINITY_CHEST}>Infinity Chest</MenuItem>
                             </Select>
                         </FormControl>
+
+                        {/* Buffer Chest fields - item filter and storage size */}
+                        {isBufferChest(chest) && (
+                            <>
+                                <ItemSelector
+                                    value={chest.item_filter || null}
+                                    options={itemNames}
+                                    onChange={(newValue) => onUpdate(index, { item_filter: newValue || '' })}
+                                    label="Item Filter"
+                                    size="small"
+                                    minWidth={200}
+                                />
+                                <TextField
+                                    label="Storage Size"
+                                    type="number"
+                                    value={chest.storage_size}
+                                    onChange={(e) => onUpdate(index, { storage_size: parseInt(e.target.value) || 1 })}
+                                    inputProps={{ min: 1 }}
+                                    sx={{ width: 140 }}
+                                    size="small"
+                                    slotProps={{
+                                        input: {
+                                            endAdornment: (
+                                                <InputAdornment position="end">
+                                                    <IconButton
+                                                        size="small"
+                                                        onClick={() => setStorageSizeInfoOpen(true)}
+                                                        edge="end"
+                                                        aria-label="Storage size help"
+                                                    >
+                                                        <HelpOutline fontSize="small" />
+                                                    </IconButton>
+                                                </InputAdornment>
+                                            ),
+                                        },
+                                    }}
+                                />
+                            </>
+                        )}
+
+                        {/* Infinity Chest filter slots - multiple slots */}
+                        {isInfinityChest(chest) && (
+                            <ChestFilterSlotSelector
+                                filters={getInfinityChestFilters(chest)}
+                                itemNames={itemNames}
+                                onFilterChange={(slotIndex, filter) =>
+                                    handleInfinityChestFilterChange(index, slotIndex, filter)
+                                }
+                                onRemoveFilter={(slotIndex) =>
+                                    handleInfinityChestRemoveFilter(index, slotIndex)
+                                }
+                                onAddFilter={() => handleInfinityChestAddFilter(index)}
+                                maxSlots={10}
+                                quantityLabel="Request Count"
+                                canAddMore={true}
+                            />
+                        )}
 
                         <Box sx={{ flex: 1 }} />
 
@@ -132,100 +211,48 @@ export function ChestsForm({
                             <Delete />
                         </IconButton>
                     </Box>
-
-                    {/* Buffer Chest fields */}
-                    {isBufferChest(chest) && (
-                        <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', flexWrap: 'wrap' }}>
-                            <TextField
-                                label="Storage Size"
-                                type="number"
-                                value={chest.storage_size}
-                                onChange={(e) => onUpdate(index, { storage_size: parseInt(e.target.value) || 1 })}
-                                inputProps={{ min: 1 }}
-                                sx={{ width: 130 }}
-                                size="small"
-                            />
-
-                            <ItemSelector
-                                value={chest.item_filter || null}
-                                options={itemNames}
-                                onChange={(newValue) => onUpdate(index, { item_filter: newValue || '' })}
-                                label="Item Filter"
-                                size="small"
-                                minWidth={300}
-                            />
-                        </Box>
-                    )}
-
-                    {/* Infinity Chest fields */}
-                    {isInfinityChest(chest) && (
-                        <Box>
-                            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
-                                <Typography variant="body2" color="text.secondary">
-                                    Item Filters ({chest.item_filter.length})
-                                </Typography>
-                                <Button
-                                    size="small"
-                                    startIcon={<Add />}
-                                    onClick={() => addInfinityFilter(index)}
-                                >
-                                    Add Filter
-                                </Button>
-                            </Box>
-
-                            {chest.item_filter.map((filter, filterIndex) => (
-                                <Box
-                                    key={`filter-\${filterIndex}`}
-                                    sx={{
-                                        display: 'flex',
-                                        gap: 2,
-                                        alignItems: 'center',
-                                        mb: 1,
-                                        p: 1,
-                                        bgcolor: 'background.paper',
-                                        borderRadius: 1,
-                                    }}
-                                >
-                                    <ItemSelector
-                                        value={filter.item_name || null}
-                                        options={itemNames}
-                                        onChange={(newValue) =>
-                                            updateInfinityFilter(index, filterIndex, { item_name: newValue || '' })
-                                        }
-                                        label="Item"
-                                        size="small"
-                                        minWidth={200}
-                                        sx={{ flex: 1 }}
-                                    />
-
-                                    <TextField
-                                        label="Request Count"
-                                        type="number"
-                                        value={filter.request_count}
-                                        onChange={(e) =>
-                                            updateInfinityFilter(index, filterIndex, {
-                                                request_count: parseInt(e.target.value) || 1,
-                                            })
-                                        }
-                                        inputProps={{ min: 1 }}
-                                        sx={{ width: 130 }}
-                                        size="small"
-                                    />
-
-                                    <IconButton
-                                        onClick={() => removeInfinityFilter(index, filterIndex)}
-                                        color="error"
-                                        size="small"
-                                        disabled={chest.item_filter.length <= 1}
-                                    >
-                                        <Delete fontSize="small" />
-                                    </IconButton>
-                                </Box>
-                            ))}
-                        </Box>
-                    )}
                 </Box>
             ))}
+
+            {/* Storage Size Info Dialog */}
+            <Dialog
+                open={storageSizeInfoOpen}
+                onClose={() => setStorageSizeInfoOpen(false)}
+                maxWidth="sm"
+                fullWidth
+            >
+                <DialogTitle>Storage Size Explained</DialogTitle>
+                <DialogContent>
+                    <Typography variant="body1" paragraph>
+                        The <strong>Storage Size</strong> represents the number of available slots in the chest 
+                        that the simulation will use for buffering items.
+                    </Typography>
+                    <Typography variant="body1" paragraph>
+                        In Factorio, you can limit a chest's storage by clicking on the red X in the chest's 
+                        inventory. This limits how many slots are available for items.
+                    </Typography>
+                    <Box
+                        component="img"
+                        src="/images/chest_slot_count_example.png"
+                        alt="Example of chest slot limit in Factorio showing 8 slots available out of 48"
+                        sx={{
+                            width: '100%',
+                            maxWidth: 400,
+                            display: 'block',
+                            mx: 'auto',
+                            my: 2,
+                            borderRadius: 1,
+                            border: '1px solid',
+                            borderColor: 'divider',
+                        }}
+                    />
+                    <Typography variant="body2" color="text.secondary">
+                        <strong>Example:</strong> If your chest has 8 slots available (as shown above), 
+                        enter "8" as the storage size. This tells the simulation how much buffer capacity 
+                        is available for the inserters to work with.
+                    </Typography>
+                </DialogContent>
+            </Dialog>
         </Paper>
     );
 }
