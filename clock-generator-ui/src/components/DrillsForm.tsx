@@ -1,8 +1,5 @@
-import { Add, Delete, ExpandMore, Info, Settings } from '@mui/icons-material';
+import { Add, Delete, Info, Settings } from '@mui/icons-material';
 import {
-    Accordion,
-    AccordionDetails,
-    AccordionSummary,
     Box,
     Button,
     FormControl,
@@ -10,6 +7,7 @@ import {
     IconButton,
     InputLabel,
     MenuItem,
+    Paper,
     Popover,
     Select,
     Switch,
@@ -78,250 +76,235 @@ export function DrillsForm({
     };
 
     return (
-        <Box>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                <Accordion defaultExpanded={enabled} sx={{ flex: 1 }}>
-                    <AccordionSummary expandIcon={<ExpandMore />}>
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, width: '100%' }}>
-                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                <Typography variant="h6">
-                                    Mining Drills
-                                </Typography>
-                            </Box>
-                            <FormControlLabel
-                                control={
-                                    <Switch
-                                        checked={enabled}
-                                        onChange={(e) => {
-                                            e.stopPropagation();
-                                            if (enabled) {
-                                                onDisable();
-                                            } else {
-                                                onEnable();
-                                            }
-                                        }}
-                                        onClick={(e) => e.stopPropagation()}
-                                        size="small"
-                                    />
-                                }
-                                label={enabled ? 'Enabled' : 'Disabled'}
-                                onClick={(e) => e.stopPropagation()}
-                                sx={{ ml: 1 }}
-                            />
-                        </Box>
-                    </AccordionSummary>
-                    <AccordionDetails>
-                {enabled ? (
-                    <>
-                        <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', mb: 2 }}>
-                            <TextField
-                                label="Mining Productivity Level"
-                                type="number"
-                                value={miningProductivityLevel}
-                                onChange={(e) =>
-                                    onUpdateProductivityLevel(parseInt(e.target.value) || 0)
-                                }
-                                inputProps={{ min: 0 }}
-                                sx={{ width: 200 }}
+        <Paper sx={{ p: 2, mb: 2 }}>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <Typography variant="h6">
+                        Mining Drills ({drills.length})
+                    </Typography>
+                    <FormControlLabel
+                        control={
+                            <Switch
+                                checked={enabled}
+                                onChange={() => {
+                                    if (enabled) {
+                                        onDisable();
+                                    } else {
+                                        onEnable();
+                                    }
+                                }}
                                 size="small"
                             />
-                            <Box sx={{ flex: 1 }} />
-                            <Button startIcon={<Add />} onClick={onAdd} variant="outlined" size="small">
-                                Add Drill
-                            </Button>
-                        </Box>
-
-                        {drills.map((drill, index) => (
-                            <Box
-                                key={`drill-${index}`}
-                                sx={{
-                                    display: 'flex',
-                                    gap: 2,
-                                    alignItems: 'center',
-                                    mb: 2,
-                                    p: 2,
-                                    bgcolor: 'action.hover',
-                                    borderRadius: 1,
-                                    flexWrap: 'wrap',
-                                }}
-                            >
-                                <TextField
-                                    label="ID"
-                                    type="number"
-                                    value={drill.id}
-                                    onChange={(e) =>
-                                        onUpdate(index, { id: parseInt(e.target.value) || 1 })
-                                    }
-                                    inputProps={{ min: 1 }}
-                                    sx={{ width: 80 }}
-                                    size="small"
-                                />
-                                <FormControl size="small" sx={{ minWidth: 180 }}>
-                                    <InputLabel>Drill Type</InputLabel>
-                                    <Select
-                                        value={drill.type}
-                                        label="Drill Type"
-                                        onChange={(e) =>
-                                            onUpdate(index, {
-                                                type: e.target.value as DrillFormData['type'],
-                                            })
-                                        }
-                                        renderValue={(selected) => (
-                                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                                <FactorioIcon name={selected} size={20} />
-                                                {DRILL_TYPES.find((dt) => dt.value === selected)?.label}
-                                            </Box>
-                                        )}
-                                    >
-                                        {DRILL_TYPES.map((dt) => (
-                                            <MenuItem key={dt.value} value={dt.value}>
-                                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                                    <FactorioIcon name={dt.value} size={20} />
-                                                    {dt.label}
-                                                </Box>
-                                            </MenuItem>
-                                        ))}
-                                    </Select>
-                                </FormControl>
-                                <ItemSelector
-                                    value={drill.mined_item_name || ''}
-                                    onChange={(newValue) => {
-                                        if (newValue) {
-                                            onUpdate(index, { mined_item_name: newValue });
-                                        }
-                                    }}
-                                    options={resourceNames}
-                                    label="Mined Resource"
-                                />
-                                <TextField
-                                    label="Speed Bonus"
-                                    type="number"
-                                    value={drill.speed_bonus}
-                                    onChange={(e) =>
-                                        onUpdate(index, {
-                                            speed_bonus: parseFloat(e.target.value) || 0,
-                                        })
-                                    }
-                                    inputProps={{ step: 0.1 }}
-                                    sx={{ width: 120 }}
-                                    size="small"
-                                />
-                                <FormControl size="small" sx={{ minWidth: 120 }}>
-                                    <InputLabel>Target Machine</InputLabel>
-                                    <Select
-                                        value={drill.target.id}
-                                        label="Target Machine"
-                                        onChange={(e) =>
-                                            onUpdate(index, {
-                                                target: { type: 'machine', id: e.target.value as number },
-                                            })
-                                        }
-                                    >
-                                        {machineIds.map((id) => (
-                                            <MenuItem key={id} value={id}>
-                                                Machine {id}
-                                            </MenuItem>
-                                        ))}
-                                    </Select>
-                                </FormControl>
-                                {/* Enable Control Settings */}
-                                <Tooltip title="Configure Enable Control">
-                                    <IconButton
-                                        onClick={() => setEnableControlModalDrillIndex(index)}
-                                        color={drill.overrides?.enable_control?.mode && drill.overrides.enable_control.mode !== 'AUTO' ? 'primary' : 'default'}
-                                    >
-                                        <Settings />
-                                    </IconButton>
-                                </Tooltip>
-                                <IconButton onClick={() => onRemove(index)} color="error">
-                                    <Delete />
-                                </IconButton>
-                            </Box>
-                        ))}
-
-                        {drills.length === 0 && (
-                            <Typography
-                                variant="body2"
-                                color="text.secondary"
-                                sx={{ textAlign: 'center', py: 2 }}
-                            >
-                                No drills configured. Add drills if you need mining input.
-                            </Typography>
-                        )}
-                    </>
-                ) : (
-                    <Typography variant="body2" color="text.secondary">
-                        Mining drills are disabled. Enable them if your setup includes ore mining.
-                    </Typography>
-                )}
-
-                {/* Enable Control Modal */}
-                <EnableControlModal
-                    open={enableControlModalDrillIndex !== null}
-                    onClose={() => setEnableControlModalDrillIndex(null)}
-                    entityType="drill"
-                    entityLabel={enableControlModalDrillIndex !== null ? `Drill ${drills[enableControlModalDrillIndex]?.id}` : ''}
-                    currentOverride={enableControlModalDrillIndex !== null ? drills[enableControlModalDrillIndex]?.overrides?.enable_control : undefined}
-                    onSave={(override: EnableControlOverride | undefined) => {
-                        if (enableControlModalDrillIndex !== null) {
-                            const drill = drills[enableControlModalDrillIndex];
-                            onUpdate(enableControlModalDrillIndex, {
-                                overrides: {
-                                    ...drill.overrides,
-                                    enable_control: override,
-                                },
-                            });
                         }
-                        setEnableControlModalDrillIndex(null);
-                    }}
-                />
-            </AccordionDetails>
-                </Accordion>
-                <IconButton 
-                    size="small" 
-                    onClick={handleInfoClick}
-                    color="info"
-                >
-                    <Info fontSize="small" />
-                </IconButton>
-            </Box>
-            <Popover
-                open={Boolean(infoAnchorEl)}
-                anchorEl={infoAnchorEl}
-                onClose={handleInfoClose}
-                anchorOrigin={{
-                    vertical: 'bottom',
-                    horizontal: 'left',
-                }}
-            >
-                <Box sx={{ p: 2, maxWidth: 350 }}>
-                    <Typography variant="body2" sx={{ mb: 1 }}>
-                        To get the speed bonus of a mining drill in Factorio, hover over the drill and run this command:
-                    </Typography>
-                    <Box
-                        sx={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: 1,
-                            bgcolor: 'action.hover',
-                            p: 1,
-                            borderRadius: 1,
-                            fontFamily: 'monospace',
-                            fontSize: '0.85rem',
+                        label={enabled ? 'Enabled' : 'Disabled'}
+                        sx={{ ml: 1 }}
+                    />
+                    <IconButton size="small" onClick={handleInfoClick} color="info">
+                        <Info fontSize="small" />
+                    </IconButton>
+                    <Popover
+                        open={Boolean(infoAnchorEl)}
+                        anchorEl={infoAnchorEl}
+                        onClose={handleInfoClose}
+                        anchorOrigin={{
+                            vertical: 'bottom',
+                            horizontal: 'left',
                         }}
                     >
-                        <Typography
-                            component="code"
-                            sx={{ flex: 1, wordBreak: 'break-all', fontFamily: 'monospace', fontSize: '0.85rem' }}
-                        >
-                            {SPEED_BONUS_COMMAND}
-                        </Typography>
-                        <Button size="small" onClick={handleCopy} variant="outlined">
-                            {copied ? 'Copied!' : 'Copy'}
-                        </Button>
-                    </Box>
+                        <Box sx={{ p: 2, maxWidth: 350 }}>
+                            <Typography variant="body2" sx={{ mb: 1 }}>
+                                To get the speed bonus of a mining drill in Factorio, hover over the drill and run this command:
+                            </Typography>
+                            <Box
+                                sx={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: 1,
+                                    bgcolor: 'action.hover',
+                                    p: 1,
+                                    borderRadius: 1,
+                                    fontFamily: 'monospace',
+                                    fontSize: '0.85rem',
+                                }}
+                            >
+                                <Typography
+                                    component="code"
+                                    sx={{ flex: 1, wordBreak: 'break-all', fontFamily: 'monospace', fontSize: '0.85rem' }}
+                                >
+                                    {SPEED_BONUS_COMMAND}
+                                </Typography>
+                                <Button size="small" onClick={handleCopy} variant="outlined">
+                                    {copied ? 'Copied!' : 'Copy'}
+                                </Button>
+                            </Box>
+                        </Box>
+                    </Popover>
                 </Box>
-            </Popover>
-        </Box>
+                <Button startIcon={<Add />} onClick={onAdd} variant="text" size="small" disabled={!enabled}>
+                    Add Drill
+                </Button>
+            </Box>
+
+            {enabled ? (
+                <>
+                    <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', mb: 2 }}>
+                        <TextField
+                            label="Mining Productivity Level"
+                            type="number"
+                            value={miningProductivityLevel}
+                            onChange={(e) =>
+                                onUpdateProductivityLevel(parseInt(e.target.value) || 0)
+                            }
+                            inputProps={{ min: 0 }}
+                            sx={{ width: 200 }}
+                            size="small"
+                        />
+                    </Box>
+
+                    {drills.map((drill, index) => (
+                        <Box
+                            key={`drill-${index}`}
+                            sx={{
+                                display: 'flex',
+                                gap: 2,
+                                alignItems: 'center',
+                                mb: 2,
+                                p: 2,
+                                bgcolor: 'action.hover',
+                                borderRadius: 1,
+                                flexWrap: 'wrap',
+                            }}
+                        >
+                            <TextField
+                                label="ID"
+                                type="number"
+                                value={drill.id}
+                                onChange={(e) =>
+                                    onUpdate(index, { id: parseInt(e.target.value) || 1 })
+                                }
+                                inputProps={{ min: 1 }}
+                                sx={{ width: 80 }}
+                                size="small"
+                            />
+                            <FormControl size="small" sx={{ minWidth: 180 }}>
+                                <InputLabel>Drill Type</InputLabel>
+                                <Select
+                                    value={drill.type}
+                                    label="Drill Type"
+                                    onChange={(e) =>
+                                        onUpdate(index, {
+                                            type: e.target.value as DrillFormData['type'],
+                                        })
+                                    }
+                                    renderValue={(selected) => (
+                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                            <FactorioIcon name={selected} size={20} />
+                                            {DRILL_TYPES.find((dt) => dt.value === selected)?.label}
+                                        </Box>
+                                    )}
+                                >
+                                    {DRILL_TYPES.map((dt) => (
+                                        <MenuItem key={dt.value} value={dt.value}>
+                                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                                <FactorioIcon name={dt.value} size={20} />
+                                                {dt.label}
+                                            </Box>
+                                        </MenuItem>
+                                    ))}
+                                </Select>
+                            </FormControl>
+                            <ItemSelector
+                                value={drill.mined_item_name || ''}
+                                onChange={(newValue) => {
+                                    if (newValue) {
+                                        onUpdate(index, { mined_item_name: newValue });
+                                    }
+                                }}
+                                options={resourceNames}
+                                label="Mined Resource"
+                            />
+                            <TextField
+                                label="Speed Bonus"
+                                type="number"
+                                value={drill.speed_bonus}
+                                onChange={(e) =>
+                                    onUpdate(index, {
+                                        speed_bonus: parseFloat(e.target.value) || 0,
+                                    })
+                                }
+                                inputProps={{ step: 0.1 }}
+                                sx={{ width: 120 }}
+                                size="small"
+                            />
+                            <FormControl size="small" sx={{ minWidth: 120 }}>
+                                <InputLabel>Target Machine</InputLabel>
+                                <Select
+                                    value={drill.target.id}
+                                    label="Target Machine"
+                                    onChange={(e) =>
+                                        onUpdate(index, {
+                                            target: { type: 'machine', id: e.target.value as number },
+                                        })
+                                    }
+                                >
+                                    {machineIds.map((id) => (
+                                        <MenuItem key={id} value={id}>
+                                            Machine {id}
+                                        </MenuItem>
+                                    ))}
+                                </Select>
+                            </FormControl>
+                            {/* Enable Control Settings */}
+                            <Tooltip title="Configure Enable Control">
+                                <IconButton
+                                    onClick={() => setEnableControlModalDrillIndex(index)}
+                                    color={drill.overrides?.enable_control?.mode && drill.overrides.enable_control.mode !== 'AUTO' ? 'primary' : 'default'}
+                                >
+                                    <Settings />
+                                </IconButton>
+                            </Tooltip>
+                            <IconButton onClick={() => onRemove(index)} color="error">
+                                <Delete />
+                            </IconButton>
+                        </Box>
+                    ))}
+
+                    {drills.length === 0 && (
+                        <Typography
+                            variant="body2"
+                            color="text.secondary"
+                            sx={{ textAlign: 'center', py: 2 }}
+                        >
+                            No drills configured. Add drills if you need mining input.
+                        </Typography>
+                    )}
+                </>
+            ) : (
+                <Typography variant="body2" color="text.secondary">
+                    Mining drills are disabled. Enable them if your setup includes ore mining.
+                </Typography>
+            )}
+
+            {/* Enable Control Modal */}
+            <EnableControlModal
+                open={enableControlModalDrillIndex !== null}
+                onClose={() => setEnableControlModalDrillIndex(null)}
+                entityType="drill"
+                entityLabel={enableControlModalDrillIndex !== null ? `Drill ${drills[enableControlModalDrillIndex]?.id}` : ''}
+                currentOverride={enableControlModalDrillIndex !== null ? drills[enableControlModalDrillIndex]?.overrides?.enable_control : undefined}
+                onSave={(override: EnableControlOverride | undefined) => {
+                    if (enableControlModalDrillIndex !== null) {
+                        const drill = drills[enableControlModalDrillIndex];
+                        onUpdate(enableControlModalDrillIndex, {
+                            overrides: {
+                                ...drill.overrides,
+                                enable_control: override,
+                            },
+                        });
+                    }
+                    setEnableControlModalDrillIndex(null);
+                }}
+            />
+        </Paper>
     );
 }
