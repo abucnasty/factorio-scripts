@@ -114,9 +114,10 @@ export {
     Duration,
 } from './data-types';
 
-// Belt and Mining Drill Types
+// Belt, Chest, and Mining Drill Types
 export {
     BeltType,
+    ChestType,
     MiningDrillType,
 } from './common/entity-types';
 

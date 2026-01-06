@@ -11,6 +11,7 @@ import {
 } from '@mui/material';
 import { useMemo, useState } from 'react';
 import type { BeltFormData, ChestFormData, EnableControlOverride, InserterFormData, MachineFormData } from '../hooks/useConfigForm';
+import { isBufferChest, isInfinityChest } from '../hooks/useConfigForm';
 import { EnableControlModal } from './EnableControlModal';
 import type { RecipeInfo } from '../hooks/useSimulationWorker';
 import { FactorioIcon } from './FactorioIcon';
@@ -79,13 +80,26 @@ export function InsertersForm({
 
         // Add chests
         chests.forEach((chest) => {
+            let sublabel: string;
+            let ingredientIcons: string[] | undefined;
+            
+            if (isBufferChest(chest)) {
+                sublabel = chest.item_filter || 'No item filter';
+                ingredientIcons = chest.item_filter ? [chest.item_filter] : undefined;
+            } else {
+                // Infinity chest
+                const itemNames = chest.item_filter.map(f => f.item_name).filter(Boolean);
+                sublabel = itemNames.length > 0 ? itemNames.join(', ') : 'No filters';
+                ingredientIcons = itemNames.length > 0 ? itemNames : undefined;
+            }
+            
             options.push({
                 type: 'chest',
                 id: chest.id,
                 label: `Chest ${chest.id}`,
-                icon: 'iron-chest',
-                sublabel: chest.item_filter || 'No item filter',
-                ingredientIcons: chest.item_filter ? [chest.item_filter] : undefined,
+                icon: isInfinityChest(chest) ? 'infinity-chest' : 'iron-chest',
+                sublabel,
+                ingredientIcons,
             });
         });
 
@@ -116,10 +130,14 @@ export function InsertersForm({
                 sourceItems = belt.lanes.map(lane => lane.ingredient).filter(Boolean);
             }
         } else if (inserter.source.type === 'chest') {
-            // Chest source - get item filter
+            // Chest source - get item filter(s)
             const chest = chests.find(c => c.id === inserter.source.id);
-            if (chest?.item_filter) {
-                sourceItems = [chest.item_filter];
+            if (chest) {
+                if (isBufferChest(chest) && chest.item_filter) {
+                    sourceItems = [chest.item_filter];
+                } else if (isInfinityChest(chest)) {
+                    sourceItems = chest.item_filter.map(f => f.item_name).filter(Boolean);
+                }
             }
         }
 
@@ -139,8 +157,14 @@ export function InsertersForm({
         } else if (inserter.sink.type === 'chest') {
             // Chest sink - only accepts its item filter
             const chest = chests.find(c => c.id === inserter.sink.id);
-            if (chest?.item_filter) {
-                sinkNeeds = [chest.item_filter];
+            if (chest) {
+                if (isBufferChest(chest) && chest.item_filter) {
+                    sinkNeeds = [chest.item_filter];
+                } else if (isInfinityChest(chest)) {
+                    sinkNeeds = chest.item_filter.map(f => f.item_name).filter(Boolean);
+                } else {
+                    sinkNeeds = sourceItems;
+                }
             } else {
                 sinkNeeds = sourceItems;
             }

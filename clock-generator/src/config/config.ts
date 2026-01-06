@@ -26,8 +26,11 @@ export type {
     InserterFilterConfig,
     BeltLaneConfig,
     BeltConfig,
+    ChestConfig,
+    BufferChestConfig,
+    InfinityChestConfig,
     ConfigOverrides,
-    Config
+    Config,
 } from "./schema";
 
 // Re-export schemas for programmatic access
@@ -43,6 +46,9 @@ export {
     InserterConfigSchema,
     BeltLaneConfigSchema,
     BeltConfigSchema,
+    ChestConfigSchema,
+    BufferChestConfigSchema,
+    InfinityChestConfigSchema,
     ConfigOverridesSchema,
     ConfigSchema
 } from "./schema";

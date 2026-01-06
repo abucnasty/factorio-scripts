@@ -119,11 +119,13 @@ export class IdleModeTransitionEvaluator implements ModeTransitionEvaluator<Inse
 
     private chestPickupTransition(state: InserterState, source: ChestState): ModeTransition<InserterMode> {
         const pickup_amount_condition = 1;
-        const item_name = source.getItemFilter();
-        const quantity = source.getCurrentQuantity();
         
-        if (quantity >= pickup_amount_condition) {
-            return ModeTransition.transition(this.pickup_mode, `chest has ${quantity} of ${item_name} to pickup`);
+        // Check all item types in the chest
+        for (const item_name of state.inserter.filtered_items) {
+            const quantity = source.getCurrentQuantity(item_name);
+            if (quantity >= pickup_amount_condition) {
+                return ModeTransition.transition(this.pickup_mode, `chest has ${quantity} of ${item_name} to pickup`);
+            }
         }
         return ModeTransition.NONE;
     }

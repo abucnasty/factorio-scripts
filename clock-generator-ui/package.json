@@ -8,6 +8,7 @@
     "build": "npm run build:deps && tsc -b && vite build",
     "build:deps": "cd ../clock-generator && npm ci && npm run build",
     "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
     "preview": "vite preview"
   },
   "dependencies": {
