@@ -1,11 +1,10 @@
-import { Add, Close, Delete, Settings } from '@mui/icons-material';
+import { Add, Delete, Settings } from '@mui/icons-material';
 import {
     Autocomplete,
     Box,
     Button,
     IconButton,
     Paper,
-    Popover,
     TextField,
     Tooltip,
     Typography,
@@ -15,6 +14,7 @@ import type { BeltFormData, ChestFormData, EnableControlOverride, InserterFormDa
 import { EnableControlModal } from './EnableControlModal';
 import type { RecipeInfo } from '../hooks/useSimulationWorker';
 import { FactorioIcon } from './FactorioIcon';
+import { FilterSlotSelector } from './FilterSlotSelector';
 
 interface EntityOption {
     type: 'machine' | 'belt' | 'chest';
@@ -48,8 +48,6 @@ export function InsertersForm({
     onUpdate,
     onRemove,
 }: InsertersFormProps) {
-    const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
-    const [activeSlot, setActiveSlot] = useState<{ inserterIndex: number; slotIndex: number } | null>(null);
     const [enableControlModalInserterIndex, setEnableControlModalInserterIndex] = useState<number | null>(null);
 
     // Build entity options for the dropdown
@@ -155,34 +153,35 @@ export function InsertersForm({
         return sourceItems.filter(item => sinkNeeds.includes(item));
     };
 
-    const handleSlotClick = (event: React.UIEvent<HTMLElement>, inserterIndex: number, slotIndex: number) => {
-        setAnchorEl(event.currentTarget);
-        setActiveSlot({ inserterIndex, slotIndex });
-    };
-
-    const handleClose = () => {
-        setAnchorEl(null);
-        setActiveSlot(null);
-    };
-
-    const handleItemSelect = (item: string) => {
-        if (activeSlot) {
-            const inserter = inserters[activeSlot.inserterIndex];
-            const filters = [...(inserter.filters || [])];
-            filters[activeSlot.slotIndex] = item;
-            // Remove empty trailing slots
-            while (filters.length > 0 && !filters[filters.length - 1]) {
-                filters.pop();
-            }
-            onUpdate(activeSlot.inserterIndex, { filters: filters.length > 0 ? filters : undefined });
+    const handleFilterChange = (inserterIndex: number, slotIndex: number, item: string) => {
+        const inserter = inserters[inserterIndex];
+        const filters = [...(inserter.filters || [])];
+        filters[slotIndex] = item;
+        // Remove empty trailing slots
+        while (filters.length > 0 && !filters[filters.length - 1]) {
+            filters.pop();
         }
-        handleClose();
+        onUpdate(inserterIndex, { filters: filters.length > 0 ? filters : undefined });
     };
 
     const handleRemoveFilter = (inserterIndex: number, slotIndex: number) => {
         const inserter = inserters[inserterIndex];
-        const filters = [...(inserter.filters || [])];
+        let filters = [...(inserter.filters || [])];
+        
+        // If removing an auto-assigned filter (no explicit filters exist), convert all to explicit first
+        if (filters.length === 0) {
+            const inferredFilters = getInferredFilters(inserter);
+            filters = [...inferredFilters];
+        }
+        
+        // Remove the specified slot
         filters.splice(slotIndex, 1);
+        
+        // Clean up empty trailing slots
+        while (filters.length > 0 && !filters[filters.length - 1]) {
+            filters.pop();
+        }
+        
         onUpdate(inserterIndex, { filters: filters.length > 0 ? filters : undefined });
     };
 
@@ -192,7 +191,7 @@ export function InsertersForm({
                 <Typography variant="h6">
                     Inserters ({inserters.length})
                 </Typography>
-                <Button startIcon={<Add />} onClick={onAdd} variant="outlined" size="small">
+                <Button startIcon={<Add />} onClick={onAdd} variant="text" size="small">
                     Add Inserter
                 </Button>
             </Box>
@@ -400,125 +399,14 @@ export function InsertersForm({
                     />
 
                     {/* Item Filter Slots */}
-                    <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center' }}>
-                        <Typography variant="body2" color="text.secondary" sx={{ mr: 1 }}>
-                            Filters:
-                        </Typography>
-                        {(() => {
-                            const hasExplicitFilters = inserter.filters && inserter.filters.length > 0;
-                            const inferredFilters = !hasExplicitFilters ? getInferredFilters(inserter) : [];
-                            const isInferred = !hasExplicitFilters && inferredFilters.length > 0;
-
-                            // Show inferred filters as a compact display if there are any
-                            if (isInferred && inferredFilters.length > 0) {
-                                return (
-                                    <>
-                                        <Box
-                                            sx={{
-                                                display: 'flex',
-                                                gap: 0.5,
-                                                alignItems: 'center',
-                                                px: 1,
-                                                py: 0.5,
-                                                border: '2px dashed',
-                                                borderColor: 'divider',
-                                                borderRadius: 1,
-                                                bgcolor: 'action.hover',
-                                                opacity: 0.7,
-                                            }}
-                                        >
-                                            {inferredFilters.slice(0, 5).map((item, i) => (
-                                                <FactorioIcon key={i} name={item} size={24} />
-                                            ))}
-                                            {inferredFilters.length > 5 && (
-                                                <Typography variant="caption" color="text.secondary">
-                                                    +{inferredFilters.length - 5}
-                                                </Typography>
-                                            )}
-                                        </Box>
-                                        <Typography variant="caption" color="text.secondary" sx={{ ml: 1 }}>
-                                            (auto)
-                                        </Typography>
-                                        <IconButton
-                                            size="small"
-                                            onClick={(e) => handleSlotClick(e, index, 0)}
-                                            sx={{ ml: 0.5 }}
-                                        >
-                                            <Add sx={{ fontSize: 16 }} />
-                                        </IconButton>
-                                    </>
-                                );
-                            }
-
-                            // Show explicit filter slots or empty slots
-                            return [0, 1, 2, 3, 4].map((slotIndex) => {
-                                const filterItem = inserter.filters?.[slotIndex];
-                                return (
-                                    <Box
-                                        key={slotIndex}
-                                        tabIndex={0}
-                                        role="button"
-                                        aria-label={filterItem ? `Filter ${slotIndex + 1}: ${filterItem}` : `Add filter ${slotIndex + 1}`}
-                                        onClick={(e) => handleSlotClick(e, index, slotIndex)}
-                                        onKeyDown={(e) => {
-                                            if (e.key === 'Enter' || e.key === ' ') {
-                                                e.preventDefault();
-                                                handleSlotClick(e, index, slotIndex);
-                                            }
-                                        }}
-                                        sx={{
-                                            width: 36,
-                                            height: 36,
-                                            border: '2px solid',
-                                            borderColor: filterItem ? 'primary.main' : 'divider',
-                                            borderRadius: 1,
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            justifyContent: 'center',
-                                            cursor: 'pointer',
-                                            bgcolor: 'background.paper',
-                                            position: 'relative',
-                                            '&:hover, &:focus': {
-                                                borderColor: 'primary.light',
-                                                bgcolor: 'action.hover',
-                                                outline: 'none',
-                                            },
-                                            '&:focus-visible': {
-                                                boxShadow: '0 0 0 2px',
-                                                boxShadowColor: 'primary.main',
-                                            },
-                                        }}
-                                    >
-                                        {filterItem ? (
-                                            <>
-                                                <FactorioIcon name={filterItem} size={28} />
-                                                <IconButton
-                                                    size="small"
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        handleRemoveFilter(index, slotIndex);
-                                                    }}
-                                                    sx={{
-                                                        position: 'absolute',
-                                                        top: -8,
-                                                        right: -8,
-                                                        width: 16,
-                                                        height: 16,
-                                                        bgcolor: 'error.main',
-                                                        '&:hover': { bgcolor: 'error.dark' },
-                                                    }}
-                                                >
-                                                    <Close sx={{ fontSize: 12, color: 'white' }} />
-                                                </IconButton>
-                                            </>
-                                        ) : (
-                                            <Add sx={{ fontSize: 16, color: 'text.disabled' }} />
-                                        )}
-                                    </Box>
-                                );
-                            });
-                        })()}
-                    </Box>
+                    <FilterSlotSelector
+                        filters={inserter.filters}
+                        inferredFilters={getInferredFilters(inserter)}
+                        itemNames={itemNames}
+                        onFilterChange={(slotIndex, item) => handleFilterChange(index, slotIndex, item)}
+                        onRemoveFilter={(slotIndex) => handleRemoveFilter(index, slotIndex)}
+                        maxSlots={5}
+                    />
 
                     {/* Enable Control Settings */}
                     <Tooltip title="Configure Enable Control">
@@ -541,58 +429,6 @@ export function InsertersForm({
                     No inserters configured. Add at least one inserter to transfer items.
                 </Typography>
             )}
-
-            {/* Item Selection Popover */}
-            <Popover
-                open={Boolean(anchorEl)}
-                anchorEl={anchorEl}
-                onClose={handleClose}
-                anchorOrigin={{
-                    vertical: 'bottom',
-                    horizontal: 'left',
-                }}
-                transformOrigin={{
-                    vertical: 'top',
-                    horizontal: 'left',
-                }}
-            >
-                <Box sx={{ p: 2, width: 300 }}>
-                    <Autocomplete
-                        options={itemNames}
-                        autoFocus
-                        openOnFocus
-                        onChange={(_, newValue) => {
-                            if (newValue) {
-                                handleItemSelect(newValue);
-                            }
-                        }}
-                        renderInput={(params) => (
-                            <TextField
-                                {...params}
-                                label="Select Item"
-                                placeholder="Search items..."
-                                size="small"
-                                autoFocus
-                            />
-                        )}
-                        renderOption={(props, option) => {
-                            const { key, ...rest } = props;
-                            return (
-                                <Box
-                                    component="li"
-                                    key={key}
-                                    {...rest}
-                                    sx={{ display: 'flex', alignItems: 'center', gap: 1 }}
-                                >
-                                    <FactorioIcon name={option} size={20} />
-                                    {option}
-                                </Box>
-                            );
-                        }}
-                        autoHighlight
-                    />
-                </Box>
-            </Popover>
 
             {/* Enable Control Modal */}
             <EnableControlModal

@@ -17,7 +17,7 @@ function buildItemColorMap(entities: SerializableEntityTransferHistory[]): Map<s
             itemSet.add(transfer.item_name);
         });
     });
-    
+
     const colorMap = new Map<string, string>();
     const sortedItems = Array.from(itemSet).sort();
     sortedItems.forEach((item, index) => {
@@ -92,7 +92,7 @@ interface EntityRowProps {
 function EntityRow({ entity, totalDuration, rowHeight, colorMap }: EntityRowProps) {
     // Collect unique items transferred by this entity
     const transferredItems = Array.from(new Set(entity.transfers.map(t => t.item_name))).sort();
-    
+
     // Calculate total amount transferred
     const totalAmount = entity.transfers.reduce((sum, t) => sum + t.amount, 0);
 
@@ -123,14 +123,14 @@ function EntityRow({ entity, totalDuration, rowHeight, colorMap }: EntityRowProp
                     placement="left"
                 >
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                        <FactorioIcon 
-                            name={entity.entity_type === 'inserter' ? 'stack-inserter' : 'electric-mining-drill'} 
-                            size={18} 
+                        <FactorioIcon
+                            name={entity.entity_type === 'inserter' ? 'stack-inserter' : 'electric-mining-drill'}
+                            size={18}
                         />
-                        <Typography 
-                            variant="body2" 
-                            noWrap 
-                            sx={{ 
+                        <Typography
+                            variant="body2"
+                            noWrap
+                            sx={{
                                 fontSize: '0.75rem',
                                 color: entity.entity_type === 'drill' ? 'warning.main' : 'text.primary',
                             }}
@@ -322,10 +322,12 @@ export function TransferHistoryVisualization({ transferHistory }: TransferHistor
                 onClose={() => setIsModalOpen(false)}
                 maxWidth={false}
                 fullScreen
-                PaperProps={{
-                    sx: {
-                        bgcolor: 'background.default',
-                    },
+                slotProps={{
+                    paper: {
+                        sx: {
+                            bgcolor: 'common.black',
+                        },
+                    }
                 }}
             >
                 <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>

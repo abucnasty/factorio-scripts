@@ -7,7 +7,7 @@ import { RecipeMetadata } from "./recipe";
 import { BonusProductivityRate, CraftingRate, InsertionDuration } from "./traits";
 import { Entity } from "../entity";
 import { EntityId } from "../entity-id";
-import { Percentage } from "../../data-types";
+import { Percentage, SerializableMachineFacts, SerializableMachineInput } from "../../data-types";
 import { MachineInputs } from "./input/machine-inputs";
 
 
@@ -16,6 +16,8 @@ export class Machine implements Entity {
     public static fromConfig = fromConfig
     public static createMachine = createMachine
     public static printMachineFacts = printMachineFacts
+    public static getMachineFacts = getMachineFacts
+    public static computeMachineFacts = computeMachineFacts
 
     constructor(
         public readonly entity_id: EntityId,
@@ -123,4 +125,56 @@ function printMachineFacts(machine: Machine): void {
     for (const input of machine.inputs.values()) {
         console.log(`  - ${input.item_name}: ${input.automated_insertion_limit.quantity}`);
     }
+}
+
+/**
+ * Extracts serializable facts from a Machine instance.
+ */
+function getMachineFacts(machine: Machine): SerializableMachineFacts {
+    const inputs: SerializableMachineInput[] = [];
+    for (const input of machine.inputs.values()) {
+        inputs.push({
+            item_name: input.item_name,
+            consumption_rate_per_second: input.consumption_rate.rate_per_second,
+            automated_insertion_limit: input.automated_insertion_limit.quantity,
+            amount_per_craft: input.ingredient.amount,
+        });
+    }
+
+    return {
+        recipe: machine.metadata.recipe.name,
+        crafting_speed: machine.metadata.crafting_speed,
+        productivity: machine.metadata.productivity,
+        type: machine.metadata.type,
+        output_item: machine.output.item_name,
+        output_per_craft: machine.output.amount_per_craft.toDecimal(),
+        output_rate_per_second: machine.output.production_rate.amount_per_second.toDecimal(),
+        output_block_size: machine.output.outputBlock.quantity,
+        overload_multiplier: machine.overload_multiplier.overload_multiplier,
+        ticks_per_craft: machine.crafting_rate.ticks_per_craft,
+        ticks_per_bonus_craft: machine.bonus_productivity_rate.ticks_per_bonus,
+        insertion_duration_ticks: machine.insertion_duration.tick_duration.toDecimal(),
+        inputs,
+    };
+}
+
+/**
+ * Computes machine facts from configuration parameters.
+ * This is useful for computing facts on-the-fly in the UI without running a full simulation.
+ */
+export interface ComputeMachineFactsParams {
+    recipe: string;
+    productivity: number;
+    crafting_speed: number;
+    type?: 'machine' | 'furnace';
+}
+
+function computeMachineFacts(params: ComputeMachineFactsParams): SerializableMachineFacts {
+    const machine = createMachine(1, {
+        recipe: RecipeMetadata.fromRecipeName(params.recipe),
+        productivity: params.productivity,
+        crafting_speed: params.crafting_speed,
+        type: params.type ?? 'machine',
+    });
+    return getMachineFacts(machine);
 }

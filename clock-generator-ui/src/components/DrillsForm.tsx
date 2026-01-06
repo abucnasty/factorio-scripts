@@ -3,7 +3,6 @@ import {
     Accordion,
     AccordionDetails,
     AccordionSummary,
-    Autocomplete,
     Box,
     Button,
     FormControl,
@@ -22,6 +21,7 @@ import { useState } from 'react';
 import type { DrillFormData, EnableControlOverride } from '../hooks/useConfigForm';
 import { EnableControlModal } from './EnableControlModal';
 import { FactorioIcon } from './FactorioIcon';
+import { ItemSelector } from './ItemSelector';
 
 const DRILL_TYPES = [
     { value: 'electric-mining-drill', label: 'Electric Mining Drill' },
@@ -78,81 +78,39 @@ export function DrillsForm({
     };
 
     return (
-        <Accordion defaultExpanded={enabled}>
-            <AccordionSummary expandIcon={<ExpandMore />}>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, width: '100%' }}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                        <Typography variant="h6">
-                            Mining Drills
-                        </Typography>
-                        <IconButton 
-                            size="small" 
-                            onClick={handleInfoClick} 
-                            color="info"
-                        >
-                            <Info fontSize="small" />
-                        </IconButton>
-                        <Popover
-                            open={Boolean(infoAnchorEl)}
-                            anchorEl={infoAnchorEl}
-                            onClose={handleInfoClose}
-                            anchorOrigin={{
-                                vertical: 'bottom',
-                                horizontal: 'left',
-                            }}
-                        >
-                            <Box sx={{ p: 2, maxWidth: 350 }}>
-                                <Typography variant="body2" sx={{ mb: 1 }}>
-                                    To get the speed bonus of a mining drill in Factorio, hover over the drill and run this command:
+        <Box>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                <Accordion defaultExpanded={enabled} sx={{ flex: 1 }}>
+                    <AccordionSummary expandIcon={<ExpandMore />}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, width: '100%' }}>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                <Typography variant="h6">
+                                    Mining Drills
                                 </Typography>
-                                <Box
-                                    sx={{
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        gap: 1,
-                                        bgcolor: 'action.hover',
-                                        p: 1,
-                                        borderRadius: 1,
-                                        fontFamily: 'monospace',
-                                        fontSize: '0.85rem',
-                                    }}
-                                >
-                                    <Typography
-                                        component="code"
-                                        sx={{ flex: 1, wordBreak: 'break-all', fontFamily: 'monospace', fontSize: '0.85rem' }}
-                                    >
-                                        {SPEED_BONUS_COMMAND}
-                                    </Typography>
-                                    <Button size="small" onClick={handleCopy} variant="outlined">
-                                        {copied ? 'Copied!' : 'Copy'}
-                                    </Button>
-                                </Box>
                             </Box>
-                        </Popover>
-                    </Box>
-                    <FormControlLabel
-                        control={
-                            <Switch
-                                checked={enabled}
-                                onChange={(e) => {
-                                    e.stopPropagation();
-                                    if (enabled) {
-                                        onDisable();
-                                    } else {
-                                        onEnable();
-                                    }
-                                }}
+                            <FormControlLabel
+                                control={
+                                    <Switch
+                                        checked={enabled}
+                                        onChange={(e) => {
+                                            e.stopPropagation();
+                                            if (enabled) {
+                                                onDisable();
+                                            } else {
+                                                onEnable();
+                                            }
+                                        }}
+                                        onClick={(e) => e.stopPropagation()}
+                                        size="small"
+                                    />
+                                }
+                                label={enabled ? 'Enabled' : 'Disabled'}
                                 onClick={(e) => e.stopPropagation()}
-                                size="small"
+                                sx={{ ml: 1 }}
                             />
-                        }
-                        label={enabled ? 'Enabled' : 'Disabled'}
-                        onClick={(e) => e.stopPropagation()}
-                        sx={{ ml: 1 }}
-                    />
-                </Box>
-            </AccordionSummary>
-            <AccordionDetails>
+                        </Box>
+                    </AccordionSummary>
+                    <AccordionDetails>
                 {enabled ? (
                     <>
                         <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', mb: 2 }}>
@@ -225,42 +183,15 @@ export function DrillsForm({
                                         ))}
                                     </Select>
                                 </FormControl>
-                                <Autocomplete
-                                    sx={{ minWidth: 200, flex: 1 }}
-                                    options={resourceNames}
-                                    value={drill.mined_item_name || null}
-                                    onChange={(_, newValue) =>
-                                        onUpdate(index, { mined_item_name: newValue || '' })
-                                    }
-                                    renderInput={(params) => (
-                                        <TextField
-                                            {...params}
-                                            label="Mined Resource"
-                                            placeholder="Search resources..."
-                                            size="small"
-                                            slotProps={{
-                                                input: {
-                                                    ...params.InputProps,
-                                                    startAdornment: drill.mined_item_name ? (
-                                                        <Box sx={{ display: 'flex', alignItems: 'center', ml: 1 }}>
-                                                            <FactorioIcon name={drill.mined_item_name} size={20} />
-                                                        </Box>
-                                                    ) : null,
-                                                },
-                                            }}
-                                        />
-                                    )}
-                                    renderOption={(props, option) => {
-                                        const { key, ...rest } = props;
-                                        return (
-                                            <Box component="li" key={key} {...rest} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                                <FactorioIcon name={option} size={20} />
-                                                {option}
-                                            </Box>
-                                        );
+                                <ItemSelector
+                                    value={drill.mined_item_name || ''}
+                                    onChange={(newValue) => {
+                                        if (newValue) {
+                                            onUpdate(index, { mined_item_name: newValue });
+                                        }
                                     }}
-                                    freeSolo
-                                    autoHighlight
+                                    options={resourceNames}
+                                    label="Mined Resource"
                                 />
                                 <TextField
                                     label="Speed Bonus"
@@ -345,6 +276,52 @@ export function DrillsForm({
                     }}
                 />
             </AccordionDetails>
-        </Accordion>
+                </Accordion>
+                <IconButton 
+                    size="small" 
+                    onClick={handleInfoClick}
+                    color="info"
+                >
+                    <Info fontSize="small" />
+                </IconButton>
+            </Box>
+            <Popover
+                open={Boolean(infoAnchorEl)}
+                anchorEl={infoAnchorEl}
+                onClose={handleInfoClose}
+                anchorOrigin={{
+                    vertical: 'bottom',
+                    horizontal: 'left',
+                }}
+            >
+                <Box sx={{ p: 2, maxWidth: 350 }}>
+                    <Typography variant="body2" sx={{ mb: 1 }}>
+                        To get the speed bonus of a mining drill in Factorio, hover over the drill and run this command:
+                    </Typography>
+                    <Box
+                        sx={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 1,
+                            bgcolor: 'action.hover',
+                            p: 1,
+                            borderRadius: 1,
+                            fontFamily: 'monospace',
+                            fontSize: '0.85rem',
+                        }}
+                    >
+                        <Typography
+                            component="code"
+                            sx={{ flex: 1, wordBreak: 'break-all', fontFamily: 'monospace', fontSize: '0.85rem' }}
+                        >
+                            {SPEED_BONUS_COMMAND}
+                        </Typography>
+                        <Button size="small" onClick={handleCopy} variant="outlined">
+                            {copied ? 'Copied!' : 'Copy'}
+                        </Button>
+                    </Box>
+                </Box>
+            </Popover>
+        </Box>
     );
 }

@@ -35,17 +35,30 @@ const darkTheme = createTheme({
     palette: {
         mode: 'dark',
         primary: {
-            main: '#ff9800', // Factorio orange
+            main: '#fca300',
+            light: '#ffba37',
         },
         secondary: {
-            main: '#4caf50',
+            main: '#5eb664',
+            light: '#81d99a',
         },
         background: {
-            default: '#121212',
-            paper: '#1e1e1e',
+            default: '#404040',
+            paper: '#232323',
         },
+        common: {
+            black: '#121212',
+        },
+        error: {
+            main: '#ff5958'
+        }
     },
+    shape: {
+        borderRadius: 0,
+    },
+    spacing: (factor: number) => factor * 7,
 });
+
 
 // Simple HOCON parsing fallback - in real scenario use the browser config loader
 async function parseConfig(content: string): Promise<Config> {
@@ -65,6 +78,7 @@ function App() {
         isRunning,
         recipeNames,
         resourceNames,
+        itemNames,
         logs,
         blueprintString,
         transferHistory,
@@ -119,12 +133,12 @@ function App() {
     const machineIds = useMemo(() => config.machines.map((m) => m.id), [config.machines]);
 
     // All item names (from recipes and resources)
-    const itemNames = useMemo(() => {
+    const itemNamesComposite = useMemo(() => {
         const names = new Set<string>();
-        recipeNames.forEach((name) => names.add(name));
+        itemNames.forEach((name) => names.add(name));
         resourceNames.forEach((name) => names.add(name));
         return Array.from(names).sort();
-    }, [recipeNames, resourceNames]);
+    }, [itemNames, resourceNames]);
 
     const handleGenerate = useCallback(() => {
         const configToRun = exportConfig();
@@ -216,7 +230,7 @@ function App() {
                                 machines={config.machines}
                                 belts={config.belts}
                                 chests={config.chests}
-                                itemNames={itemNames}
+                                itemNames={itemNamesComposite}
                                 getRecipeInfo={getRecipeInfo}
                                 onAdd={addInserter}
                                 onUpdate={updateInserter}
@@ -225,7 +239,7 @@ function App() {
 
                             <BeltsForm
                                 belts={config.belts}
-                                itemNames={itemNames}
+                                itemNames={itemNamesComposite}
                                 onAdd={addBelt}
                                 onUpdate={updateBelt}
                                 onRemove={removeBelt}
@@ -233,7 +247,7 @@ function App() {
 
                             <ChestsForm
                                 chests={config.chests}
-                                itemNames={itemNames}
+                                itemNames={itemNamesComposite}
                                 onAdd={addChest}
                                 onUpdate={updateChest}
                                 onRemove={removeChest}

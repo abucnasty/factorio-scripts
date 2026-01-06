@@ -1,6 +1,5 @@
 import { Add, Delete } from '@mui/icons-material';
 import {
-    Autocomplete,
     Box,
     Button,
     FormControl,
@@ -14,6 +13,7 @@ import {
 } from '@mui/material';
 import { BELT_FORM_DEFAULT_STACK_SIZE, type BeltFormData, type BeltLaneFormData } from '../hooks/useConfigForm';
 import { FactorioIcon } from './FactorioIcon';
+import { ItemSelector } from './ItemSelector';
 
 const BELT_TYPES = [
     { value: 'transport-belt', label: 'Transport Belt' },
@@ -74,7 +74,7 @@ export function BeltsForm({
                 <Typography variant="h6">
                     Belts ({belts.length})
                 </Typography>
-                <Button startIcon={<Add />} onClick={onAdd} variant="outlined" size="small">
+                <Button startIcon={<Add />} onClick={onAdd} variant="text" size="small">
                     Add Belt
                 </Button>
             </Box>
@@ -147,42 +147,15 @@ export function BeltsForm({
                                 <Typography variant="body2" sx={{ width: 60 }}>
                                     Lane {laneIndex + 1}:
                                 </Typography>
-                                <Autocomplete
-                                    sx={{ minWidth: 200, flex: 1 }}
-                                    options={itemNames}
+                                <ItemSelector
                                     value={lane.ingredient || null}
-                                    onChange={(_, newValue) =>
+                                    options={itemNames}
+                                    onChange={(newValue) =>
                                         handleLaneUpdate(beltIndex, laneIndex, 'ingredient', newValue || '')
                                     }
-                                    renderInput={(params) => (
-                                        <TextField
-                                            {...params}
-                                            label="Ingredient"
-                                            placeholder="Search items..."
-                                            size="small"
-                                            slotProps={{
-                                                input: {
-                                                    ...params.InputProps,
-                                                    startAdornment: lane.ingredient ? (
-                                                        <Box sx={{ display: 'flex', alignItems: 'center', ml: 1 }}>
-                                                            <FactorioIcon name={lane.ingredient} size={20} />
-                                                        </Box>
-                                                    ) : null,
-                                                },
-                                            }}
-                                        />
-                                    )}
-                                    renderOption={(props, option) => {
-                                        const { key, ...rest } = props;
-                                        return (
-                                            <Box component="li" key={key} {...rest} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                                <FactorioIcon name={option} size={20} />
-                                                {option}
-                                            </Box>
-                                        );
-                                    }}
+                                    label="Ingredient"
                                     freeSolo
-                                    autoHighlight
+                                    sx={{ flex: 1 }}
                                 />
                                 <TextField
                                     label="Stack Size"
