@@ -65,7 +65,12 @@
       "stack_size": 16,
       "filters": [
         "lithium"
-      ]
+      ],
+      "overrides": {
+        "enable_control": {
+          "mode": "ALWAYS"
+        }
+      }
     },
     {
       "source": {
@@ -87,7 +92,12 @@
         "type": "machine",
         "id": 2
       },
-      "stack_size": 16
+      "stack_size": 16,
+      "overrides": {
+        "enable_control": {
+          "mode": "ALWAYS"
+        }
+      }
     },
     {
       "source": {
@@ -133,5 +143,8 @@
         }
       ]
     }
-  ]
+  ],
+  "overrides": {
+    "lcm": 3
+  }
 }

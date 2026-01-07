@@ -11,11 +11,11 @@ export interface OutputBlock {
 
 
 function fromRecipe(machine_type: MachineType, recipe: RecipeMetadata, overloadMultiplier: OverloadMultiplier): OutputBlock {
-    if (machine_type === "furnace") {
+    if (machine_type === MachineType.FURNACE) {
         return forFurnace(recipe);
     }
 
-    if (machine_type === "machine") {
+    if (machine_type === MachineType.MACHINE) {
         return forMachine(recipe, overloadMultiplier);
     }
 

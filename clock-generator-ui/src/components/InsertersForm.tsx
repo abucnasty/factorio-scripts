@@ -9,6 +9,7 @@ import {
     Tooltip,
     Typography,
 } from '@mui/material';
+import { TargetType } from 'clock-generator/browser';
 import { useMemo, useState } from 'react';
 import type { BeltFormData, ChestFormData, EnableControlOverride, InserterFormData, MachineFormData } from '../hooks/useConfigForm';
 import { isBufferChest, isInfinityChest } from '../hooks/useConfigForm';
@@ -17,8 +18,10 @@ import type { RecipeInfo } from '../hooks/useSimulationWorker';
 import { FactorioIcon } from './FactorioIcon';
 import { FilterSlotSelector } from './FilterSlotSelector';
 
+type SourceSinkType = typeof TargetType[keyof typeof TargetType];
+
 interface EntityOption {
-    type: 'machine' | 'belt' | 'chest';
+    type: SourceSinkType;
     id: number;
     label: string;
     icon: string;
@@ -58,7 +61,7 @@ export function InsertersForm({
         // Add machines
         machines.forEach((machine) => {
             options.push({
-                type: 'machine',
+                type: TargetType.MACHINE,
                 id: machine.id,
                 label: `Machine ${machine.id}`,
                 icon: machine.recipe || 'assembling-machine-3',
@@ -70,7 +73,7 @@ export function InsertersForm({
         belts.forEach((belt) => {
             const ingredientIcons = belt.lanes.map(lane => lane.ingredient).filter(Boolean);
             options.push({
-                type: 'belt',
+                type: TargetType.BELT,
                 id: belt.id,
                 label: `Belt ${belt.id}`,
                 icon: belt.type,
@@ -94,7 +97,7 @@ export function InsertersForm({
             }
             
             options.push({
-                type: 'chest',
+                type: TargetType.CHEST,
                 id: chest.id,
                 label: `Chest ${chest.id}`,
                 icon: isInfinityChest(chest) ? 'infinity-chest' : 'iron-chest',
@@ -107,7 +110,7 @@ export function InsertersForm({
     }, [machines, belts, chests]);
 
     // Find entity option by type and id
-    const findEntityOption = (type: 'machine' | 'belt' | 'chest', id: number): EntityOption | undefined => {
+    const findEntityOption = (type: SourceSinkType, id: number): EntityOption | undefined => {
         return entityOptions.find(opt => opt.type === type && opt.id === id);
     };
 
@@ -115,7 +118,7 @@ export function InsertersForm({
     const getInferredFilters = (inserter: InserterFormData): string[] => {
         // Get source items (what the source can provide)
         let sourceItems: string[] = [];
-        if (inserter.source.type === 'machine') {
+        if (inserter.source.type === TargetType.MACHINE) {
             const machine = machines.find(m => m.id === inserter.source.id);
             if (machine?.recipe) {
                 const recipeInfo = getRecipeInfo(machine.recipe);
@@ -123,13 +126,13 @@ export function InsertersForm({
                     sourceItems = recipeInfo.results; // Machine outputs its recipe results
                 }
             }
-        } else if (inserter.source.type === 'belt') {
+        } else if (inserter.source.type === TargetType.BELT) {
             // Belt source - get ingredients from lanes
             const belt = belts.find(b => b.id === inserter.source.id);
             if (belt) {
                 sourceItems = belt.lanes.map(lane => lane.ingredient).filter(Boolean);
             }
-        } else if (inserter.source.type === 'chest') {
+        } else if (inserter.source.type === TargetType.CHEST) {
             // Chest source - get item filter(s)
             const chest = chests.find(c => c.id === inserter.source.id);
             if (chest) {
@@ -143,7 +146,7 @@ export function InsertersForm({
 
         // Get sink requirements (what the sink needs)
         let sinkNeeds: string[] = [];
-        if (inserter.sink.type === 'machine') {
+        if (inserter.sink.type === TargetType.MACHINE) {
             const machine = machines.find(m => m.id === inserter.sink.id);
             if (machine?.recipe) {
                 const recipeInfo = getRecipeInfo(machine.recipe);
@@ -151,10 +154,10 @@ export function InsertersForm({
                     sinkNeeds = recipeInfo.ingredients; // Machine needs its recipe ingredients
                 }
             }
-        } else if (inserter.sink.type === 'belt') {
+        } else if (inserter.sink.type === TargetType.BELT) {
             // Belt sink - accept anything from source
             sinkNeeds = sourceItems;
-        } else if (inserter.sink.type === 'chest') {
+        } else if (inserter.sink.type === TargetType.CHEST) {
             // Chest sink - only accepts its item filter
             const chest = chests.find(c => c.id === inserter.sink.id);
             if (chest) {
@@ -461,6 +464,87 @@ export function InsertersForm({
                 entityType="inserter"
                 entityLabel={enableControlModalInserterIndex !== null ? `Inserter ${enableControlModalInserterIndex + 1}` : ''}
                 currentOverride={enableControlModalInserterIndex !== null ? inserters[enableControlModalInserterIndex]?.overrides?.enable_control : undefined}
+                sourceType={enableControlModalInserterIndex !== null ? inserters[enableControlModalInserterIndex]?.source?.type : undefined}
+                sinkType={enableControlModalInserterIndex !== null ? inserters[enableControlModalInserterIndex]?.sink?.type : undefined}
+                copyFromOptions={inserters
+                    .map((ins, idx) => ({ inserter: ins, index: idx }))
+                    .filter(({ inserter, index }) => 
+                        index !== enableControlModalInserterIndex && 
+                        inserter.overrides?.enable_control && 
+                        inserter.overrides.enable_control.mode !== 'AUTO'
+                    )
+                    .map(({ inserter, index }) => ({
+                        label: `Inserter ${index + 1}`,
+                        override: inserter.overrides!.enable_control!,
+                    }))
+                }
+                availableItems={(() => {
+                    if (enableControlModalInserterIndex === null) return [];
+                    const inserter = inserters[enableControlModalInserterIndex];
+                    const items = new Set<string>();
+                    
+                    // Get items from source
+                    if (inserter?.source?.type === TargetType.MACHINE) {
+                        const machine = machines.find(m => m.id === inserter.source.id);
+                        if (machine?.recipe) {
+                            const recipeInfo = getRecipeInfo(machine.recipe);
+                            if (recipeInfo) {
+                                recipeInfo.results.forEach(r => items.add(r));
+                                recipeInfo.ingredients.forEach(i => items.add(i));
+                            }
+                        }
+                    } else if (inserter?.source?.type === TargetType.BELT) {
+                        const belt = belts.find(b => b.id === inserter.source.id);
+                        if (belt) {
+                            belt.lanes.forEach(lane => {
+                                if (lane.ingredient) items.add(lane.ingredient);
+                            });
+                        }
+                    } else if (inserter?.source?.type === TargetType.CHEST) {
+                        const chest = chests.find(c => c.id === inserter.source.id);
+                        if (chest) {
+                            if (isBufferChest(chest) && chest.item_filter) {
+                                items.add(chest.item_filter);
+                            } else if (isInfinityChest(chest)) {
+                                chest.item_filter.forEach(f => {
+                                    if (f.item_name) items.add(f.item_name);
+                                });
+                            }
+                        }
+                    }
+
+                    // Get items from sink
+                    if (inserter?.sink?.type === TargetType.MACHINE) {
+                        const machine = machines.find(m => m.id === inserter.sink.id);
+                        if (machine?.recipe) {
+                            const recipeInfo = getRecipeInfo(machine.recipe);
+                            if (recipeInfo) {
+                                recipeInfo.results.forEach(r => items.add(r));
+                                recipeInfo.ingredients.forEach(i => items.add(i));
+                            }
+                        }
+                    } else if (inserter?.sink?.type === TargetType.BELT) {
+                        const belt = belts.find(b => b.id === inserter.sink.id);
+                        if (belt) {
+                            belt.lanes.forEach(lane => {
+                                if (lane.ingredient) items.add(lane.ingredient);
+                            });
+                        }
+                    } else if (inserter?.sink?.type === TargetType.CHEST) {
+                        const chest = chests.find(c => c.id === inserter.sink.id);
+                        if (chest) {
+                            if (isBufferChest(chest) && chest.item_filter) {
+                                items.add(chest.item_filter);
+                            } else if (isInfinityChest(chest)) {
+                                chest.item_filter.forEach(f => {
+                                    if (f.item_name) items.add(f.item_name);
+                                });
+                            }
+                        }
+                    }
+
+                    return Array.from(items);
+                })()}
                 onSave={(override: EnableControlOverride | undefined) => {
                     if (enableControlModalInserterIndex !== null) {
                         const inserter = inserters[enableControlModalInserterIndex];

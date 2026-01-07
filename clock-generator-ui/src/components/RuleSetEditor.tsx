@@ -1,0 +1,168 @@
+import { Add, AddCircleOutline } from '@mui/icons-material';
+import { Box, Button, Paper, ToggleButton, ToggleButtonGroup, Typography } from '@mui/material';
+import { 
+    RuleOperator, 
+    TargetType 
+} from 'clock-generator/browser';
+import type { Condition, RuleSet } from '../hooks/useConfigForm';
+import { ConditionRow } from './ConditionRow';
+import { 
+    isCondition, 
+    createDefaultCondition, 
+    createDefaultStatusCondition, 
+    createDefaultRuleSet 
+} from './ruleSetUtils';
+
+type SourceSinkType = typeof TargetType[keyof typeof TargetType];
+
+interface RuleSetEditorProps {
+    ruleSet: RuleSet;
+    onChange: (ruleSet: RuleSet) => void;
+    availableItems: string[];
+    sourceType: SourceSinkType;
+    sinkType: SourceSinkType;
+    depth?: number;
+    label?: string;
+}
+
+export function RuleSetEditor({
+    ruleSet,
+    onChange,
+    availableItems,
+    sourceType,
+    sinkType,
+    depth = 0,
+    label,
+}: RuleSetEditorProps) {
+    const handleOperatorChange = (_: React.MouseEvent<HTMLElement>, newOperator: RuleOperator | null) => {
+        if (newOperator) {
+            onChange({ ...ruleSet, operator: newOperator });
+        }
+    };
+
+    const handleRuleChange = (index: number, rule: Condition | RuleSet) => {
+        const newRules = [...ruleSet.rules];
+        newRules[index] = rule;
+        onChange({ ...ruleSet, rules: newRules });
+    };
+
+    const handleDeleteRule = (index: number) => {
+        if (ruleSet.rules.length > 1) {
+            const newRules = ruleSet.rules.filter((_, i) => i !== index);
+            onChange({ ...ruleSet, rules: newRules });
+        }
+    };
+
+    const handleAddCondition = () => {
+        onChange({ ...ruleSet, rules: [...ruleSet.rules, createDefaultCondition()] });
+    };
+
+    const handleAddStatusCondition = () => {
+        onChange({ ...ruleSet, rules: [...ruleSet.rules, createDefaultStatusCondition()] });
+    };
+
+    const handleAddGroup = () => {
+        onChange({ ...ruleSet, rules: [...ruleSet.rules, createDefaultRuleSet()] });
+    };
+
+    const borderColor = depth % 2 === 0 ? 'primary.main' : 'secondary.main';
+    const canAddStatusCondition = sourceType === TargetType.MACHINE || sinkType === TargetType.MACHINE;
+
+    return (
+        <Paper
+            variant="outlined"
+            sx={{
+                p: 1.5,
+                borderLeft: 3,
+                borderLeftColor: borderColor,
+                bgcolor: "background.paper",
+            }}
+        >
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 1 }}>
+                {label && (
+                    <Typography variant="subtitle2" color="text.secondary">
+                        {label}
+                    </Typography>
+                )}
+                <ToggleButtonGroup
+                    value={ruleSet.operator}
+                    exclusive
+                    onChange={handleOperatorChange}
+                    size="small"
+                >
+                    <ToggleButton value={RuleOperator.AND}>AND</ToggleButton>
+                    <ToggleButton value={RuleOperator.OR}>OR</ToggleButton>
+                </ToggleButtonGroup>
+                <Typography variant="caption" color="text.secondary">
+                    {ruleSet.operator === RuleOperator.AND ? 'All conditions must be true' : 'Any condition can be true'}
+                </Typography>
+            </Box>
+
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                {ruleSet.rules.map((rule, index) => (
+                    <Box key={index}>
+                        {isCondition(rule) ? (
+                            <ConditionRow
+                                condition={rule}
+                                onChange={(c) => handleRuleChange(index, c)}
+                                onDelete={() => handleDeleteRule(index)}
+                                availableItems={availableItems}
+                                sourceType={sourceType}
+                                sinkType={sinkType}
+                                canDelete={ruleSet.rules.length > 1}
+                            />
+                        ) : (
+                            <Box sx={{ position: 'relative' }}>
+                                <RuleSetEditor
+                                    ruleSet={rule}
+                                    onChange={(r) => handleRuleChange(index, r)}
+                                    availableItems={availableItems}
+                                    sourceType={sourceType}
+                                    sinkType={sinkType}
+                                    depth={depth + 1}
+                                />
+                                {ruleSet.rules.length > 1 && (
+                                    <Button
+                                        size="small"
+                                        color="error"
+                                        onClick={() => handleDeleteRule(index)}
+                                        sx={{ position: 'absolute', top: 4, right: 4 }}
+                                    >
+                                        Remove Group
+                                    </Button>
+                                )}
+                            </Box>
+                        )}
+                    </Box>
+                ))}
+            </Box>
+
+            <Box sx={{ display: 'flex', gap: 1, mt: 1 }}>
+                <Button
+                    size="small"
+                    startIcon={<Add />}
+                    onClick={handleAddCondition}
+                >
+                    Add Condition
+                </Button>
+                {canAddStatusCondition && (
+                    <Button
+                        size="small"
+                        startIcon={<Add />}
+                        onClick={handleAddStatusCondition}
+                    >
+                        Add Status Check
+                    </Button>
+                )}
+                <Button
+                    size="small"
+                    startIcon={<AddCircleOutline />}
+                    onClick={handleAddGroup}
+                    variant="outlined"
+                >
+                    Add Group
+                </Button>
+            </Box>
+        </Paper>
+    );
+}
