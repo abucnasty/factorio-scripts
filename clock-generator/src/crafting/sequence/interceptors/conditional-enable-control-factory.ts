@@ -8,7 +8,8 @@ import {
     ValueReference
 } from "../../../config/schema";
 import { EntityId, Inserter } from "../../../entities";
-import { EntityState, InserterState, MachineState, ReadableEntityStateRegistry } from "../../../state";
+import { assertIsInserterState, assertIsMachineState, EntityState, InserterState, MachineState, ReadableEntityStateRegistry } from "../../../state";
+import assert from "../../../common/assert";
 
 interface EvaluationContext {
     inserter: Inserter;
@@ -120,9 +121,7 @@ export class ConditionalEnableControlFactory {
 
     private getMachineState(entity: EntityReference, context: EvaluationContext): MachineState {
         const state = this.getEntityState(entity, context);
-        if (!EntityState.isMachine(state)) {
-            throw new Error(`Expected machine state for ${entity}, got ${state.entity_id.type}`);
-        }
+        assertIsMachineState(state);
         return state;
     }
 
@@ -142,9 +141,7 @@ export class ConditionalEnableControlFactory {
     ): number {
         const machine = this.getMachineState(entity, context);
         const input = machine.machine.inputs.get(item_name);
-        if (!input) {
-            throw new Error(`Item ${item_name} not found in machine inputs`);
-        }
+        assert(input, `Item ${item_name} not found in machine inputs`);
         return input.automated_insertion_limit.quantity;
     }
 
@@ -166,7 +163,8 @@ export class ConditionalEnableControlFactory {
     private getHandQuantity(item_name: string | undefined, context: EvaluationContext): number {
         const inserter_state = context.entity_state_registry.getStateByEntityIdOrThrow(
             context.inserter.entity_id
-        ) as InserterState;
+        );
+        assertIsInserterState(inserter_state);
 
         if (!inserter_state.held_item) {
             return 0;
