@@ -463,6 +463,18 @@ export function InsertersForm({
                 currentOverride={enableControlModalInserterIndex !== null ? inserters[enableControlModalInserterIndex]?.overrides?.enable_control : undefined}
                 sourceType={enableControlModalInserterIndex !== null ? inserters[enableControlModalInserterIndex]?.source?.type : undefined}
                 sinkType={enableControlModalInserterIndex !== null ? inserters[enableControlModalInserterIndex]?.sink?.type : undefined}
+                copyFromOptions={inserters
+                    .map((ins, idx) => ({ inserter: ins, index: idx }))
+                    .filter(({ inserter, index }) => 
+                        index !== enableControlModalInserterIndex && 
+                        inserter.overrides?.enable_control && 
+                        inserter.overrides.enable_control.mode !== 'AUTO'
+                    )
+                    .map(({ inserter, index }) => ({
+                        label: `Inserter ${index + 1}`,
+                        override: inserter.overrides!.enable_control!,
+                    }))
+                }
                 availableItems={(() => {
                     if (enableControlModalInserterIndex === null) return [];
                     const inserter = inserters[enableControlModalInserterIndex];

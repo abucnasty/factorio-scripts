@@ -1,4 +1,4 @@
-import { Add, Close, Delete, Fullscreen, FullscreenExit } from '@mui/icons-material';
+import { Add, Close, ContentCopy, Delete, Fullscreen, FullscreenExit } from '@mui/icons-material';
 import {
     Box,
     Button,
@@ -9,8 +9,11 @@ import {
     FormControl,
     FormControlLabel,
     IconButton,
+    InputLabel,
+    MenuItem,
     Radio,
     RadioGroup,
+    Select,
     TextField,
     Tooltip,
     Typography,
@@ -22,6 +25,11 @@ import { FullscreenProvider } from './FullscreenContext';
 import { LatchConfigEditor } from './LatchConfigEditor';
 import { QuickTemplateSelect } from './QuickTemplateSelect';
 
+interface CopyFromOption {
+    label: string;
+    override: EnableControlOverride;
+}
+
 interface EnableControlModalProps {
     open: boolean;
     onClose: () => void;
@@ -32,6 +40,8 @@ interface EnableControlModalProps {
     sourceType?: 'machine' | 'belt' | 'chest';
     sinkType?: 'machine' | 'belt' | 'chest';
     availableItems?: string[];
+    /** Other entities with configured overrides that can be copied from */
+    copyFromOptions?: CopyFromOption[];
 }
 
 const MODE_DESCRIPTIONS: Record<EnableControlMode, string> = {
@@ -52,6 +62,7 @@ function EnableControlModalContent({
     sourceType = 'machine',
     sinkType = 'machine',
     availableItems = [],
+    copyFromOptions = [],
 }: Omit<EnableControlModalProps, 'open'>) {
     // Initialize state from currentOverride
     const initialMode = currentOverride?.mode ?? 'AUTO';
@@ -133,6 +144,20 @@ function EnableControlModalContent({
         }
     };
 
+    const handleCopyFrom = (option: CopyFromOption) => {
+        const override = option.override;
+        setMode(override.mode);
+        
+        if (override.mode === 'CLOCKED') {
+            setRanges(override.ranges || [{ start: 0, end: 100 }]);
+            setPeriodDuration(override.period_duration_ticks?.toString() || '');
+        } else if (override.mode === 'CONDITIONAL') {
+            setRuleSet(override.rule_set || createDefaultRuleSet());
+            setLatchEnabled(!!override.latch);
+            setReleaseCondition(override.latch?.release);
+        }
+    };
+
     const handleClear = () => {
         onSave(undefined);
         onClose();
@@ -172,6 +197,43 @@ function EnableControlModalContent({
                 <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
                     Configure when this {entityType} should be enabled during the crafting cycle.
                 </Typography>
+
+                {/* Copy From dropdown */}
+                {copyFromOptions.length > 0 && (
+                    <Box sx={{ mb: 3 }}>
+                        <FormControl size="small" sx={{ minWidth: 250 }}>
+                            <InputLabel shrink>Copy from another {entityType}</InputLabel>
+                            <Select
+                                value=""
+                                label={`Copy from another ${entityType}`}
+                                onChange={(e) => {
+                                    const option = copyFromOptions.find((_, i) => i.toString() === e.target.value);
+                                    if (option) handleCopyFrom(option);
+                                }}
+                                displayEmpty
+                                notched
+                                startAdornment={<ContentCopy sx={{ mr: 1, color: 'action.active' }} fontSize="small" />}
+                                renderValue={() => (
+                                    <Typography variant="body2" color="text.secondary">
+                                        Select to copy configuration...
+                                    </Typography>
+                                )}
+                            >
+                                {copyFromOptions.map((option, index) => (
+                                    <MenuItem key={index} value={index.toString()}>
+                                        <Box>
+                                            <Typography variant="body2">{option.label}</Typography>
+                                            <Typography variant="caption" color="text.secondary">
+                                                {option.override.mode}
+                                                {option.override.mode === 'CONDITIONAL' && option.override.latch && ' (latched)'}
+                                            </Typography>
+                                        </Box>
+                                    </MenuItem>
+                                ))}
+                            </Select>
+                        </FormControl>
+                    </Box>
+                )}
 
                 <FormControl component="fieldset" fullWidth>
                     <RadioGroup
