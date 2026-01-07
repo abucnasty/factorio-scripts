@@ -292,6 +292,15 @@ export function DrillsForm({
                 entityType="drill"
                 entityLabel={enableControlModalDrillIndex !== null ? `Drill ${drills[enableControlModalDrillIndex]?.id}` : ''}
                 currentOverride={enableControlModalDrillIndex !== null ? drills[enableControlModalDrillIndex]?.overrides?.enable_control : undefined}
+                sinkType="machine"
+                availableItems={(() => {
+                    if (enableControlModalDrillIndex === null) return [];
+                    const drill = drills[enableControlModalDrillIndex];
+                    if (drill?.mined_item_name) {
+                        return [drill.mined_item_name];
+                    }
+                    return [];
+                })()}
                 onSave={(override: EnableControlOverride | undefined) => {
                     if (enableControlModalDrillIndex !== null) {
                         const drill = drills[enableControlModalDrillIndex];

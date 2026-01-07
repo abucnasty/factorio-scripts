@@ -461,6 +461,75 @@ export function InsertersForm({
                 entityType="inserter"
                 entityLabel={enableControlModalInserterIndex !== null ? `Inserter ${enableControlModalInserterIndex + 1}` : ''}
                 currentOverride={enableControlModalInserterIndex !== null ? inserters[enableControlModalInserterIndex]?.overrides?.enable_control : undefined}
+                sourceType={enableControlModalInserterIndex !== null ? inserters[enableControlModalInserterIndex]?.source?.type : undefined}
+                sinkType={enableControlModalInserterIndex !== null ? inserters[enableControlModalInserterIndex]?.sink?.type : undefined}
+                availableItems={(() => {
+                    if (enableControlModalInserterIndex === null) return [];
+                    const inserter = inserters[enableControlModalInserterIndex];
+                    const items = new Set<string>();
+                    
+                    // Get items from source
+                    if (inserter?.source?.type === 'machine') {
+                        const machine = machines.find(m => m.id === inserter.source.id);
+                        if (machine?.recipe) {
+                            const recipeInfo = getRecipeInfo(machine.recipe);
+                            if (recipeInfo) {
+                                recipeInfo.results.forEach(r => items.add(r));
+                                recipeInfo.ingredients.forEach(i => items.add(i));
+                            }
+                        }
+                    } else if (inserter?.source?.type === 'belt') {
+                        const belt = belts.find(b => b.id === inserter.source.id);
+                        if (belt) {
+                            belt.lanes.forEach(lane => {
+                                if (lane.ingredient) items.add(lane.ingredient);
+                            });
+                        }
+                    } else if (inserter?.source?.type === 'chest') {
+                        const chest = chests.find(c => c.id === inserter.source.id);
+                        if (chest) {
+                            if (isBufferChest(chest) && chest.item_filter) {
+                                items.add(chest.item_filter);
+                            } else if (isInfinityChest(chest)) {
+                                chest.item_filter.forEach(f => {
+                                    if (f.item_name) items.add(f.item_name);
+                                });
+                            }
+                        }
+                    }
+
+                    // Get items from sink
+                    if (inserter?.sink?.type === 'machine') {
+                        const machine = machines.find(m => m.id === inserter.sink.id);
+                        if (machine?.recipe) {
+                            const recipeInfo = getRecipeInfo(machine.recipe);
+                            if (recipeInfo) {
+                                recipeInfo.results.forEach(r => items.add(r));
+                                recipeInfo.ingredients.forEach(i => items.add(i));
+                            }
+                        }
+                    } else if (inserter?.sink?.type === 'belt') {
+                        const belt = belts.find(b => b.id === inserter.sink.id);
+                        if (belt) {
+                            belt.lanes.forEach(lane => {
+                                if (lane.ingredient) items.add(lane.ingredient);
+                            });
+                        }
+                    } else if (inserter?.sink?.type === 'chest') {
+                        const chest = chests.find(c => c.id === inserter.sink.id);
+                        if (chest) {
+                            if (isBufferChest(chest) && chest.item_filter) {
+                                items.add(chest.item_filter);
+                            } else if (isInfinityChest(chest)) {
+                                chest.item_filter.forEach(f => {
+                                    if (f.item_name) items.add(f.item_name);
+                                });
+                            }
+                        }
+                    }
+
+                    return Array.from(items);
+                })()}
                 onSave={(override: EnableControlOverride | undefined) => {
                     if (enableControlModalInserterIndex !== null) {
                         const inserter = inserters[enableControlModalInserterIndex];

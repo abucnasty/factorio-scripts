@@ -1,12 +1,14 @@
 import assert from "../../../common/assert";
-import { EntityId } from "../../../entities";
+import { EntityId, Inserter } from "../../../entities";
 import { AlwaysEnabledControl, EnableControl, ResettableRegistry, TickProvider } from "../../../control-logic";
 import { EnableControlOverrideConfig } from "../../../config/schema";
 import { CraftingCyclePlan } from "../cycle/crafting-cycle";
 import { Duration, OpenRange } from "../../../data-types";
+import { ReadableEntityStateRegistry } from "../../../state";
+import { ConditionalEnableControlFactory } from "./conditional-enable-control-factory";
 
 /**
- * Map of entity ID string (e.g., "inserter:1") to EnableControlOverrideConfig.
+ * keys are EntityId (e.g. "inserter:1")
  */
 export type EntityEnableControlOverrideMap = Map<string, EnableControlOverrideConfig>;
 
@@ -20,12 +22,17 @@ export type EntityEnableControlOverrideMap = Map<string, EnableControlOverrideCo
  */
 export class ConfigurableEnableControlFactory {
 
+    private readonly conditional_factory: ConditionalEnableControlFactory;
+
     constructor(
         private readonly override_map: EntityEnableControlOverrideMap,
         private readonly tick_provider: TickProvider,
         private readonly crafting_cycle_plan: CraftingCyclePlan,
         private readonly resettable_registry: ResettableRegistry,
-    ) {}
+        entity_state_registry: ReadableEntityStateRegistry,
+    ) {
+        this.conditional_factory = new ConditionalEnableControlFactory(entity_state_registry);
+    }
 
     /**
      * Check if an entity has a non-AUTO enable control override configured.
@@ -49,7 +56,7 @@ export class ConfigurableEnableControlFactory {
      * 
      * @throws If no override is configured for this entity or if mode is AUTO.
      */
-    public createForEntityId(entity_id: EntityId): EnableControl {
+    public createForEntityId(entity_id: EntityId, inserter?: Inserter): EnableControl {
         const override = this.override_map.get(entity_id.id);
         assert(
             override !== undefined,
@@ -69,6 +76,10 @@ export class ConfigurableEnableControlFactory {
 
             case "CLOCKED":
                 return this.createClockedControl(entity_id, override);
+
+            case "CONDITIONAL":
+                assert(inserter !== undefined, `Inserter required for CONDITIONAL mode on ${entity_id.id}`);
+                return this.conditional_factory.createFromConfig(override, inserter);
 
             default:
                 throw new Error(`Unknown enable control mode: ${(override as any).mode}`);

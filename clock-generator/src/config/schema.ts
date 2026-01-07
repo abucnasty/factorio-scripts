@@ -84,21 +84,126 @@ const EnableControlOverrideNeverSchema = z.object({
 
 const EnableControlOverrideClockedSchema = z.object({
     mode: z.literal("CLOCKED"),
-    /**
-     * The tick ranges during which the entity is enabled.
-     */
     ranges: z.array(EnableControlRangeSchema).min(1),
-    /**
-     * Optional period duration in ticks. If not specified, falls back to crafting cycle duration.
-     */
     period_duration_ticks: z.number().int().positive().optional()
 });
+
+// ============================================================================
+// Conditional Enable Control Configuration
+// ============================================================================
+
+export const EntityReferenceSchema = z.enum(["SOURCE", "SINK"]);
+export type EntityReference = z.infer<typeof EntityReferenceSchema>;
+
+export const ComparisonOperatorSchema = z.enum([">", "<", ">=", "<=", "==", "!="]);
+export type ComparisonOperator = z.infer<typeof ComparisonOperatorSchema>;
+
+const ValueReferenceConstantSchema = z.object({
+    type: z.literal("CONSTANT"),
+    value: z.number()
+});
+
+const ValueReferenceInventoryItemSchema = z.object({
+    type: z.literal("INVENTORY_ITEM"),
+    entity: EntityReferenceSchema,
+    item_name: z.string()
+});
+
+const ValueReferenceAutomatedInsertionLimitSchema = z.object({
+    type: z.literal("AUTOMATED_INSERTION_LIMIT"),
+    entity: EntityReferenceSchema,
+    item_name: z.string()
+});
+
+const ValueReferenceOutputBlockSchema = z.object({
+    type: z.literal("OUTPUT_BLOCK"),
+    entity: EntityReferenceSchema
+});
+
+const ValueReferenceCraftingProgressSchema = z.object({
+    type: z.literal("CRAFTING_PROGRESS"),
+    entity: EntityReferenceSchema
+});
+
+const ValueReferenceBonusProgressSchema = z.object({
+    type: z.literal("BONUS_PROGRESS"),
+    entity: EntityReferenceSchema
+});
+
+const ValueReferenceHandQuantitySchema = z.object({
+    type: z.literal("HAND_QUANTITY"),
+    item_name: z.string().optional()
+});
+
+const ValueReferenceMachineStatusSchema = z.object({
+    type: z.literal("MACHINE_STATUS"),
+    entity: EntityReferenceSchema,
+    status: z.enum(["INGREDIENT_SHORTAGE", "WORKING", "OUTPUT_FULL"])
+});
+
+const ValueReferenceInserterStackSizeSchema = z.object({
+    type: z.literal("INSERTER_STACK_SIZE")
+});
+
+export const ValueReferenceSchema = z.discriminatedUnion("type", [
+    ValueReferenceConstantSchema,
+    ValueReferenceInventoryItemSchema,
+    ValueReferenceAutomatedInsertionLimitSchema,
+    ValueReferenceOutputBlockSchema,
+    ValueReferenceCraftingProgressSchema,
+    ValueReferenceBonusProgressSchema,
+    ValueReferenceHandQuantitySchema,
+    ValueReferenceMachineStatusSchema,
+    ValueReferenceInserterStackSizeSchema
+]);
+
+export type ValueReference = z.infer<typeof ValueReferenceSchema>;
+
+export const ConditionSchema = z.object({
+    left: ValueReferenceSchema,
+    operator: ComparisonOperatorSchema,
+    right: ValueReferenceSchema
+});
+
+export type Condition = z.infer<typeof ConditionSchema>;
+
+export const RuleOperatorSchema = z.enum(["AND", "OR"]);
+export type RuleOperator = z.infer<typeof RuleOperatorSchema>;
+
+interface RuleSetType {
+    operator: RuleOperator;
+    rules: (Condition | RuleSetType)[];
+}
+
+export const RuleSetSchema: z.ZodType<RuleSetType> = z.lazy(() =>
+    z.object({
+        operator: RuleOperatorSchema,
+        rules: z.array(z.union([ConditionSchema, RuleSetSchema])).min(1)
+    })
+);
+
+export type RuleSet = z.infer<typeof RuleSetSchema>;
+
+export const LatchConfigSchema = z.object({
+    release: RuleSetSchema
+});
+
+export type LatchConfig = z.infer<typeof LatchConfigSchema>;
+
+const EnableControlOverrideConditionalSchema = z.object({
+    mode: z.literal("CONDITIONAL"),
+    rule_set: RuleSetSchema,
+    latch: LatchConfigSchema.optional()
+});
+
+export type EnableControlOverrideConditional = z.infer<typeof EnableControlOverrideConditionalSchema>;
 
 export const EnableControlOverrideConfigSchema = z.discriminatedUnion("mode", [
     EnableControlOverrideAutoSchema,
     EnableControlOverrideAlwaysSchema,
     EnableControlOverrideNeverSchema,
-    EnableControlOverrideClockedSchema
+    EnableControlOverrideClockedSchema,
+    EnableControlOverrideConditionalSchema
 ]);
 
 export type EnableControlOverrideConfig = z.infer<typeof EnableControlOverrideConfigSchema>;

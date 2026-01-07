@@ -1,4 +1,4 @@
-import { Add, Close, Delete } from '@mui/icons-material';
+import { Add, Close, Delete, Fullscreen, FullscreenExit } from '@mui/icons-material';
 import {
     Box,
     Button,
@@ -12,10 +12,15 @@ import {
     Radio,
     RadioGroup,
     TextField,
+    Tooltip,
     Typography,
 } from '@mui/material';
 import { useState } from 'react';
-import type { EnableControlMode, EnableControlOverride, EnableControlRange } from '../hooks/useConfigForm';
+import type { EnableControlMode, EnableControlOverride, EnableControlRange, RuleSet } from '../hooks/useConfigForm';
+import { createDefaultRuleSet, RuleSetEditor } from './RuleSetEditor';
+import { FullscreenProvider } from './FullscreenContext';
+import { LatchConfigEditor } from './LatchConfigEditor';
+import { QuickTemplateSelect } from './QuickTemplateSelect';
 
 interface EnableControlModalProps {
     open: boolean;
@@ -24,6 +29,9 @@ interface EnableControlModalProps {
     entityLabel: string;
     currentOverride?: EnableControlOverride;
     onSave: (override: EnableControlOverride | undefined) => void;
+    sourceType?: 'machine' | 'belt' | 'chest';
+    sinkType?: 'machine' | 'belt' | 'chest';
+    availableItems?: string[];
 }
 
 const MODE_DESCRIPTIONS: Record<EnableControlMode, string> = {
@@ -31,6 +39,7 @@ const MODE_DESCRIPTIONS: Record<EnableControlMode, string> = {
     ALWAYS: 'Entity is always enabled',
     NEVER: 'Entity is never enabled',
     CLOCKED: 'Entity is enabled during specified tick ranges',
+    CONDITIONAL: 'Entity is enabled based on custom conditions',
 };
 
 // Inner component that resets when key changes
@@ -40,17 +49,31 @@ function EnableControlModalContent({
     entityLabel,
     currentOverride,
     onSave,
+    sourceType = 'machine',
+    sinkType = 'machine',
+    availableItems = [],
 }: Omit<EnableControlModalProps, 'open'>) {
     // Initialize state from currentOverride
     const initialMode = currentOverride?.mode ?? 'AUTO';
     const initialRanges = (currentOverride?.mode === 'CLOCKED' && currentOverride?.ranges) 
         ? currentOverride.ranges 
         : [{ start: 0, end: 100 }];
-    const initialPeriodDuration = currentOverride?.period_duration_ticks?.toString() ?? '';
+    const initialPeriodDuration = 
+        (currentOverride?.mode === 'CLOCKED' ? currentOverride?.period_duration_ticks?.toString() : '') ?? '';
+    const initialRuleSet = (currentOverride?.mode === 'CONDITIONAL' && currentOverride?.rule_set) 
+        ? currentOverride.rule_set 
+        : createDefaultRuleSet();
+    const initialLatchEnabled = !!(currentOverride?.mode === 'CONDITIONAL' && currentOverride?.latch);
+    const initialReleaseCondition = (currentOverride?.mode === 'CONDITIONAL' && currentOverride?.latch?.release) 
+        ? currentOverride.latch.release 
+        : undefined;
 
     const [mode, setMode] = useState<EnableControlMode>(initialMode);
     const [ranges, setRanges] = useState<EnableControlRange[]>(initialRanges);
     const [periodDuration, setPeriodDuration] = useState<string>(initialPeriodDuration);
+    const [ruleSet, setRuleSet] = useState<RuleSet>(initialRuleSet);
+    const [latchEnabled, setLatchEnabled] = useState<boolean>(initialLatchEnabled);
+    const [releaseCondition, setReleaseCondition] = useState<RuleSet | undefined>(initialReleaseCondition);
 
     const handleAddRange = () => {
         const lastRange = ranges[ranges.length - 1];
@@ -72,7 +95,6 @@ function EnableControlModalContent({
 
     const handleSave = () => {
         if (mode === 'AUTO') {
-            // Clear the override entirely
             onSave(undefined);
         } else if (mode === 'CLOCKED') {
             const override: EnableControlOverride = {
@@ -83,10 +105,32 @@ function EnableControlModalContent({
                 override.period_duration_ticks = parseInt(periodDuration);
             }
             onSave(override);
-        } else {
-            onSave({ mode });
+        } else if (mode === 'CONDITIONAL') {
+            const override: EnableControlOverride = {
+                mode: 'CONDITIONAL',
+                rule_set: ruleSet,
+                latch: latchEnabled && releaseCondition ? {
+                    release: releaseCondition,
+                } : undefined,
+            };
+            onSave(override);
+        } else if (mode === 'ALWAYS') {
+            onSave({ mode: 'ALWAYS' });
+        } else if (mode === 'NEVER') {
+            onSave({ mode: 'NEVER' });
         }
         onClose();
+    };
+
+    const handleApplyTemplate = (templateRuleSet: RuleSet, templateRelease?: RuleSet) => {
+        setRuleSet(templateRuleSet);
+        if (templateRelease) {
+            setLatchEnabled(true);
+            setReleaseCondition(templateRelease);
+        } else {
+            setLatchEnabled(false);
+            setReleaseCondition(undefined);
+        }
     };
 
     const handleClear = () => {
@@ -95,9 +139,16 @@ function EnableControlModalContent({
     };
 
     const hasOverride = currentOverride && currentOverride.mode !== 'AUTO';
+    const [isFullscreen, setIsFullscreen] = useState(false);
 
     return (
-        <Dialog open onClose={onClose} maxWidth="sm" fullWidth>
+        <Dialog 
+            open 
+            onClose={onClose} 
+            maxWidth={isFullscreen ? false : "md"} 
+            fullWidth 
+            fullScreen={isFullscreen}
+        >
             <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <Box>
                     <Typography variant="h6">Enable Control Override</Typography>
@@ -105,10 +156,18 @@ function EnableControlModalContent({
                         {entityLabel}
                     </Typography>
                 </Box>
-                <IconButton onClick={onClose} edge="end">
-                    <Close />
-                </IconButton>
+                <Box>
+                    <Tooltip title={isFullscreen ? "Exit fullscreen" : "Fullscreen"}>
+                        <IconButton onClick={() => setIsFullscreen(!isFullscreen)}>
+                            {isFullscreen ? <FullscreenExit /> : <Fullscreen />}
+                        </IconButton>
+                    </Tooltip>
+                    <IconButton onClick={onClose} edge="end">
+                        <Close />
+                    </IconButton>
+                </Box>
             </DialogTitle>
+            <FullscreenProvider value={isFullscreen}>
             <DialogContent dividers>
                 <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
                     Configure when this {entityType} should be enabled during the crafting cycle.
@@ -119,7 +178,7 @@ function EnableControlModalContent({
                         value={mode}
                         onChange={(e) => setMode(e.target.value as EnableControlMode)}
                     >
-                        {(['AUTO', 'ALWAYS', 'NEVER', 'CLOCKED'] as EnableControlMode[]).map((m) => (
+                        {(['AUTO', 'ALWAYS', 'NEVER', 'CLOCKED', 'CONDITIONAL'] as EnableControlMode[]).map((m) => (
                             <FormControlLabel
                                 key={m}
                                 value={m}
@@ -210,7 +269,40 @@ function EnableControlModalContent({
                         </Box>
                     </Box>
                 )}
+
+                {/* CONDITIONAL mode configuration */}
+                {mode === 'CONDITIONAL' && (
+                    <Box sx={{ mt: 3, pl: 2 }}>
+                        <QuickTemplateSelect
+                            onApply={handleApplyTemplate}
+                            defaultItemName={availableItems[0] || ''}
+                        />
+                        
+                        <Typography variant="subtitle2" sx={{ mb: 2 }}>
+                            Conditions
+                        </Typography>
+                        
+                        <RuleSetEditor
+                            ruleSet={ruleSet}
+                            onChange={setRuleSet}
+                            availableItems={availableItems}
+                            sourceType={sourceType}
+                            sinkType={sinkType}
+                        />
+
+                        <LatchConfigEditor
+                            enabled={latchEnabled}
+                            releaseCondition={releaseCondition}
+                            onToggle={setLatchEnabled}
+                            onReleaseChange={setReleaseCondition}
+                            availableItems={availableItems}
+                            sourceType={sourceType}
+                            sinkType={sinkType}
+                        />
+                    </Box>
+                )}
             </DialogContent>
+            </FullscreenProvider>
             <DialogActions sx={{ justifyContent: 'space-between' }}>
                 <Box>
                     {hasOverride && (
