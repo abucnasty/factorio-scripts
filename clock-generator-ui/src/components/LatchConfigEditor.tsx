@@ -6,8 +6,11 @@ import {
     Switch,
     Typography,
 } from '@mui/material';
+import { TargetType } from 'clock-generator/browser';
 import type { RuleSet } from '../hooks/useConfigForm';
 import { createDefaultRuleSet, RuleSetEditor } from './RuleSetEditor';
+
+type SourceSinkType = typeof TargetType[keyof typeof TargetType];
 
 interface LatchConfigEditorProps {
     enabled: boolean;
@@ -15,8 +18,8 @@ interface LatchConfigEditorProps {
     onToggle: (enabled: boolean) => void;
     onReleaseChange: (release: RuleSet) => void;
     availableItems: string[];
-    sourceType: 'machine' | 'belt' | 'chest';
-    sinkType: 'machine' | 'belt' | 'chest';
+    sourceType: SourceSinkType;
+    sinkType: SourceSinkType;
 }
 
 export function LatchConfigEditor({

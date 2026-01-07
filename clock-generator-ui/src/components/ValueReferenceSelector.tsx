@@ -8,66 +8,83 @@ import {
     ToggleButton,
     ToggleButtonGroup,
 } from '@mui/material';
-import type { EntityReference, ValueReference } from '../hooks/useConfigForm';
+import { ValueReferenceType, EntityReference, TargetType } from 'clock-generator/browser';
+import type { ValueReference } from '../hooks/useConfigForm';
 import { useFullscreen } from './FullscreenContext';
 import { ItemSelector } from './ItemSelector';
 
 const VALUE_TYPES = [
-    { value: 'CONSTANT', label: 'Constant' },
-    { value: 'INVENTORY_ITEM', label: 'Inventory Item' },
-    { value: 'AUTOMATED_INSERTION_LIMIT', label: 'Insertion Limit' },
-    { value: 'OUTPUT_BLOCK', label: 'Output Block' },
-    { value: 'CRAFTING_PROGRESS', label: 'Crafting Progress %' },
-    { value: 'BONUS_PROGRESS', label: 'Bonus Progress %' },
-    { value: 'HAND_QUANTITY', label: 'Hand Quantity' },
-    { value: 'INSERTER_STACK_SIZE', label: 'Inserter Stack Size' },
+    { value: ValueReferenceType.CONSTANT, label: 'Constant' },
+    { value: ValueReferenceType.INVENTORY_ITEM, label: 'Inventory Item' },
+    { value: ValueReferenceType.AUTOMATED_INSERTION_LIMIT, label: 'Insertion Limit' },
+    { value: ValueReferenceType.OUTPUT_BLOCK, label: 'Output Block' },
+    { value: ValueReferenceType.CRAFTING_PROGRESS, label: 'Crafting Progress %' },
+    { value: ValueReferenceType.BONUS_PROGRESS, label: 'Bonus Progress %' },
+    { value: ValueReferenceType.HAND_QUANTITY, label: 'Hand Quantity' },
+    { value: ValueReferenceType.INSERTER_STACK_SIZE, label: 'Inserter Stack Size' },
 ] as const;
+
+type SourceSinkType = typeof TargetType[keyof typeof TargetType];
 
 interface ValueReferenceSelectorProps {
     value: ValueReference;
     onChange: (value: ValueReference) => void;
     availableItems: string[];
-    sourceType: 'machine' | 'belt' | 'chest';
-    sinkType: 'machine' | 'belt' | 'chest';
+    sourceType: SourceSinkType;
+    sinkType: SourceSinkType;
     compact?: boolean;
 }
 
 function getDefaultValueReference(type: ValueReference['type']): ValueReference {
     switch (type) {
-        case 'CONSTANT':
-            return { type: 'CONSTANT', value: 0 };
-        case 'INVENTORY_ITEM':
-            return { type: 'INVENTORY_ITEM', entity: 'SINK', item_name: '' };
-        case 'AUTOMATED_INSERTION_LIMIT':
-            return { type: 'AUTOMATED_INSERTION_LIMIT', entity: 'SINK', item_name: '' };
-        case 'OUTPUT_BLOCK':
-            return { type: 'OUTPUT_BLOCK', entity: 'SOURCE' };
-        case 'CRAFTING_PROGRESS':
-            return { type: 'CRAFTING_PROGRESS', entity: 'SINK' };
-        case 'BONUS_PROGRESS':
-            return { type: 'BONUS_PROGRESS', entity: 'SINK' };
-        case 'HAND_QUANTITY':
-            return { type: 'HAND_QUANTITY' };
-        case 'INSERTER_STACK_SIZE':
-            return { type: 'INSERTER_STACK_SIZE' };
+        case ValueReferenceType.CONSTANT:
+            return { type: ValueReferenceType.CONSTANT, value: 0 };
+        case ValueReferenceType.INVENTORY_ITEM:
+            return { type: ValueReferenceType.INVENTORY_ITEM, entity: EntityReference.SINK, item_name: '' };
+        case ValueReferenceType.AUTOMATED_INSERTION_LIMIT:
+            return { type: ValueReferenceType.AUTOMATED_INSERTION_LIMIT, entity: EntityReference.SINK, item_name: '' };
+        case ValueReferenceType.OUTPUT_BLOCK:
+            return { type: ValueReferenceType.OUTPUT_BLOCK, entity: EntityReference.SOURCE };
+        case ValueReferenceType.CRAFTING_PROGRESS:
+            return { type: ValueReferenceType.CRAFTING_PROGRESS, entity: EntityReference.SINK };
+        case ValueReferenceType.BONUS_PROGRESS:
+            return { type: ValueReferenceType.BONUS_PROGRESS, entity: EntityReference.SINK };
+        case ValueReferenceType.HAND_QUANTITY:
+            return { type: ValueReferenceType.HAND_QUANTITY };
+        case ValueReferenceType.INSERTER_STACK_SIZE:
+            return { type: ValueReferenceType.INSERTER_STACK_SIZE };
         default:
             // MACHINE_STATUS is handled by StatusConditionRow
-            return { type: 'CONSTANT', value: 0 };
+            return { type: ValueReferenceType.CONSTANT, value: 0 };
     }
 }
 
 function needsEntity(type: ValueReference['type']): boolean {
-    return ['INVENTORY_ITEM', 'AUTOMATED_INSERTION_LIMIT', 'OUTPUT_BLOCK', 'CRAFTING_PROGRESS', 'BONUS_PROGRESS'].includes(type);
+    const typesNeedingEntity: readonly ValueReference['type'][] = [
+        ValueReferenceType.INVENTORY_ITEM,
+        ValueReferenceType.AUTOMATED_INSERTION_LIMIT,
+        ValueReferenceType.OUTPUT_BLOCK,
+        ValueReferenceType.CRAFTING_PROGRESS,
+        ValueReferenceType.BONUS_PROGRESS
+    ];
+    return typesNeedingEntity.includes(type);
 }
 
 function needsItemName(type: ValueReference['type']): boolean {
-    return ['INVENTORY_ITEM', 'AUTOMATED_INSERTION_LIMIT'].includes(type);
+    const typesNeedingItem: readonly ValueReference['type'][] = [
+        ValueReferenceType.INVENTORY_ITEM,
+        ValueReferenceType.AUTOMATED_INSERTION_LIMIT
+    ];
+    return typesNeedingItem.includes(type);
 }
 
-function isValidForEntityType(type: ValueReference['type'], entityType: 'machine' | 'belt' | 'chest'): boolean {
-    if (entityType === 'machine') return true;
+function isValidForEntityType(type: ValueReference['type'], entityType: SourceSinkType): boolean {
+    if (entityType === TargetType.MACHINE) return true;
     const machineOnlyTypes: ValueReference['type'][] = [
-        'CRAFTING_PROGRESS', 'BONUS_PROGRESS', 'AUTOMATED_INSERTION_LIMIT', 'OUTPUT_BLOCK'
+        ValueReferenceType.CRAFTING_PROGRESS,
+        ValueReferenceType.BONUS_PROGRESS,
+        ValueReferenceType.AUTOMATED_INSERTION_LIMIT,
+        ValueReferenceType.OUTPUT_BLOCK
     ];
     return !machineOnlyTypes.includes(type);
 }
@@ -103,7 +120,7 @@ export function ValueReferenceSelector({
     });
 
     const entityDisabled = (entity: EntityReference) => {
-        const entityType = entity === 'SOURCE' ? sourceType : sinkType;
+        const entityType = entity === EntityReference.SOURCE ? sourceType : sinkType;
         return !isValidForEntityType(value.type, entityType);
     };
 
@@ -131,16 +148,16 @@ export function ValueReferenceSelector({
                     onChange={handleEntityChange}
                     size="small"
                 >
-                    <ToggleButton value="SOURCE" disabled={entityDisabled('SOURCE')}>
+                    <ToggleButton value={EntityReference.SOURCE} disabled={entityDisabled(EntityReference.SOURCE)}>
                         Src
                     </ToggleButton>
-                    <ToggleButton value="SINK" disabled={entityDisabled('SINK')}>
+                    <ToggleButton value={EntityReference.SINK} disabled={entityDisabled(EntityReference.SINK)}>
                         Sink
                     </ToggleButton>
                 </ToggleButtonGroup>
             )}
 
-            {value.type === 'CONSTANT' && (
+            {value.type === ValueReferenceType.CONSTANT && (
                 <TextField
                     type="number"
                     value={value.value}
@@ -164,7 +181,7 @@ export function ValueReferenceSelector({
                 />
             )}
 
-            {value.type === 'HAND_QUANTITY' && (
+            {value.type === ValueReferenceType.HAND_QUANTITY && (
                 <ItemSelector
                     value={value.item_name || null}
                     options={availableItems}

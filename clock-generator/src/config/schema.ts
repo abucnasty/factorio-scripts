@@ -1,5 +1,15 @@
 import { z } from "zod";
 import { MiningDrillType, BeltType, ChestType } from "../common/entity-types";
+import {
+    EnableControlMode,
+    EntityReference,
+    ComparisonOperator,
+    ValueReferenceType,
+    RuleOperator,
+    TargetType,
+    CraftingEntityType,
+} from "../common/enable-control-types";
+import { MachineStatus } from "../state/machine-state";
 
 // ============================================================================
 // Primitive Types
@@ -18,7 +28,7 @@ export const MachineConfigurationSchema = z.object({
     recipe: z.string(),
     productivity: z.number().min(0),
     crafting_speed: z.number().positive(),
-    type: z.enum(["machine", "furnace"]).optional()
+    type: z.enum([CraftingEntityType.MACHINE, CraftingEntityType.FURNACE]).optional()
 });
 
 export type MachineConfiguration = z.infer<typeof MachineConfigurationSchema>;
@@ -52,10 +62,17 @@ export type TargetProductionRateConfig = z.infer<typeof TargetProductionRateConf
  * - ALWAYS: Always enabled
  * - NEVER: Never enabled
  * - CLOCKED: Use custom clocked ranges
+ * - CONDITIONAL: Use rule-based conditions
  */
-export const EnableControlModeSchema = z.enum(["AUTO", "ALWAYS", "NEVER", "CLOCKED"]);
+export const EnableControlModeSchema = z.enum([
+    EnableControlMode.AUTO,
+    EnableControlMode.ALWAYS,
+    EnableControlMode.NEVER,
+    EnableControlMode.CLOCKED,
+    EnableControlMode.CONDITIONAL,
+]);
 
-export type EnableControlMode = z.infer<typeof EnableControlModeSchema>;
+export { EnableControlMode };
 
 /**
  * Range for clocked enable control.
@@ -71,19 +88,19 @@ export type EnableControlRange = z.infer<typeof EnableControlRangeSchema>;
  * Base schema for enable control override with mode discriminator.
  */
 const EnableControlOverrideAutoSchema = z.object({
-    mode: z.literal("AUTO")
+    mode: z.literal(EnableControlMode.AUTO)
 });
 
 const EnableControlOverrideAlwaysSchema = z.object({
-    mode: z.literal("ALWAYS")
+    mode: z.literal(EnableControlMode.ALWAYS)
 });
 
 const EnableControlOverrideNeverSchema = z.object({
-    mode: z.literal("NEVER")
+    mode: z.literal(EnableControlMode.NEVER)
 });
 
 const EnableControlOverrideClockedSchema = z.object({
-    mode: z.literal("CLOCKED"),
+    mode: z.literal(EnableControlMode.CLOCKED),
     ranges: z.array(EnableControlRangeSchema).min(1),
     period_duration_ticks: z.number().int().positive().optional()
 });
@@ -92,58 +109,71 @@ const EnableControlOverrideClockedSchema = z.object({
 // Conditional Enable Control Configuration
 // ============================================================================
 
-export const EntityReferenceSchema = z.enum(["SOURCE", "SINK"]);
-export type EntityReference = z.infer<typeof EntityReferenceSchema>;
+export const EntityReferenceSchema = z.enum([EntityReference.SOURCE, EntityReference.SINK]);
+export { EntityReference };
 
-export const ComparisonOperatorSchema = z.enum([">", "<", ">=", "<=", "==", "!="]);
-export type ComparisonOperator = z.infer<typeof ComparisonOperatorSchema>;
+export const ComparisonOperatorSchema = z.enum([
+    ComparisonOperator.GREATER_THAN,
+    ComparisonOperator.LESS_THAN,
+    ComparisonOperator.GREATER_THAN_OR_EQUAL,
+    ComparisonOperator.LESS_THAN_OR_EQUAL,
+    ComparisonOperator.EQUAL,
+    ComparisonOperator.NOT_EQUAL,
+]);
+export { ComparisonOperator };
 
 const ValueReferenceConstantSchema = z.object({
-    type: z.literal("CONSTANT"),
+    type: z.literal(ValueReferenceType.CONSTANT),
     value: z.number()
 });
 
 const ValueReferenceInventoryItemSchema = z.object({
-    type: z.literal("INVENTORY_ITEM"),
+    type: z.literal(ValueReferenceType.INVENTORY_ITEM),
     entity: EntityReferenceSchema,
     item_name: z.string()
 });
 
 const ValueReferenceAutomatedInsertionLimitSchema = z.object({
-    type: z.literal("AUTOMATED_INSERTION_LIMIT"),
+    type: z.literal(ValueReferenceType.AUTOMATED_INSERTION_LIMIT),
     entity: EntityReferenceSchema,
     item_name: z.string()
 });
 
 const ValueReferenceOutputBlockSchema = z.object({
-    type: z.literal("OUTPUT_BLOCK"),
+    type: z.literal(ValueReferenceType.OUTPUT_BLOCK),
     entity: EntityReferenceSchema
 });
 
 const ValueReferenceCraftingProgressSchema = z.object({
-    type: z.literal("CRAFTING_PROGRESS"),
+    type: z.literal(ValueReferenceType.CRAFTING_PROGRESS),
     entity: EntityReferenceSchema
 });
 
 const ValueReferenceBonusProgressSchema = z.object({
-    type: z.literal("BONUS_PROGRESS"),
+    type: z.literal(ValueReferenceType.BONUS_PROGRESS),
     entity: EntityReferenceSchema
 });
 
 const ValueReferenceHandQuantitySchema = z.object({
-    type: z.literal("HAND_QUANTITY"),
+    type: z.literal(ValueReferenceType.HAND_QUANTITY),
     item_name: z.string().optional()
 });
 
 const ValueReferenceMachineStatusSchema = z.object({
-    type: z.literal("MACHINE_STATUS"),
+    type: z.literal(ValueReferenceType.MACHINE_STATUS),
     entity: EntityReferenceSchema,
-    status: z.enum(["INGREDIENT_SHORTAGE", "WORKING", "OUTPUT_FULL"])
+    status: z.enum([
+        MachineStatus.INGREDIENT_SHORTAGE,
+        MachineStatus.WORKING,
+        MachineStatus.OUTPUT_FULL,
+    ])
 });
 
 const ValueReferenceInserterStackSizeSchema = z.object({
-    type: z.literal("INSERTER_STACK_SIZE")
+    type: z.literal(ValueReferenceType.INSERTER_STACK_SIZE)
 });
+
+export { ValueReferenceType };
 
 export const ValueReferenceSchema = z.discriminatedUnion("type", [
     ValueReferenceConstantSchema,
@@ -167,8 +197,8 @@ export const ConditionSchema = z.object({
 
 export type Condition = z.infer<typeof ConditionSchema>;
 
-export const RuleOperatorSchema = z.enum(["AND", "OR"]);
-export type RuleOperator = z.infer<typeof RuleOperatorSchema>;
+export const RuleOperatorSchema = z.enum([RuleOperator.AND, RuleOperator.OR]);
+export { RuleOperator };
 
 interface RuleSetType {
     operator: RuleOperator;
@@ -191,7 +221,7 @@ export const LatchConfigSchema = z.object({
 export type LatchConfig = z.infer<typeof LatchConfigSchema>;
 
 const EnableControlOverrideConditionalSchema = z.object({
-    mode: z.literal("CONDITIONAL"),
+    mode: z.literal(EnableControlMode.CONDITIONAL),
     rule_set: RuleSetSchema,
     latch: LatchConfigSchema.optional()
 });
@@ -219,7 +249,7 @@ const MiningDrillTypeSchema = z.enum([
 ]);
 
 export const DrillTargetMachineConfigSchema = z.object({
-    type: z.literal("machine"),
+    type: z.literal(TargetType.MACHINE),
     id: z.number().int().positive()
 });
 
@@ -266,23 +296,25 @@ export type DrillsConfig = z.infer<typeof DrillsConfigSchema>;
 // ============================================================================
 
 export const InserterBeltConfigSchema = z.object({
-    type: z.literal("belt"),
+    type: z.literal(TargetType.BELT),
     id: z.number().int().positive()
 });
 
 export type InserterBeltConfig = z.infer<typeof InserterBeltConfigSchema>;
 
 export const InserterMachineConfigSchema = z.object({
-    type: z.literal("machine"),
+    type: z.literal(TargetType.MACHINE),
     id: z.number().int().positive()
 });
 
 export type InserterMachineConfig = z.infer<typeof InserterMachineConfigSchema>;
 
 export const InserterChestConfigSchema = z.object({
-    type: z.literal("chest"),
+    type: z.literal(TargetType.CHEST),
     id: z.number().int().positive()
 });
+
+export { TargetType };
 
 export type InserterChestConfig = z.infer<typeof InserterChestConfigSchema>;
 

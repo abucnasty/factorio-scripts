@@ -1,14 +1,24 @@
 import { Add, AddCircleOutline } from '@mui/icons-material';
 import { Box, Button, Paper, ToggleButton, ToggleButtonGroup, Typography } from '@mui/material';
-import type { Condition, RuleOperator, RuleSet } from '../hooks/useConfigForm';
+import { 
+    ValueReferenceType, 
+    EntityReference, 
+    ComparisonOperator, 
+    RuleOperator, 
+    MachineStatus,
+    TargetType 
+} from 'clock-generator/browser';
+import type { Condition, RuleSet } from '../hooks/useConfigForm';
 import { ConditionRow } from './ConditionRow';
+
+type SourceSinkType = typeof TargetType[keyof typeof TargetType];
 
 interface RuleSetEditorProps {
     ruleSet: RuleSet;
     onChange: (ruleSet: RuleSet) => void;
     availableItems: string[];
-    sourceType: 'machine' | 'belt' | 'chest';
-    sinkType: 'machine' | 'belt' | 'chest';
+    sourceType: SourceSinkType;
+    sinkType: SourceSinkType;
     depth?: number;
     label?: string;
 }
@@ -19,23 +29,23 @@ function isCondition(rule: Condition | RuleSet): rule is Condition {
 
 function createDefaultCondition(): Condition {
     return {
-        left: { type: 'INVENTORY_ITEM', entity: 'SOURCE', item_name: '' },
-        operator: '>=',
-        right: { type: 'CONSTANT', value: 0 },
+        left: { type: ValueReferenceType.INVENTORY_ITEM, entity: EntityReference.SOURCE, item_name: '' },
+        operator: ComparisonOperator.GREATER_THAN_OR_EQUAL,
+        right: { type: ValueReferenceType.CONSTANT, value: 0 },
     };
 }
 
 function createDefaultStatusCondition(): Condition {
     return {
-        left: { type: 'MACHINE_STATUS', entity: 'SOURCE', status: 'OUTPUT_FULL' },
-        operator: '==',
-        right: { type: 'CONSTANT', value: 1 },
+        left: { type: ValueReferenceType.MACHINE_STATUS, entity: EntityReference.SOURCE, status: MachineStatus.OUTPUT_FULL },
+        operator: ComparisonOperator.EQUAL,
+        right: { type: ValueReferenceType.CONSTANT, value: 1 },
     };
 }
 
 function createDefaultRuleSet(): RuleSet {
     return {
-        operator: 'AND',
+        operator: RuleOperator.AND,
         rules: [createDefaultCondition()],
     };
 }
@@ -81,7 +91,7 @@ export function RuleSetEditor({
     };
 
     const borderColor = depth % 2 === 0 ? 'primary.main' : 'secondary.main';
-    const canAddStatusCondition = sourceType === 'machine' || sinkType === 'machine';
+    const canAddStatusCondition = sourceType === TargetType.MACHINE || sinkType === TargetType.MACHINE;
 
     return (
         <Paper
@@ -105,11 +115,11 @@ export function RuleSetEditor({
                     onChange={handleOperatorChange}
                     size="small"
                 >
-                    <ToggleButton value="AND">AND</ToggleButton>
-                    <ToggleButton value="OR">OR</ToggleButton>
+                    <ToggleButton value={RuleOperator.AND}>AND</ToggleButton>
+                    <ToggleButton value={RuleOperator.OR}>OR</ToggleButton>
                 </ToggleButtonGroup>
                 <Typography variant="caption" color="text.secondary">
-                    {ruleSet.operator === 'AND' ? 'All conditions must be true' : 'Any condition can be true'}
+                    {ruleSet.operator === RuleOperator.AND ? 'All conditions must be true' : 'Any condition can be true'}
                 </Typography>
             </Box>
 

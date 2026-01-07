@@ -1,4 +1,11 @@
 import { Box, FormControl, InputLabel, MenuItem, Select, Typography } from '@mui/material';
+import { 
+    ValueReferenceType, 
+    EntityReference, 
+    ComparisonOperator, 
+    RuleOperator,
+    MachineStatus 
+} from 'clock-generator/browser';
 import type { RuleSet } from '../hooks/useConfigForm';
 
 interface Template {
@@ -17,11 +24,11 @@ const TEMPLATES: Template[] = [
         name: 'Source Output Full',
         description: 'Enable when source machine status is in Output Full',
         getRuleSet: () => ({
-            operator: 'AND',
+            operator: RuleOperator.AND,
             rules: [{
-                left: { type: 'MACHINE_STATUS', entity: 'SOURCE', status: 'OUTPUT_FULL' },
-                operator: '==',
-                right: { type: 'CONSTANT', value: 1 },
+                left: { type: ValueReferenceType.MACHINE_STATUS, entity: EntityReference.SOURCE, status: MachineStatus.OUTPUT_FULL },
+                operator: ComparisonOperator.EQUAL,
+                right: { type: ValueReferenceType.CONSTANT, value: 1 },
             }],
         }),
     },
@@ -30,11 +37,11 @@ const TEMPLATES: Template[] = [
         name: 'Sink Below Insertion Limit',
         description: 'Enable when sink inventory is below automated insertion limit',
         getRuleSet: (itemName) => ({
-            operator: 'AND',
+            operator: RuleOperator.AND,
             rules: [{
-                left: { type: 'INVENTORY_ITEM', entity: 'SINK', item_name: itemName },
-                operator: '<',
-                right: { type: 'AUTOMATED_INSERTION_LIMIT', entity: 'SINK', item_name: itemName },
+                left: { type: ValueReferenceType.INVENTORY_ITEM, entity: EntityReference.SINK, item_name: itemName },
+                operator: ComparisonOperator.LESS_THAN,
+                right: { type: ValueReferenceType.AUTOMATED_INSERTION_LIMIT, entity: EntityReference.SINK, item_name: itemName },
             }],
         }),
     },
@@ -43,19 +50,19 @@ const TEMPLATES: Template[] = [
         name: 'Latched Output Drain',
         description: 'Enable when sink reaches threshold, release when drained to output block',
         getRuleSet: (itemName) => ({
-            operator: 'AND',
+            operator: RuleOperator.AND,
             rules: [{
-                left: { type: 'INVENTORY_ITEM', entity: 'SOURCE', item_name: itemName },
-                operator: '>=',
-                right: { type: 'CONSTANT', value: 32 },
+                left: { type: ValueReferenceType.INVENTORY_ITEM, entity: EntityReference.SOURCE, item_name: itemName },
+                operator: ComparisonOperator.GREATER_THAN_OR_EQUAL,
+                right: { type: ValueReferenceType.CONSTANT, value: 32 },
             }],
         }),
         getRelease: (itemName) => ({
-            operator: 'AND',
+            operator: RuleOperator.AND,
             rules: [{
-                left: { type: 'INVENTORY_ITEM', entity: 'SINK', item_name: itemName },
-                operator: '<=',
-                right: { type: 'OUTPUT_BLOCK', entity: 'SINK' },
+                left: { type: ValueReferenceType.INVENTORY_ITEM, entity: EntityReference.SINK, item_name: itemName },
+                operator: ComparisonOperator.LESS_THAN_OR_EQUAL,
+                right: { type: ValueReferenceType.OUTPUT_BLOCK, entity: EntityReference.SINK },
             }],
         }),
     },

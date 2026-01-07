@@ -1,25 +1,28 @@
 import { Delete } from '@mui/icons-material';
 import { Box, FormControl, IconButton, MenuItem, Select } from '@mui/material';
-import type { ComparisonOperator, Condition, ValueReference } from '../hooks/useConfigForm';
+import { ComparisonOperator, ValueReferenceType, TargetType } from 'clock-generator/browser';
+import type { Condition, ValueReference } from '../hooks/useConfigForm';
 import { StatusConditionRow } from './StatusConditionRow';
 import { ValueReferenceSelector } from './ValueReferenceSelector';
 
 const ALL_OPERATORS: { value: ComparisonOperator; label: string }[] = [
-    { value: '>', label: '>' },
-    { value: '<', label: '<' },
-    { value: '>=', label: '≥' },
-    { value: '<=', label: '≤' },
-    { value: '==', label: '=' },
-    { value: '!=', label: '≠' },
+    { value: ComparisonOperator.GREATER_THAN, label: '>' },
+    { value: ComparisonOperator.LESS_THAN, label: '<' },
+    { value: ComparisonOperator.GREATER_THAN_OR_EQUAL, label: '≥' },
+    { value: ComparisonOperator.LESS_THAN_OR_EQUAL, label: '≤' },
+    { value: ComparisonOperator.EQUAL, label: '=' },
+    { value: ComparisonOperator.NOT_EQUAL, label: '≠' },
 ];
+
+type SourceSinkType = typeof TargetType[keyof typeof TargetType];
 
 interface ConditionRowProps {
     condition: Condition;
     onChange: (condition: Condition) => void;
     onDelete: () => void;
     availableItems: string[];
-    sourceType: 'machine' | 'belt' | 'chest';
-    sinkType: 'machine' | 'belt' | 'chest';
+    sourceType: SourceSinkType;
+    sinkType: SourceSinkType;
     canDelete: boolean;
 }
 
@@ -33,7 +36,7 @@ export function ConditionRow({
     canDelete,
 }: ConditionRowProps) {
     // Use specialized row for MACHINE_STATUS enum conditions
-    if (condition.left.type === 'MACHINE_STATUS') {
+    if (condition.left.type === ValueReferenceType.MACHINE_STATUS) {
         return (
             <StatusConditionRow
                 condition={condition}
@@ -48,11 +51,11 @@ export function ConditionRow({
 
     const handleLeftChange = (left: ValueReference) => {
         // If switching to MACHINE_STATUS, set operator to == and right to CONSTANT 1
-        if (left.type === 'MACHINE_STATUS') {
+        if (left.type === ValueReferenceType.MACHINE_STATUS) {
             onChange({ 
                 left, 
-                operator: '==',
-                right: { type: 'CONSTANT', value: 1 }
+                operator: ComparisonOperator.EQUAL,
+                right: { type: ValueReferenceType.CONSTANT, value: 1 }
             });
         } else {
             onChange({ ...condition, left });

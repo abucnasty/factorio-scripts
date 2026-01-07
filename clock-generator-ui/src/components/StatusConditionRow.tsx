@@ -8,23 +8,30 @@ import {
     ToggleButton,
     ToggleButtonGroup,
 } from '@mui/material';
-import type { ComparisonOperator, Condition, EntityReference } from '../hooks/useConfigForm';
+import { 
+    MachineStatus, 
+    EntityReference, 
+    ComparisonOperator, 
+    TargetType,
+    ValueReferenceType 
+} from 'clock-generator/browser';
+import type { Condition } from '../hooks/useConfigForm';
 import { useFullscreen } from './FullscreenContext';
 
 const MACHINE_STATUSES = [
-    { value: 'INGREDIENT_SHORTAGE', label: 'Ingredient Shortage' },
-    { value: 'WORKING', label: 'Working' },
-    { value: 'OUTPUT_FULL', label: 'Output Full' },
+    { value: MachineStatus.INGREDIENT_SHORTAGE, label: 'Ingredient Shortage' },
+    { value: MachineStatus.WORKING, label: 'Working' },
+    { value: MachineStatus.OUTPUT_FULL, label: 'Output Full' },
 ] as const;
 
-type MachineStatus = typeof MACHINE_STATUSES[number]['value'];
+type SourceSinkType = typeof TargetType[keyof typeof TargetType];
 
 interface StatusConditionRowProps {
     condition: Condition;
     onChange: (condition: Condition) => void;
     onDelete: () => void;
-    sourceType: 'machine' | 'belt' | 'chest';
-    sinkType: 'machine' | 'belt' | 'chest';
+    sourceType: SourceSinkType;
+    sinkType: SourceSinkType;
     canDelete: boolean;
 }
 
@@ -43,12 +50,16 @@ export function StatusConditionRow({
     const statusSelectWidth = isFullscreen ? 220 : 160;
 
     // Extract current values from the MACHINE_STATUS condition
-    const currentEntity = condition.left.type === 'MACHINE_STATUS' ? condition.left.entity : 'SOURCE';
-    const currentStatus = condition.left.type === 'MACHINE_STATUS' ? condition.left.status : 'OUTPUT_FULL';
-    const isNegated = condition.operator === '!=';
+    const currentEntity = condition.left.type === ValueReferenceType.MACHINE_STATUS 
+        ? condition.left.entity 
+        : EntityReference.SOURCE;
+    const currentStatus = condition.left.type === ValueReferenceType.MACHINE_STATUS 
+        ? condition.left.status 
+        : MachineStatus.OUTPUT_FULL;
+    const isNegated = condition.operator === ComparisonOperator.NOT_EQUAL;
 
     const handleEntityChange = (_: React.MouseEvent<HTMLElement>, newEntity: EntityReference | null) => {
-        if (newEntity && condition.left.type === 'MACHINE_STATUS') {
+        if (newEntity && condition.left.type === ValueReferenceType.MACHINE_STATUS) {
             onChange({
                 ...condition,
                 left: { ...condition.left, entity: newEntity },
@@ -57,12 +68,12 @@ export function StatusConditionRow({
     };
 
     const handleNegationChange = (negated: boolean) => {
-        const operator: ComparisonOperator = negated ? '!=' : '==';
+        const operator = negated ? ComparisonOperator.NOT_EQUAL : ComparisonOperator.EQUAL;
         onChange({ ...condition, operator });
     };
 
     const handleStatusChange = (status: MachineStatus) => {
-        if (condition.left.type === 'MACHINE_STATUS') {
+        if (condition.left.type === ValueReferenceType.MACHINE_STATUS) {
             onChange({
                 ...condition,
                 left: { ...condition.left, status },
@@ -71,8 +82,8 @@ export function StatusConditionRow({
     };
 
     const entityDisabled = (entity: EntityReference) => {
-        const entityType = entity === 'SOURCE' ? sourceType : sinkType;
-        return entityType !== 'machine';
+        const entityType = entity === EntityReference.SOURCE ? sourceType : sinkType;
+        return entityType !== TargetType.MACHINE;
     };
 
     return (
@@ -91,10 +102,10 @@ export function StatusConditionRow({
                 onChange={handleEntityChange}
                 size="small"
             >
-                <ToggleButton value="SOURCE" disabled={entityDisabled('SOURCE')}>
+                <ToggleButton value={EntityReference.SOURCE} disabled={entityDisabled(EntityReference.SOURCE)}>
                     Source
                 </ToggleButton>
-                <ToggleButton value="SINK" disabled={entityDisabled('SINK')}>
+                <ToggleButton value={EntityReference.SINK} disabled={entityDisabled(EntityReference.SINK)}>
                     Sink
                 </ToggleButton>
             </ToggleButtonGroup>
