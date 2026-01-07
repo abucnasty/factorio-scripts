@@ -56,10 +56,3 @@ export const TargetType = {
 } as const;
 
 export type TargetType = typeof TargetType[keyof typeof TargetType];
-
-export const CraftingEntityType = {
-    MACHINE: "machine",
-    FURNACE: "furnace",
-} as const;
-
-export type CraftingEntityType = typeof CraftingEntityType[keyof typeof CraftingEntityType];

@@ -7,9 +7,9 @@ import {
     ValueReferenceType,
     RuleOperator,
     TargetType,
-    CraftingEntityType,
 } from "../common/enable-control-types";
 import { MachineStatus } from "../state/machine-state";
+import { MachineType } from "../entities";
 
 // ============================================================================
 // Primitive Types
@@ -28,7 +28,7 @@ export const MachineConfigurationSchema = z.object({
     recipe: z.string(),
     productivity: z.number().min(0),
     crafting_speed: z.number().positive(),
-    type: z.enum([CraftingEntityType.MACHINE, CraftingEntityType.FURNACE]).optional()
+    type: z.enum(Object.values(MachineType)).optional()
 });
 
 export type MachineConfiguration = z.infer<typeof MachineConfigurationSchema>;
