@@ -18,7 +18,6 @@ import type { MachineFormData } from '../hooks/useConfigForm';
 import { useMachineFacts } from '../hooks/useMachineFacts';
 import { FactorioIcon } from './FactorioIcon';
 import { MachineFactsAccordion } from './MachineFactsAccordion';
-import { MachineType } from '../../../clock-generator/dist/entities';
 
 interface MachinesFormProps {
     machines: MachineFormData[];
@@ -231,13 +230,13 @@ function MachineRow({ machine, index, recipeNames, canDelete, onUpdate, onRemove
                             </Box>
                         )}
                     >
-                        <MenuItem value={MachineType.MACHINE}>
+                        <MenuItem value="machine">
                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                                 <FactorioIcon name="assembling-machine-3" size={20} />
                                 Machine
                             </Box>
                         </MenuItem>
-                        <MenuItem value={MachineType.FURNACE}>
+                        <MenuItem value="furnace">
                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                                 <FactorioIcon name="electric-furnace" size={20} />
                                 Furnace
