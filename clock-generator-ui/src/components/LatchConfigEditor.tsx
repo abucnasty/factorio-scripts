@@ -8,7 +8,8 @@ import {
 } from '@mui/material';
 import { TargetType } from 'clock-generator/browser';
 import type { RuleSet } from '../hooks/useConfigForm';
-import { createDefaultRuleSet, RuleSetEditor } from './RuleSetEditor';
+import { RuleSetEditor } from './RuleSetEditor';
+import { createDefaultRuleSet } from './ruleSetUtils';
 
 type SourceSinkType = typeof TargetType[keyof typeof TargetType];
 
@@ -80,5 +81,3 @@ export function LatchConfigEditor({
         </Paper>
     );
 }
-
-export { createDefaultRuleSet };

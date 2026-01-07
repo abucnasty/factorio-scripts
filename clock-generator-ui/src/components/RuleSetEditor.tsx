@@ -1,15 +1,17 @@
 import { Add, AddCircleOutline } from '@mui/icons-material';
 import { Box, Button, Paper, ToggleButton, ToggleButtonGroup, Typography } from '@mui/material';
 import { 
-    ValueReferenceType, 
-    EntityReference, 
-    ComparisonOperator, 
     RuleOperator, 
-    MachineStatus,
     TargetType 
 } from 'clock-generator/browser';
 import type { Condition, RuleSet } from '../hooks/useConfigForm';
 import { ConditionRow } from './ConditionRow';
+import { 
+    isCondition, 
+    createDefaultCondition, 
+    createDefaultStatusCondition, 
+    createDefaultRuleSet 
+} from './ruleSetUtils';
 
 type SourceSinkType = typeof TargetType[keyof typeof TargetType];
 
@@ -21,33 +23,6 @@ interface RuleSetEditorProps {
     sinkType: SourceSinkType;
     depth?: number;
     label?: string;
-}
-
-function isCondition(rule: Condition | RuleSet): rule is Condition {
-    return 'left' in rule && 'operator' in rule && 'right' in rule;
-}
-
-function createDefaultCondition(): Condition {
-    return {
-        left: { type: ValueReferenceType.INVENTORY_ITEM, entity: EntityReference.SOURCE, item_name: '' },
-        operator: ComparisonOperator.GREATER_THAN_OR_EQUAL,
-        right: { type: ValueReferenceType.CONSTANT, value: 0 },
-    };
-}
-
-function createDefaultStatusCondition(): Condition {
-    return {
-        left: { type: ValueReferenceType.MACHINE_STATUS, entity: EntityReference.SOURCE, status: MachineStatus.OUTPUT_FULL },
-        operator: ComparisonOperator.EQUAL,
-        right: { type: ValueReferenceType.CONSTANT, value: 1 },
-    };
-}
-
-function createDefaultRuleSet(): RuleSet {
-    return {
-        operator: RuleOperator.AND,
-        rules: [createDefaultCondition()],
-    };
 }
 
 export function RuleSetEditor({
@@ -191,5 +166,3 @@ export function RuleSetEditor({
         </Paper>
     );
 }
-
-export { createDefaultCondition, createDefaultRuleSet };

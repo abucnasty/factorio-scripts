@@ -21,7 +21,8 @@ import {
 import { EnableControlMode, TargetType } from 'clock-generator/browser';
 import { useState } from 'react';
 import type { EnableControlOverride, EnableControlRange, RuleSet } from '../hooks/useConfigForm';
-import { createDefaultRuleSet, RuleSetEditor } from './RuleSetEditor';
+import { RuleSetEditor } from './RuleSetEditor';
+import { createDefaultRuleSet } from './ruleSetUtils';
 import { FullscreenProvider } from './FullscreenContext';
 import { LatchConfigEditor } from './LatchConfigEditor';
 import { QuickTemplateSelect } from './QuickTemplateSelect';
