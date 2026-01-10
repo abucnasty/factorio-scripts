@@ -1,4 +1,4 @@
-import { Autocomplete, Box, TextField } from '@mui/material';
+import { Autocomplete, Box, TextField, Tooltip } from '@mui/material';
 import { FactorioIcon } from './FactorioIcon';
 
 interface ItemSelectorProps {
@@ -11,6 +11,8 @@ interface ItemSelectorProps {
     minWidth?: number;
     freeSolo?: boolean;
     sx?: object;
+    /** If true, only show the icon in the selected value (text shown in dropdown and tooltip) */
+    iconOnly?: boolean;
 }
 
 export function ItemSelector({
@@ -23,19 +25,25 @@ export function ItemSelector({
     minWidth = 200,
     freeSolo = false,
     sx,
+    iconOnly = false,
 }: ItemSelectorProps) {
-    return (
+    // For iconOnly mode, use a more compact width
+    const effectiveMinWidth = iconOnly && value ? 80 : minWidth;
+
+    const autocomplete = (
         <Autocomplete
             size={size}
-            sx={{ minWidth, ...sx }}
+            sx={{ minWidth: effectiveMinWidth, ...sx }}
             options={options}
             value={value}
             onChange={(_, newValue) => onChange(newValue)}
+            // When iconOnly, don't show the text in the input field
+            getOptionLabel={(option) => iconOnly ? '' : option}
             renderInput={(params) => (
                 <TextField
                     {...params}
                     label={label}
-                    placeholder={placeholder}
+                    placeholder={iconOnly ? '' : placeholder}
                     slotProps={{
                         input: {
                             ...params.InputProps,
@@ -66,4 +74,15 @@ export function ItemSelector({
             autoHighlight
         />
     );
+
+    // Wrap in tooltip when iconOnly to show the full name on hover
+    if (iconOnly && value) {
+        return (
+            <Tooltip title={value} placement="top">
+                <Box>{autocomplete}</Box>
+            </Tooltip>
+        );
+    }
+
+    return autocomplete;
 }

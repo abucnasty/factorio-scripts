@@ -21,6 +21,13 @@ export {
     InserterConfigSchema,
     BeltConfigSchema,
     ConfigOverridesSchema,
+    // Enable Control Enums
+    EnableControlMode,
+    EntityReference,
+    ComparisonOperator,
+    ValueReferenceType,
+    RuleOperator,
+    TargetType,
 } from './config/schema';
 
 export {

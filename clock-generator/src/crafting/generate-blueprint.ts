@@ -212,7 +212,8 @@ export function generateClockForConfig(
         enable_control_override_map,
         relative_tick_provider,
         crafting_cycle_plan,
-        resettable_registry
+        resettable_registry,
+        simulation_context.state_registry
     );
 
     // Create automatic enable control factory
@@ -239,7 +240,7 @@ export function generateClockForConfig(
             if (configurable_enable_control_factory.hasOverride(inserter_state.entity_id)) {
                 const override_mode = configurable_enable_control_factory.getOverrideOrThrow(inserter_state.entity_id).mode;
                 logger.log(`Using configurable enable control override for inserter ${inserter_state.entity_id.id} with mode ${override_mode}`);
-                return configurable_enable_control_factory.createForEntityId(inserter_state.entity_id);
+                return configurable_enable_control_factory.createForEntityId(inserter_state.entity_id, inserter_state.inserter);
             }
             return enable_control_factory.createForEntityId(inserter_state.entity_id);
         }

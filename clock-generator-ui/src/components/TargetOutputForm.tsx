@@ -1,5 +1,6 @@
 import { Autocomplete, Box, Paper, TextField, Typography } from '@mui/material';
 import { FactorioIcon } from './FactorioIcon';
+import { NumberField } from './NumberField';
 
 interface TargetOutputFormProps {
     recipe: string;
@@ -62,21 +63,21 @@ export function TargetOutputForm({
                     freeSolo
                     autoHighlight
                 />
-                <TextField
+                <NumberField
                     label="Items per Second"
-                    type="number"
                     value={itemsPerSecond}
-                    onChange={(e) => onItemsPerSecondChange(parseFloat(e.target.value) || 0)}
-                    inputProps={{ step: 0.1, min: 0 }}
+                    onValueChange={(val) => onItemsPerSecondChange(parseFloat(val?.toString() || '') || 0)}
+                    min={0}
+                    step={0.1}
                     sx={{ width: 150 }}
                     required
                 />
-                <TextField
+                <NumberField
                     label="Copies"
-                    type="number"
                     value={copies}
-                    onChange={(e) => onCopiesChange(parseInt(e.target.value) || 1)}
-                    inputProps={{ step: 1, min: 1 }}
+                    onValueChange={(val) => onCopiesChange(parseInt(val?.toString() || '') || 1)}
+                    min={1}
+                    step={1}
                     sx={{ width: 120 }}
                     required
                 />

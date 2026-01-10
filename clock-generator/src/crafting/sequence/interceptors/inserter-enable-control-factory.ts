@@ -244,13 +244,6 @@ export class EnableControlFactory {
         });
     }
 
-    /**
-     * Enable control for chest → machine inserters.
-     * 
-     * These inserters should be enabled when:
-     * 1. The chest has items to transfer
-     * 2. The sink machine needs the items (below insertion limit)
-     */
     public fromChestToMachine(
         inserter: Inserter,
         source_state: ChestState,
@@ -261,11 +254,15 @@ export class EnableControlFactory {
         const per_item_controls: EnableControl[] = [];
 
         for (const item_name of item_filters) {
-            if (sink_state.machine.inputs.has(item_name)) {
-                per_item_controls.push(
-                    this.fromChestToMachineForItem(source_state, sink_state, item_name)
-                );
+            if (!sink_state.machine.inputs.has(item_name)) {
+                continue;
             }
+            if (!inserter.filtered_items.has(item_name)) {
+                continue;
+            }
+            per_item_controls.push(
+                this.fromChestToMachineForItem(source_state, sink_state, item_name)
+            );
         }
 
         if (per_item_controls.length === 0) {

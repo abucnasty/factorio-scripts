@@ -13,18 +13,49 @@ export interface MachineFormData {
 }
 
 // Enable control override types
-export type EnableControlMode = 'AUTO' | 'ALWAYS' | 'NEVER' | 'CLOCKED';
+export type EnableControlMode = 'AUTO' | 'ALWAYS' | 'NEVER' | 'CLOCKED' | 'CONDITIONAL';
 
 export interface EnableControlRange {
     start: number;
     end: number;
 }
 
-export interface EnableControlOverride {
-    mode: EnableControlMode;
-    ranges?: EnableControlRange[];
-    period_duration_ticks?: number;
+export type EntityReference = 'SOURCE' | 'SINK';
+export type ComparisonOperator = '>' | '<' | '>=' | '<=' | '==' | '!=';
+export type RuleOperator = 'AND' | 'OR';
+
+export type ValueReference =
+    | { type: 'CONSTANT'; value: number }
+    | { type: 'INVENTORY_ITEM'; entity: EntityReference; item_name: string }
+    | { type: 'AUTOMATED_INSERTION_LIMIT'; entity: EntityReference; item_name: string }
+    | { type: 'OUTPUT_BLOCK'; entity: EntityReference }
+    | { type: 'CRAFTING_PROGRESS'; entity: EntityReference }
+    | { type: 'BONUS_PROGRESS'; entity: EntityReference }
+    | { type: 'HAND_QUANTITY'; item_name?: string }
+    | { type: 'MACHINE_STATUS'; entity: EntityReference; status: 'INGREDIENT_SHORTAGE' | 'WORKING' | 'OUTPUT_FULL' }
+    | { type: 'INSERTER_STACK_SIZE' };
+
+export interface Condition {
+    left: ValueReference;
+    operator: ComparisonOperator;
+    right: ValueReference;
 }
+
+export interface RuleSet {
+    operator: RuleOperator;
+    rules: (Condition | RuleSet)[];
+}
+
+export interface LatchConfig {
+    release: RuleSet;
+}
+
+export type EnableControlOverride =
+    | { mode: 'AUTO' }
+    | { mode: 'ALWAYS' }
+    | { mode: 'NEVER' }
+    | { mode: 'CLOCKED'; ranges: EnableControlRange[]; period_duration_ticks?: number }
+    | { mode: 'CONDITIONAL'; rule_set: RuleSet; latch?: LatchConfig };
 
 export interface InserterOverrides {
     animation?: {
@@ -621,13 +652,35 @@ export function useConfigForm(): UseConfigFormResult {
     }, []);
 
     // Helper to convert imported enable control override to form data
-    const mapEnableControlOverride = (ec: { mode: string; ranges?: { start: number; end: number }[]; period_duration_ticks?: number }): EnableControlOverride => {
-        const base: EnableControlOverride = { mode: ec.mode as EnableControlMode };
-        if (ec.mode === 'CLOCKED') {
-            base.ranges = ec.ranges?.map(r => ({ start: r.start, end: r.end }));
-            base.period_duration_ticks = ec.period_duration_ticks;
+    const mapEnableControlOverride = (ec: { 
+        mode: string; 
+        ranges?: { start: number; end: number }[]; 
+        period_duration_ticks?: number;
+        rule_set?: RuleSet;
+        latch?: LatchConfig;
+    }): EnableControlOverride => {
+        switch (ec.mode) {
+            case 'AUTO':
+                return { mode: 'AUTO' };
+            case 'ALWAYS':
+                return { mode: 'ALWAYS' };
+            case 'NEVER':
+                return { mode: 'NEVER' };
+            case 'CLOCKED':
+                return {
+                    mode: 'CLOCKED',
+                    ranges: ec.ranges?.map(r => ({ start: r.start, end: r.end })) ?? [],
+                    period_duration_ticks: ec.period_duration_ticks,
+                };
+            case 'CONDITIONAL':
+                return {
+                    mode: 'CONDITIONAL',
+                    rule_set: ec.rule_set ?? { operator: 'AND', rules: [] },
+                    latch: ec.latch,
+                };
+            default:
+                return { mode: 'AUTO' };
         }
-        return base;
     };
 
     // Import/Export

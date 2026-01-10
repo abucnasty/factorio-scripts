@@ -1,8 +1,9 @@
+import { EntityType } from "../entity-type";
 import { RecipeMetadata } from "./recipe";
 
 export const MachineType = {
-    MACHINE: "machine",
-    FURNACE: "furnace",
+    MACHINE: EntityType.MACHINE,
+    FURNACE: EntityType.FURNACE,
 } as const
 
 export type MachineType = typeof MachineType[keyof typeof MachineType];
