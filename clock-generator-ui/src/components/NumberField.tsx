@@ -37,12 +37,19 @@ export function NumberField({
     min,
     max,
     onValueChange,
+    format,
     ...other
 }: NumberFieldProps) {
     let id = React.useId();
     if (idProp) {
         id = idProp;
     }
+
+    // Default format to preserve high precision decimals
+    const effectiveFormat: Intl.NumberFormatOptions = format ?? {
+        maximumFractionDigits: 20,
+        useGrouping: false,
+    };
 
     // Compute validation error message
     const [validationError, setValidationError] = React.useState<string | null>(null);
@@ -76,6 +83,7 @@ export function NumberField({
             {...other}
             min={min}
             max={max}
+            format={effectiveFormat}
             onValueChange={handleValueChange}
             render={(props, state) => (
                 <FormControl
