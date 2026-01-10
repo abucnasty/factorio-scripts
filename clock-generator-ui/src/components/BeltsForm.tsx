@@ -14,6 +14,7 @@ import {
 import { BELT_FORM_DEFAULT_STACK_SIZE, type BeltFormData, type BeltLaneFormData } from '../hooks/useConfigForm';
 import { FactorioIcon } from './FactorioIcon';
 import { ItemSelector } from './ItemSelector';
+import { NumberField } from './NumberField';
 
 const BELT_TYPES = [
     { value: 'transport-belt', label: 'Transport Belt' },
@@ -157,19 +158,19 @@ export function BeltsForm({
                                     freeSolo
                                     sx={{ flex: 1 }}
                                 />
-                                <TextField
+                                <NumberField
                                     label="Stack Size"
-                                    type="number"
                                     value={lane.stack_size}
-                                    onChange={(e) =>
+                                    onValueChange={(val) => {
+                                        const integer = parseInt(val?.toString() || '');
                                         handleLaneUpdate(
                                             beltIndex,
                                             laneIndex,
                                             'stack_size',
-                                            parseInt(e.target.value) || BELT_FORM_DEFAULT_STACK_SIZE
+                                            integer || BELT_FORM_DEFAULT_STACK_SIZE
                                         )
-                                    }
-                                    inputProps={{ min: 1 }}
+                                    }}
+                                    min={1}
                                     sx={{ width: 100 }}
                                     size="small"
                                 />

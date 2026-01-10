@@ -17,6 +17,7 @@ import { EnableControlModal } from './EnableControlModal';
 import type { RecipeInfo } from '../hooks/useSimulationWorker';
 import { FactorioIcon } from './FactorioIcon';
 import { FilterSlotSelector } from './FilterSlotSelector';
+import { NumberField } from './NumberField';
 
 type SourceSinkType = typeof TargetType[keyof typeof TargetType];
 
@@ -413,14 +414,13 @@ export function InsertersForm({
                         />
                     </Box>
 
-                    <TextField
+                    <NumberField
                         label="Stack Size"
-                        type="number"
                         value={inserter.stack_size}
-                        onChange={(e) =>
-                            onUpdate(index, { stack_size: parseInt(e.target.value) || 16 })
+                        onValueChange={(val) =>
+                            onUpdate(index, { stack_size: val ?? 16 })
                         }
-                        inputProps={{ min: 1, max: 16 }}
+                        min={1}
                         sx={{ width: 100 }}
                         size="small"
                     />

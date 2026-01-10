@@ -18,6 +18,7 @@ import type { MachineFormData } from '../hooks/useConfigForm';
 import { useMachineFacts } from '../hooks/useMachineFacts';
 import { FactorioIcon } from './FactorioIcon';
 import { MachineFactsAccordion } from './MachineFactsAccordion';
+import { NumberField } from './NumberField';
 
 interface MachinesFormProps {
     machines: MachineFormData[];
@@ -155,12 +156,11 @@ function MachineRow({ machine, index, recipeNames, canDelete, onUpdate, onRemove
                     flexWrap: 'wrap',
                 }}
             >
-                <TextField
+                <NumberField
                     label="ID"
-                    type="number"
                     value={machine.id}
-                    onChange={(e) => onUpdate(index, 'id', parseInt(e.target.value) || 1)}
-                    inputProps={{ min: 1 }}
+                    onValueChange={(val) => onUpdate(index, 'id', val ?? 1)}
+                    min={1}
                     sx={{ width: 80 }}
                     size="small"
                 />
@@ -199,21 +199,23 @@ function MachineRow({ machine, index, recipeNames, canDelete, onUpdate, onRemove
                     freeSolo
                     autoHighlight
                 />
-                <TextField
+                <NumberField
                     label="Productivity (%)"
-                    type="number"
                     value={machine.productivity}
-                    onChange={(e) => onUpdate(index, 'productivity', parseFloat(e.target.value) || 0)}
-                    slotProps={{ htmlInput: { step: 1, min: 0 } }}
-                    sx={{ width: 130 }}
+                    onValueChange={(val) => onUpdate(index, 'productivity', val ?? 0)}
+                    min={0}
+                    step={1}
+                    defaultValue={0}
+                    sx={{ width: 150 }}
                     size="small"
                 />
-                <TextField
+                <NumberField
                     label="Crafting Speed"
-                    type="number"
                     value={machine.crafting_speed}
-                    onChange={(e) => onUpdate(index, 'crafting_speed', Number(e.target.value) || 1)}
-                    slotProps={{ htmlInput: { step: 0.1, min: 0 } }}
+                    onValueChange={(val) => onUpdate(index, 'crafting_speed', val ?? 1)}
+                    min={0.01}
+                    step={0.1}
+                    defaultValue={1}
                     sx={{ width: 180 }}
                     size="small"
                 />
