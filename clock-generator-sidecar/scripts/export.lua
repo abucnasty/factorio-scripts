@@ -24,8 +24,14 @@ local function resolve_target_id(target, result)
             if mapped_id then
                 target_id = mapped_id
             end
+        elseif target.type == "chest" then
+            -- Look up chest ID
+            local mapped_id = result.chest_unit_number_to_id[target.unit_number]
+            if mapped_id then
+                target_id = mapped_id
+            end
         else
-            -- Look up machine/chest ID
+            -- Look up machine ID
             local mapped_id = result.unit_number_to_id[target.unit_number]
             if mapped_id then
                 target_id = mapped_id
@@ -52,7 +58,8 @@ function export.to_json(result)
             configs = {}
         },
         inserters = {},
-        belts = {}
+        belts = {},
+        chests = {}
     }
     
     -- Format machines for clock-generator
@@ -141,6 +148,33 @@ function export.to_json(result)
             end
             
             table.insert(output.inserters, inserter_export)
+        end
+    end
+    
+    -- Format chests for clock-generator
+    for i, chest in ipairs(result.chests) do
+        if chest.chest_type == "infinity-chest" then
+            -- Infinity chest format
+            local filters = {}
+            for _, filter in ipairs(chest.item_filters) do
+                table.insert(filters, {
+                    item_name = filter.item_name,
+                    request_count = filter.request_count
+                })
+            end
+            table.insert(output.chests, {
+                type = "infinity-chest",
+                id = i,
+                item_filter = filters
+            })
+        else
+            -- Buffer chest format
+            table.insert(output.chests, {
+                type = "buffer-chest",
+                id = i,
+                storage_size = chest.storage_size,
+                item_filter = chest.item_filter
+            })
         end
     end
 

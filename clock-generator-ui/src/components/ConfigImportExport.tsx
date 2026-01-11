@@ -2,13 +2,14 @@ import { Download, Upload, ContentPaste } from '@mui/icons-material';
 import { Box, Button, Snackbar, Alert, Tooltip } from '@mui/material';
 import { useRef, useState, useCallback } from 'react';
 import type { Config } from 'clock-generator/browser';
-import { MachineConfigurationSchema, MiningDrillConfigSchema, InserterConfigSchema, BeltConfigSchema } from 'clock-generator/browser';
+import { MachineConfigurationSchema, MiningDrillConfigSchema, InserterConfigSchema, BeltConfigSchema, ChestConfigSchema } from 'clock-generator/browser';
 import type { z } from 'zod';
 
 type MachineConfiguration = z.infer<typeof MachineConfigurationSchema>;
 type MiningDrillConfiguration = z.infer<typeof MiningDrillConfigSchema>;
 type InserterConfiguration = z.infer<typeof InserterConfigSchema>;
 type BeltConfiguration = z.infer<typeof BeltConfigSchema>;
+type ChestConfiguration = z.infer<typeof ChestConfigSchema>;
 
 interface ConfigImportExportProps {
     config: Config;
@@ -17,6 +18,7 @@ interface ConfigImportExportProps {
     onReplaceDrills: (drills: MiningDrillConfiguration[]) => void;
     onReplaceInserters: (inserters: InserterConfiguration[]) => void;
     onReplaceBelts: (belts: BeltConfiguration[]) => void;
+    onReplaceChests: (chests: ChestConfiguration[]) => void;
     onUpdateMiningProductivityLevel: (level: number) => void;
     parseConfig: (content: string) => Promise<Config>;
 }
@@ -28,6 +30,7 @@ export function ConfigImportExport({
     onReplaceDrills,
     onReplaceInserters,
     onReplaceBelts,
+    onReplaceChests,
     onUpdateMiningProductivityLevel,
     parseConfig,
 }: ConfigImportExportProps) {
@@ -121,7 +124,8 @@ export function ConfigImportExport({
                     machines?: unknown[]; 
                     drills?: { mining_productivity_level?: number; configs?: unknown[] } | unknown[]; 
                     inserters?: unknown[]; 
-                    belts?: unknown[] 
+                    belts?: unknown[];
+                    chests?: unknown[];
                 };
                 
                 const machineCount = Array.isArray(data.machines) ? data.machines.length : 0;
@@ -136,9 +140,10 @@ export function ConfigImportExport({
                 const drillCount = Array.isArray(drillConfigs) ? drillConfigs.length : 0;
                 const inserterCount = Array.isArray(data.inserters) ? data.inserters.length : 0;
                 const beltCount = Array.isArray(data.belts) ? data.belts.length : 0;
+                const chestCount = Array.isArray(data.chests) ? data.chests.length : 0;
                 
-                if (machineCount === 0 && drillCount === 0 && inserterCount === 0 && beltCount === 0) {
-                    throw new Error('No machines, drills, inserters, or belts found in clipboard data.');
+                if (machineCount === 0 && drillCount === 0 && inserterCount === 0 && beltCount === 0 && chestCount === 0) {
+                    throw new Error('No machines, drills, inserters, belts, or chests found in clipboard data.');
                 }
 
                 // Validate machines (IDs are already assigned by the mod)
@@ -193,6 +198,19 @@ export function ConfigImportExport({
                     }
                 }
 
+                // Validate chests
+                const validatedChests: ChestConfiguration[] = [];
+                if (Array.isArray(data.chests)) {
+                    for (let i = 0; i < data.chests.length; i++) {
+                        const entry = data.chests[i];
+                        const result = ChestConfigSchema.safeParse(entry);
+                        if (!result.success) {
+                            throw new Error(`Invalid chest at index ${i}: ${result.error.issues[0]?.message || 'Unknown error'}`);
+                        }
+                        validatedChests.push(result.data);
+                    }
+                }
+
                 if (validatedMachines.length > 0) {
                     onReplaceMachines(validatedMachines);
                 }
@@ -209,12 +227,16 @@ export function ConfigImportExport({
                 if (validatedBelts.length > 0) {
                     onReplaceBelts(validatedBelts);
                 }
+                if (validatedChests.length > 0) {
+                    onReplaceChests(validatedChests);
+                }
 
                 const parts: string[] = [];
                 if (validatedMachines.length > 0) parts.push(`${validatedMachines.length} machines`);
                 if (validatedDrills.length > 0) parts.push(`${validatedDrills.length} drills`);
                 if (validatedInserters.length > 0) parts.push(`${validatedInserters.length} inserters`);
                 if (validatedBelts.length > 0) parts.push(`${validatedBelts.length} belts`);
+                if (validatedChests.length > 0) parts.push(`${validatedChests.length} chests`);
                 
                 setSnackbar({
                     open: true,

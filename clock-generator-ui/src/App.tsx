@@ -109,6 +109,7 @@ function App() {
         updateChest,
         switchChestType,
         removeChest,
+        replaceChests,
         enableDrills,
         disableDrills,
         updateDrillsConfig,
@@ -186,6 +187,7 @@ function App() {
                             onReplaceDrills={replaceDrills}
                             onReplaceInserters={replaceInserters}
                             onReplaceBelts={replaceBelts}
+                            onReplaceChests={replaceChests}
                             onUpdateMiningProductivityLevel={(level) => updateDrillsConfig('mining_productivity_level', level)}
                             parseConfig={parseConfig}
                         />

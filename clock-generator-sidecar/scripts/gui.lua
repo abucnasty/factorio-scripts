@@ -163,7 +163,7 @@ function gui.create(player, player_data, result)
     -- Remove existing GUI
     gui.destroy(player, player_data)
 
-    local total_count = #result.machines + #result.drills + #result.inserters + #result.belts
+    local total_count = #result.machines + #result.drills + #result.inserters + #result.belts + #result.chests
 
     -- Main frame
     local frame = player.gui.screen.add({
@@ -296,7 +296,7 @@ function gui.create(player, player_data, result)
                 inserter_table.add({ type = "label", caption = sink_text })
             end
             
-            if #result.belts > 0 then
+            if #result.belts > 0 or #result.chests > 0 then
                 add_spacer(scroll)
             end
         end
@@ -329,6 +329,47 @@ function gui.create(player, player_data, result)
                     lane2_text = belt.lanes[2].ingredient
                 end
                 belt_table.add({ type = "label", caption = lane2_text })
+            end
+            
+            if #result.chests > 0 then
+                add_spacer(scroll)
+            end
+        end
+        
+        -- Display chests if any
+        if #result.chests > 0 then
+            local chest_table = add_section_table(
+                scroll,
+                "Chests (" .. #result.chests .. ")",
+                4,
+                { "#", "Type", "Items", "Slots" },
+                { [1] = "center", [2] = "left", [3] = "left", [4] = "center" }
+            )
+
+            -- Chest rows
+            for i, chest in ipairs(result.chests) do
+                chest_table.add({ type = "label", caption = tostring(i) })
+                chest_table.add({ type = "label", caption = chest.chest_type })
+                
+                -- Items description
+                local items_text = ""
+                if chest.chest_type == "infinity-chest" then
+                    local item_names = {}
+                    for _, filter in ipairs(chest.item_filters) do
+                        table.insert(item_names, filter.item_name .. ":" .. filter.request_count)
+                    end
+                    items_text = table.concat(item_names, ", ")
+                else
+                    items_text = chest.item_filter
+                end
+                chest_table.add({ type = "label", caption = items_text })
+                
+                -- Slots (only for buffer chests)
+                local slots_text = "-"
+                if chest.chest_type == "buffer-chest" then
+                    slots_text = tostring(chest.storage_size)
+                end
+                chest_table.add({ type = "label", caption = slots_text })
             end
         end
     end

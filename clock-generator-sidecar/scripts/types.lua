@@ -29,6 +29,23 @@
 ---@field lane number The lane index (1 = right, 2 = left)
 ---@field ingredient string The item on this lane
 
+---@class InfinityFilterData
+---@field item_name string The item name
+---@field request_count number The quantity of items
+
+---@class BufferChestData
+---@field chest_type "buffer-chest" The chest type discriminator
+---@field unit_number number The unit number of the chest entity
+---@field storage_size number Number of inventory slots
+---@field item_filter string The single item type this chest holds
+
+---@class InfinityChestData
+---@field chest_type "infinity-chest" The chest type discriminator
+---@field unit_number number The unit number of the chest entity
+---@field item_filters InfinityFilterData[] The items and quantities in this chest
+
+---@alias ChestData BufferChestData|InfinityChestData
+
 ---@class InserterData
 ---@field inserter_type string The inserter entity name
 ---@field stack_size number The inserter stack size
@@ -48,8 +65,10 @@
 ---@field drills DrillData[]
 ---@field inserters InserterData[]
 ---@field belts BeltData[]
+---@field chests ChestData[]
 ---@field unit_number_to_id table<number, number> Maps entity unit_number to machine ID
 ---@field belt_unit_number_to_id table<number, number> Maps belt unit_number to belt ID
+---@field chest_unit_number_to_id table<number, number> Maps chest unit_number to chest ID
 ---@field mining_productivity_level number The researched mining productivity level
 
 return {}

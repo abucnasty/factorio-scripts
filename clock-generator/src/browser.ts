@@ -20,6 +20,9 @@ export {
     MiningDrillConfigSchema,
     InserterConfigSchema,
     BeltConfigSchema,
+    ChestConfigSchema,
+    BufferChestConfigSchema,
+    InfinityChestConfigSchema,
     ConfigOverridesSchema,
     // Enable Control Enums
     EnableControlMode,

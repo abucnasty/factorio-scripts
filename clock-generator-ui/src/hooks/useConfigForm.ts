@@ -250,6 +250,7 @@ export interface UseConfigFormResult {
     updateChest: (index: number, updates: Partial<ChestFormData>) => void;
     switchChestType: (index: number, newType: ChestType) => void;
     removeChest: (index: number) => void;
+    replaceChests: (chests: ChestFormData[]) => void;
     
     // Drills
     enableDrills: () => void;
@@ -492,6 +493,13 @@ export function useConfigForm(): UseConfigFormResult {
         setConfig((prev) => ({
             ...prev,
             chests: prev.chests.filter((_, i) => i !== index),
+        }));
+    }, []);
+
+    const replaceChests = useCallback((newChests: ChestFormData[]) => {
+        setConfig((prev) => ({
+            ...prev,
+            chests: newChests,
         }));
     }, []);
 
@@ -781,6 +789,7 @@ export function useConfigForm(): UseConfigFormResult {
         updateChest,
         switchChestType,
         removeChest,
+        replaceChests,
         enableDrills,
         disableDrills,
         updateDrillsConfig,

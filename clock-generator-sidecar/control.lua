@@ -38,14 +38,14 @@ local function on_player_selected_area(event)
     init_player_data(event.player_index)
     local player_data = storage[event.player_index]
 
-    -- Extract entity data (machines, drills, inserters, and belts)
+    -- Extract entity data (machines, drills, inserters, belts, and chests)
     local result = extraction.extract_all_entities(event.entities, player.force)
     player_data.extraction_result = result
 
     -- Show GUI
     gui.create(player, player_data, result)
 
-    local total = #result.machines + #result.drills + #result.inserters + #result.belts
+    local total = #result.machines + #result.drills + #result.inserters + #result.belts + #result.chests
     if total == 0 then
         player.print({ "clock-generator-sidecar.no-machines-selected" })
     else
@@ -72,7 +72,7 @@ local function on_gui_click(event)
         -- Show copy popup with JSON text
         if player_data and player_data.extraction_result then
             local result = player_data.extraction_result
-            if #result.machines > 0 or #result.drills > 0 or #result.inserters > 0 or #result.belts > 0 then
+            if #result.machines > 0 or #result.drills > 0 or #result.inserters > 0 or #result.belts > 0 or #result.chests > 0 then
                 local json = export.to_json(result)
                 gui.create_copy_popup(player, json)
             else
