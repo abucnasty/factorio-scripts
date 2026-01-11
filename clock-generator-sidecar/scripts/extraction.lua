@@ -67,24 +67,40 @@ local function extract_belt_data(entity)
     -- Transport belts have 2 lines: 1 = right lane, 2 = left lane
     local max_lines = entity.get_max_transport_line_index()
 
-    local has_items = false
-    for i = 1, math.min(max_lines, 2) do
-        local transport_line = entity.get_transport_line(i)
-        local ingredient, stack_size = helpers.get_lane_info(transport_line, default_belt_stack_size)
+    -- Extract lane 1 (right lane) first
+    local transport_line_1 = entity.get_transport_line(1)
+    local ingredient_1, stack_size_1 = helpers.get_lane_info(transport_line_1, default_belt_stack_size)
 
-        if ingredient then
-            has_items = true
-        end
-
-        table.insert(lanes, {
-            ingredient = ingredient,
-            stack_size = stack_size
-        })
+    -- Extract lane 2 (left lane)
+    local transport_line_2 = max_lines >= 2 and entity.get_transport_line(2) or nil
+    local ingredient_2, stack_size_2 = nil, nil
+    if transport_line_2 then
+        ingredient_2, stack_size_2 = helpers.get_lane_info(transport_line_2, default_belt_stack_size)
     end
 
-    -- Skip belts with no items on them
-    if not has_items then
+    -- Skip belts with no items on either lane
+    if not ingredient_1 and not ingredient_2 then
         return nil
+    end
+
+    -- If only lane 2 has items, use it as lane 1 (single lane belt)
+    if not ingredient_1 and ingredient_2 then
+        table.insert(lanes, {
+            ingredient = ingredient_2,
+            stack_size = stack_size_2
+        })
+    else
+        -- Lane 1 has items - add it
+        table.insert(lanes, {
+            ingredient = ingredient_1,
+            stack_size = stack_size_1
+        })
+
+        -- Add second lane (may be empty)
+        table.insert(lanes, {
+            ingredient = ingredient_2,
+            stack_size = stack_size_2 or default_belt_stack_size
+        })
     end
 
     ---@type BeltData
