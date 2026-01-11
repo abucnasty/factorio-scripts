@@ -1,5 +1,5 @@
 import { Download, Upload, ContentPaste } from '@mui/icons-material';
-import { Box, Button, Snackbar, Alert, Tooltip } from '@mui/material';
+import { Box, Button, Snackbar, Alert, Tooltip, Dialog, DialogTitle, DialogContent, DialogActions, FormControlLabel, Checkbox, Typography } from '@mui/material';
 import { useRef, useState, useCallback } from 'react';
 import type { Config } from 'clock-generator/browser';
 import { MachineConfigurationSchema, MiningDrillConfigSchema, InserterConfigSchema, BeltConfigSchema, ChestConfigSchema } from 'clock-generator/browser';
@@ -10,6 +10,23 @@ type MiningDrillConfiguration = z.infer<typeof MiningDrillConfigSchema>;
 type InserterConfiguration = z.infer<typeof InserterConfigSchema>;
 type BeltConfiguration = z.infer<typeof BeltConfigSchema>;
 type ChestConfiguration = z.infer<typeof ChestConfigSchema>;
+
+interface PendingImport {
+    machines: MachineConfiguration[];
+    drills: MiningDrillConfiguration[];
+    inserters: InserterConfiguration[];
+    belts: BeltConfiguration[];
+    chests: ChestConfiguration[];
+    miningProductivityLevel?: number;
+}
+
+interface ImportSelections {
+    machines: boolean;
+    drills: boolean;
+    inserters: boolean;
+    belts: boolean;
+    chests: boolean;
+}
 
 interface ConfigImportExportProps {
     config: Config;
@@ -40,6 +57,16 @@ export function ConfigImportExport({
         message: string;
         severity: 'success' | 'error';
     }>({ open: false, message: '', severity: 'success' });
+
+    // State for the import confirmation modal
+    const [pendingImport, setPendingImport] = useState<PendingImport | null>(null);
+    const [importSelections, setImportSelections] = useState<ImportSelections>({
+        machines: true,
+        drills: true,
+        inserters: true,
+        belts: true,
+        chests: true,
+    });
 
     const handleExport = useCallback(() => {
         const target_recipe_name = config.target_output.recipe
@@ -211,37 +238,22 @@ export function ConfigImportExport({
                     }
                 }
 
-                if (validatedMachines.length > 0) {
-                    onReplaceMachines(validatedMachines);
-                }
-                if (validatedDrills.length > 0) {
-                    onReplaceDrills(validatedDrills);
-                }
-                // Update mining productivity level if provided
-                if (miningProductivityLevel !== undefined) {
-                    onUpdateMiningProductivityLevel(miningProductivityLevel);
-                }
-                if (validatedInserters.length > 0) {
-                    onReplaceInserters(validatedInserters);
-                }
-                if (validatedBelts.length > 0) {
-                    onReplaceBelts(validatedBelts);
-                }
-                if (validatedChests.length > 0) {
-                    onReplaceChests(validatedChests);
-                }
-
-                const parts: string[] = [];
-                if (validatedMachines.length > 0) parts.push(`${validatedMachines.length} machines`);
-                if (validatedDrills.length > 0) parts.push(`${validatedDrills.length} drills`);
-                if (validatedInserters.length > 0) parts.push(`${validatedInserters.length} inserters`);
-                if (validatedBelts.length > 0) parts.push(`${validatedBelts.length} belts`);
-                if (validatedChests.length > 0) parts.push(`${validatedChests.length} chests`);
-                
-                setSnackbar({
-                    open: true,
-                    message: `Replaced with ${parts.join(' and ')} from Factorio!`,
-                    severity: 'success',
+                // Store pending import and show confirmation modal
+                setPendingImport({
+                    machines: validatedMachines,
+                    drills: validatedDrills,
+                    inserters: validatedInserters,
+                    belts: validatedBelts,
+                    chests: validatedChests,
+                    miningProductivityLevel,
+                });
+                // Reset selections to include all available items
+                setImportSelections({
+                    machines: validatedMachines.length > 0,
+                    drills: validatedDrills.length > 0,
+                    inserters: validatedInserters.length > 0,
+                    belts: validatedBelts.length > 0,
+                    chests: validatedChests.length > 0,
                 });
                 return;
             }
@@ -267,11 +279,20 @@ export function ConfigImportExport({
                 validatedMachines.push(result.data);
             }
 
-            onReplaceMachines(validatedMachines);
-            setSnackbar({
-                open: true,
-                message: `Replaced with ${validatedMachines.length} machines from Factorio!`,
-                severity: 'success',
+            // Store pending import and show confirmation modal (legacy format - machines only)
+            setPendingImport({
+                machines: validatedMachines,
+                drills: [],
+                inserters: [],
+                belts: [],
+                chests: [],
+            });
+            setImportSelections({
+                machines: true,
+                drills: false,
+                inserters: false,
+                belts: false,
+                chests: false,
             });
         } catch (error) {
             console.error('Paste from Factorio error:', error);
@@ -281,7 +302,65 @@ export function ConfigImportExport({
                 severity: 'error',
             });
         }
-    }, [onReplaceMachines, onReplaceDrills, onReplaceInserters, onReplaceBelts, onUpdateMiningProductivityLevel]);
+    }, []);
+
+    const handleConfirmImport = useCallback(() => {
+        if (!pendingImport) return;
+
+        const parts: string[] = [];
+
+        if (importSelections.machines && pendingImport.machines.length > 0) {
+            onReplaceMachines(pendingImport.machines);
+            parts.push(`${pendingImport.machines.length} machines`);
+        }
+        if (importSelections.drills && pendingImport.drills.length > 0) {
+            onReplaceDrills(pendingImport.drills);
+            parts.push(`${pendingImport.drills.length} drills`);
+            // Also update mining productivity level when importing drills
+            if (pendingImport.miningProductivityLevel !== undefined) {
+                onUpdateMiningProductivityLevel(pendingImport.miningProductivityLevel);
+            }
+        }
+        if (importSelections.inserters && pendingImport.inserters.length > 0) {
+            onReplaceInserters(pendingImport.inserters);
+            parts.push(`${pendingImport.inserters.length} inserters`);
+        }
+        if (importSelections.belts && pendingImport.belts.length > 0) {
+            onReplaceBelts(pendingImport.belts);
+            parts.push(`${pendingImport.belts.length} belts`);
+        }
+        if (importSelections.chests && pendingImport.chests.length > 0) {
+            onReplaceChests(pendingImport.chests);
+            parts.push(`${pendingImport.chests.length} chests`);
+        }
+
+        setPendingImport(null);
+
+        if (parts.length > 0) {
+            setSnackbar({
+                open: true,
+                message: `Imported ${parts.join(', ')} from Factorio!`,
+                severity: 'success',
+            });
+        } else {
+            setSnackbar({
+                open: true,
+                message: 'No items selected for import.',
+                severity: 'error',
+            });
+        }
+    }, [pendingImport, importSelections, onReplaceMachines, onReplaceDrills, onReplaceInserters, onReplaceBelts, onReplaceChests, onUpdateMiningProductivityLevel]);
+
+    const handleCancelImport = useCallback(() => {
+        setPendingImport(null);
+    }, []);
+
+    const handleSelectionChange = useCallback((key: keyof ImportSelections) => {
+        setImportSelections(prev => ({
+            ...prev,
+            [key]: !prev[key],
+        }));
+    }, []);
 
     return (
         <>
@@ -333,6 +412,82 @@ export function ConfigImportExport({
                     {snackbar.message}
                 </Alert>
             </Snackbar>
+
+            {/* Import Confirmation Dialog */}
+            <Dialog open={pendingImport !== null} onClose={handleCancelImport} maxWidth="sm" fullWidth>
+                <DialogTitle>Confirm Import from Factorio</DialogTitle>
+                <DialogContent>
+                    <Typography variant="body2" sx={{ mb: 2 }}>
+                        Select which items you want to import. Existing items of each selected type will be replaced.
+                    </Typography>
+                    
+                    {pendingImport && (
+                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                            <FormControlLabel
+                                control={
+                                    <Checkbox
+                                        checked={importSelections.machines}
+                                        onChange={() => handleSelectionChange('machines')}
+                                        disabled={pendingImport.machines.length === 0}
+                                    />
+                                }
+                                label={`Machines (${pendingImport.machines.length})`}
+                            />
+                            <FormControlLabel
+                                control={
+                                    <Checkbox
+                                        checked={importSelections.drills}
+                                        onChange={() => handleSelectionChange('drills')}
+                                        disabled={pendingImport.drills.length === 0}
+                                    />
+                                }
+                                label={`Drills (${pendingImport.drills.length})${pendingImport.miningProductivityLevel !== undefined ? ` - Mining Productivity ${pendingImport.miningProductivityLevel}` : ''}`}
+                            />
+                            <FormControlLabel
+                                control={
+                                    <Checkbox
+                                        checked={importSelections.inserters}
+                                        onChange={() => handleSelectionChange('inserters')}
+                                        disabled={pendingImport.inserters.length === 0}
+                                    />
+                                }
+                                label={`Inserters (${pendingImport.inserters.length})`}
+                            />
+                            <FormControlLabel
+                                control={
+                                    <Checkbox
+                                        checked={importSelections.belts}
+                                        onChange={() => handleSelectionChange('belts')}
+                                        disabled={pendingImport.belts.length === 0}
+                                    />
+                                }
+                                label={`Belts (${pendingImport.belts.length})`}
+                            />
+                            <FormControlLabel
+                                control={
+                                    <Checkbox
+                                        checked={importSelections.chests}
+                                        onChange={() => handleSelectionChange('chests')}
+                                        disabled={pendingImport.chests.length === 0}
+                                    />
+                                }
+                                label={`Chests (${pendingImport.chests.length})`}
+                            />
+                        </Box>
+                    )}
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={handleCancelImport}>Cancel</Button>
+                    <Button 
+                        onClick={handleConfirmImport} 
+                        variant="contained" 
+                        color="secondary"
+                        disabled={!Object.values(importSelections).some(v => v)}
+                    >
+                        Import Selected
+                    </Button>
+                </DialogActions>
+            </Dialog>
         </>
     );
 }
