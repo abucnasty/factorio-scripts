@@ -238,7 +238,7 @@ local function extract_inserter_data(entity)
 
             -- If source is a machine, get its recipe outputs for auto-configuration
             if target_type == "machine" then
-                local recipe, _ = pickup_target.get_recipe()
+                local recipe = helpers.get_recipe_or_previous(pickup_target)
                 if recipe then
                     source_recipe_outputs = {}
                     for _, product in pairs(recipe.products) do
@@ -312,8 +312,8 @@ local function extract_crafting_machine_data(entity)
         return nil
     end
 
-    -- Get recipe (skip entities without active recipe)
-    local recipe, quality = entity.get_recipe()
+    -- Get recipe (fallback to previous_recipe for furnaces that may not have an active recipe)
+    local recipe = helpers.get_recipe_or_previous(entity)
     if not recipe then
         return nil
     end

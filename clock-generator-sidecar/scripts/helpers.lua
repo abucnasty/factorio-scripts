@@ -79,6 +79,50 @@ function helpers.get_lane_info(transport_line, default_stack_size)
     return ingredient, max_stack
 end
 
+--- Get the active recipe or previous recipe for an entity
+---@return LuaRecipePrototype|nil
+function helpers.get_recipe_or_previous(entity)
+    -- Get recipe (fallback to previous_recipe for furnaces that may not have an active recipe)
+    local recipe = entity.get_recipe()
+
+    if not recipe and entity.previous_recipe then
+        -- previous_recipe returns RecipeIDAndQualityIDPair with .name (RecipeID union) and .quality
+        recipe = helpers.resolve_recipe_id(entity.previous_recipe.name)
+    end
+
+    return recipe
+end
+
+---Resolve a RecipeID union type to a LuaRecipePrototype
+---@param recipe_id LuaRecipePrototype|LuaRecipe|string
+---@return LuaRecipePrototype|nil
+function helpers.resolve_recipe_id(recipe_id)
+    if not recipe_id then
+        return nil
+    end
+
+    -- If it's a string, look up the prototype
+    if type(recipe_id) == "string" then
+        return prototypes.recipe[recipe_id]
+    end
+
+    -- If it's a LuaRecipe or LuaRecipePrototype object, it has a .name property
+    -- LuaRecipe has .prototype, LuaRecipePrototype does not
+    if type(recipe_id) == "table" or type(recipe_id) == "userdata" then
+        if recipe_id.object_name == "LuaRecipe" then
+            return recipe_id.prototype
+        end
+        if recipe_id.object_name == "LuaRecipePrototype" then
+            return recipe_id
+        end
+        if recipe_id.name then
+            return prototypes.recipe[recipe_id.name]
+        end
+    end
+
+    return nil
+end
+
 ---Normalize belt name to transport belt type (converts underground belts and splitters)
 ---@param name string The entity name (e.g., "turbo-underground-belt", "fast-splitter")
 ---@return string The normalized transport belt name (e.g., "turbo-transport-belt", "fast-transport-belt")
