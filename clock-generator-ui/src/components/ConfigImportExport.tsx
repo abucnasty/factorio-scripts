@@ -1,5 +1,5 @@
-import { Download, Upload, ContentPaste } from '@mui/icons-material';
-import { Box, Button, Snackbar, Alert, Tooltip, Dialog, DialogTitle, DialogContent, DialogActions, FormControlLabel, Checkbox, Typography } from '@mui/material';
+import { Download, Upload, ContentPaste, MoreVert, RestartAlt } from '@mui/icons-material';
+import { Box, Button, Snackbar, Alert, Tooltip, Dialog, DialogTitle, DialogContent, DialogActions, FormControlLabel, Checkbox, Typography, IconButton, Menu, MenuItem, ListItemIcon, ListItemText } from '@mui/material';
 import { useRef, useState, useCallback } from 'react';
 import type { Config } from 'clock-generator/browser';
 import { MachineConfigurationSchema, MiningDrillConfigSchema, InserterConfigSchema, BeltConfigSchema, ChestConfigSchema } from 'clock-generator/browser';
@@ -37,6 +37,7 @@ interface ConfigImportExportProps {
     onReplaceBelts: (belts: BeltConfiguration[]) => void;
     onReplaceChests: (chests: ChestConfiguration[]) => void;
     onUpdateMiningProductivityLevel: (level: number) => void;
+    onReset: () => void;
     parseConfig: (content: string) => Promise<Config>;
 }
 
@@ -49,6 +50,7 @@ export function ConfigImportExport({
     onReplaceBelts,
     onReplaceChests,
     onUpdateMiningProductivityLevel,
+    onReset,
     parseConfig,
 }: ConfigImportExportProps) {
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -57,6 +59,10 @@ export function ConfigImportExport({
         message: string;
         severity: 'success' | 'error';
     }>({ open: false, message: '', severity: 'success' });
+
+    // State for the hamburger menu
+    const [menuAnchorEl, setMenuAnchorEl] = useState<null | HTMLElement>(null);
+    const menuOpen = Boolean(menuAnchorEl);
 
     // State for the import confirmation modal
     const [pendingImport, setPendingImport] = useState<PendingImport | null>(null);
@@ -362,9 +368,27 @@ export function ConfigImportExport({
         }));
     }, []);
 
+    const handleMenuOpen = useCallback((event: React.MouseEvent<HTMLElement>) => {
+        setMenuAnchorEl(event.currentTarget);
+    }, []);
+
+    const handleMenuClose = useCallback(() => {
+        setMenuAnchorEl(null);
+    }, []);
+
+    const handleMenuPasteFromFactorio = useCallback(() => {
+        handleMenuClose();
+        handlePasteFromFactorio();
+    }, [handlePasteFromFactorio]);
+
+    const handleMenuReset = useCallback(() => {
+        handleMenuClose();
+        onReset();
+    }, [onReset]);
+
     return (
         <>
-            <Box sx={{ display: 'flex', gap: 2 }}>
+            <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
                 <Button
                     startIcon={<Upload />}
                     onClick={handleImportClick}
@@ -381,17 +405,41 @@ export function ConfigImportExport({
                 >
                     Export Config
                 </Button>
-                <Tooltip title="Paste machines copied from the Crafting Speed Extractor Factorio mod">
-                    <Button
-                        startIcon={<ContentPaste />}
-                        onClick={handlePasteFromFactorio}
-                        variant="outlined"
+                <Tooltip title="More options">
+                    <IconButton
+                        onClick={handleMenuOpen}
                         size="small"
-                        color="secondary"
+                        color="inherit"
                     >
-                        Paste from Factorio
-                    </Button>
+                        <MoreVert />
+                    </IconButton>
                 </Tooltip>
+                <Menu
+                    anchorEl={menuAnchorEl}
+                    open={menuOpen}
+                    onClose={handleMenuClose}
+                    anchorOrigin={{
+                        vertical: 'bottom',
+                        horizontal: 'right',
+                    }}
+                    transformOrigin={{
+                        vertical: 'top',
+                        horizontal: 'right',
+                    }}
+                >
+                    <MenuItem onClick={handleMenuPasteFromFactorio}>
+                        <ListItemIcon>
+                            <ContentPaste fontSize="small" />
+                        </ListItemIcon>
+                        <ListItemText>Paste from Factorio</ListItemText>
+                    </MenuItem>
+                    <MenuItem onClick={handleMenuReset}>
+                        <ListItemIcon>
+                            <RestartAlt fontSize="small" />
+                        </ListItemIcon>
+                        <ListItemText>Reset Configuration</ListItemText>
+                    </MenuItem>
+                </Menu>
             </Box>
 
             <input
