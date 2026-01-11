@@ -2,13 +2,11 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
     AppBar,
     Box,
-    Button,
     CircularProgress,
     Container,
     CssBaseline,
     ThemeProvider,
     Toolbar,
-    Tooltip,
     Typography,
     createTheme,
     Alert,
@@ -97,22 +95,27 @@ function App() {
         addMachine,
         updateMachine,
         removeMachine,
+        replaceMachines,
         addInserter,
         updateInserter,
         removeInserter,
         addBelt,
         updateBelt,
         removeBelt,
+        replaceBelts,
         addChest,
         updateChest,
         switchChestType,
         removeChest,
+        replaceChests,
         enableDrills,
         disableDrills,
         updateDrillsConfig,
         addDrill,
         updateDrill,
         removeDrill,
+        replaceDrills,
+        replaceInserters,
         updateOverrides,
         importConfig,
         exportConfig,
@@ -178,17 +181,15 @@ function App() {
                         <ConfigImportExport
                             config={exportConfig()}
                             onImport={handleImportConfig}
+                            onReplaceMachines={replaceMachines}
+                            onReplaceDrills={replaceDrills}
+                            onReplaceInserters={replaceInserters}
+                            onReplaceBelts={replaceBelts}
+                            onReplaceChests={replaceChests}
+                            onUpdateMiningProductivityLevel={(level) => updateDrillsConfig('mining_productivity_level', level)}
+                            onReset={resetConfig}
                             parseConfig={parseConfig}
                         />
-                        <Tooltip title="Reset all configuration to defaults">
-                            <Button
-                                color="inherit"
-                                onClick={resetConfig}
-                                sx={{ ml: 1 }}
-                            >
-                                Reset
-                            </Button>
-                        </Tooltip>
                     </Toolbar>
                 </AppBar>
                 {/* Spacer to account for fixed AppBar */}
