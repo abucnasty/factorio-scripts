@@ -1,6 +1,6 @@
 import { InserterConfig } from "../../config";
 import { ItemName } from "../../data";
-import { ReadableBeltRegistry } from "../belt";
+import { BeltStackSize, Lane, ReadableBeltRegistry } from "../belt";
 import { EntityType } from "../entity-type";
 import { ReadableMachineRegistry } from "../machine";
 import { InserterMetadata } from "./metadata/inserter-metadata";
@@ -9,6 +9,7 @@ import assert from "../../common/assert";
 import { assertIsBelt, assertIsChest, assertIsMachine, Entity } from "../entity";
 import { EntityId } from "../entity-id";
 import { EntityRegistry } from "../entity-registry";
+import { BeltDropMetadata } from "./metadata/animation";
 
 export interface InserterTarget {
     item_names: Set<ItemName>;
@@ -32,14 +33,6 @@ export class InserterFactory {
 
 
     public fromConfig(id: number, config: InserterConfig): Inserter {
-        const metadata = InserterMetadata.create(
-            config.source.type,
-            config.sink.type,
-            config.stack_size,
-            config.filters ?? [],
-            config.overrides?.animation ?? {}
-        )
-
         const source = config.source
         const sink = config.sink
 
@@ -98,6 +91,28 @@ export class InserterFactory {
             filtered_items = new Set(config.filters);
         }
 
+        // Calculate belt drop metadata if sink is a belt
+        let beltDropMetadata: BeltDropMetadata | undefined;
+        if (sink.type === EntityType.BELT) {
+            const belt = this.entity_registry.getEntityByIdOrThrow(EntityId.forBelt(sink.id));
+            assertIsBelt(belt);
+            const selectedLane = this.selectLaneForDrop(belt.lanes, filtered_items);
+            beltDropMetadata = {
+                belt_speed: belt.belt_speed,
+                belt_stack_size: selectedLane.stack_size as BeltStackSize,
+                inserter_stack_size: config.stack_size
+            };
+        }
+
+        const metadata = InserterMetadata.create(
+            config.source.type,
+            config.sink.type,
+            config.stack_size,
+            config.filters ?? [],
+            config.overrides?.animation ?? {},
+            beltDropMetadata
+        )
+
         return {
             entity_id: EntityId.forInserter(id),
             metadata: metadata,
@@ -112,5 +127,24 @@ export class InserterFactory {
             filtered_items,
             animation: InserterAnimation.fromMetadata(metadata.animation)
         }
+    }
+
+    /**
+     * Select the lane to use for dropping items.
+     * Prefers the lane matching a filtered item if found,
+     * otherwise returns the lane with the maximum stack_size.
+     */
+    private selectLaneForDrop(lanes: readonly Lane[], filteredItems: Set<ItemName>): Lane {
+        // Try to find a lane matching any of the filtered items
+        for (const lane of lanes) {
+            if (filteredItems.has(lane.ingredient_name)) {
+                return lane;
+            }
+        }
+
+        // Fallback: return the lane with the maximum stack size
+        return lanes.reduce((maxLane, lane) => 
+            lane.stack_size > maxLane.stack_size ? lane : maxLane
+        );
     }
 }

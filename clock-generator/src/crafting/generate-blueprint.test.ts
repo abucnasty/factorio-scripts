@@ -144,9 +144,7 @@ describe("generateClockForConfig", () => {
             it("has correct tick ranges for output inserter transfers", () => {
                 const inserterTransfers = result.transfer_history.getOrThrow(output_inserter_id);
                 const expected_start_inclusive = 1
-                // the output inserter swings 6 times, so the end range can be anywhere between 61 and 71
-                // if 72 or more, the inserter will cause instability due to swinging a 7th time
-                const expected_end_inclusive = 50
+                const expected_end_inclusive = 54
                 
                 expect(inserterTransfers.length).toBe(1);
                 const transfer = inserterTransfers[0];
@@ -158,10 +156,10 @@ describe("generateClockForConfig", () => {
                 const inserter_transfers = result.transfer_history.getOrThrow(input_inserter_id)
                 const sorted_transfers = [...inserter_transfers].sort((a, b) => a.tick_range.start_inclusive - b.tick_range.start_inclusive);
                 const expected_ranges = [
-                    OpenRange.from(51, 62),
-                    OpenRange.from(62, 73),
-                    OpenRange.from(80, 91),
-                    OpenRange.from(91, 102)
+                    OpenRange.from(55, 66),
+                    OpenRange.from(66, 77),
+                    OpenRange.from(84, 95),
+                    OpenRange.from(95, 106)
                 ]
                 
                 expect(sorted_transfers.length).toBe(4);

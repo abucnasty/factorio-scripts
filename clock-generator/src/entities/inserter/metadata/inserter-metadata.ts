@@ -4,7 +4,7 @@ import { InserterType } from "./inserter-type";
 import { InserterStackSize } from "./stack-size";
 import assert from "../../../common/assert"
 import { ItemName } from "../../../data";
-import { InserterAnimationMetadata } from "./animation";
+import { BeltDropMetadata, InserterAnimationMetadata } from "./animation";
 import { InserterAnimationOverrideConfig } from "../../../config";
 import { EntityType } from "../../entity-type";
 
@@ -22,7 +22,8 @@ function create(
     sink: EntityType, 
     stackSize: number, 
     filters: ItemName[],
-    overrides: InserterAnimationOverrideConfig
+    overrides: InserterAnimationOverrideConfig,
+    beltDropMetadata?: BeltDropMetadata
 ): InserterMetadata {
     
     // assert(Object.values<number>(InserterStackSize).includes(stackSize), `Inserter has an invalid stack size of ${stackSize}`)
@@ -38,7 +39,8 @@ function create(
         definition,
         source,
         sink,
-        overrides
+        overrides,
+        beltDropMetadata
     )
 
     return {

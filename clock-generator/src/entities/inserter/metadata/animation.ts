@@ -1,8 +1,20 @@
 import assert from "../../../common/assert";
 import { InserterAnimationOverrideConfig } from "../../../config";
 import { Duration } from "../../../data-types";
+import { Belt, BeltSpeed, BeltStackSize } from "../../belt";
 import { EntityType } from "../../entity-type";
 import { InserterSpec } from "./inserter-spec";
+
+/**
+ * Optional belt metadata for calculating dynamic drop duration.
+ * When provided for belt sinks, drop duration is calculated based on
+ * the belt speed, stack size, and inserter stack size.
+ */
+export interface BeltDropMetadata {
+    belt_speed: BeltSpeed;
+    belt_stack_size: BeltStackSize;
+    inserter_stack_size: number;
+}
 
 
 export interface InserterAnimationMetadata {
@@ -57,7 +69,8 @@ function fromSourceAndSink(
     meta: InserterSpec,
     source: EntityType,
     sink: EntityType,
-    overrides: InserterAnimationOverrideConfig
+    overrides: InserterAnimationOverrideConfig,
+    beltDropMetadata?: BeltDropMetadata
 ): InserterAnimationMetadata {
     const builder = new InserterAnimationMetadataBuilder();
 
@@ -70,7 +83,18 @@ function fromSourceAndSink(
     }
 
     if (sink === "belt") {
-        builder.setDropDuration(meta.belt.drop);
+        if (beltDropMetadata) {
+            // Calculate dynamic drop duration based on belt and inserter properties
+            const dropDuration = Belt.dropDuration(
+                beltDropMetadata.belt_speed,
+                beltDropMetadata.belt_stack_size,
+                beltDropMetadata.inserter_stack_size
+            );
+            builder.setDropDuration(dropDuration);
+        } else {
+            // Fallback to static drop duration from spec
+            builder.setDropDuration(meta.belt.drop);
+        }
     }
 
     if (sink === "machine" || sink === "chest") {
