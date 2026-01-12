@@ -156,10 +156,10 @@ describe("generateClockForConfig", () => {
                 const inserter_transfers = result.transfer_history.getOrThrow(input_inserter_id)
                 const sorted_transfers = [...inserter_transfers].sort((a, b) => a.tick_range.start_inclusive - b.tick_range.start_inclusive);
                 const expected_ranges = [
-                    OpenRange.from(55, 66),
-                    OpenRange.from(66, 77),
-                    OpenRange.from(84, 95),
-                    OpenRange.from(95, 106)
+                    OpenRange.from(51, 62),
+                    OpenRange.from(62, 73),
+                    OpenRange.from(80, 91),
+                    OpenRange.from(91, 102)
                 ]
                 
                 expect(sorted_transfers.length).toBe(4);
