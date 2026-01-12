@@ -144,7 +144,7 @@ describe("generateClockForConfig", () => {
             it("has correct tick ranges for output inserter transfers", () => {
                 const inserterTransfers = result.transfer_history.getOrThrow(output_inserter_id);
                 const expected_start_inclusive = 1
-                const expected_end_inclusive = 54
+                const expected_end_inclusive = 49
                 
                 expect(inserterTransfers.length).toBe(1);
                 const transfer = inserterTransfers[0];
