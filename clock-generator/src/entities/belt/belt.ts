@@ -5,6 +5,7 @@ import { BeltStackSize, isValidBeltStackSize } from "./belt-stack-size";
 import { EntityId } from "../entity-id";
 import { Entity } from "../entity";
 import { Duration } from "../../data-types";
+import Fraction, { fraction } from "fractionability";
 
 export interface Lane {
     ingredient_name: ItemName;
@@ -25,68 +26,106 @@ export const BeltSpeed = {
 
 export type BeltSpeed = typeof BeltSpeed[keyof typeof BeltSpeed];
 
-export const BeltTileMovementDuration: Record<BeltSpeed, Duration> = {
-    [BeltSpeed.TRANSPORT_BELT]: Duration.ofSeconds(1.875),
-    [BeltSpeed.FAST_TRANSPORT_BELT]: Duration.ofSeconds(3.75),
-    [BeltSpeed.EXPRESS_TRANSPORT_BELT]: Duration.ofSeconds(5.625),
-    [BeltSpeed.TURBO_TRANSPORT_BELT]: Duration.ofSeconds(7.5),
-};
 
-/**
- * the drop rate of a turbo belt with stack size 1 for a turbo belt will be a sequence that looks as follows:
- * 1. drop 1 item
- * 2. drop 1 item
- * 3. drop 1 item
- * 4. nothing (wait until tile is free)
- * 5. drop 1 item
- * 6. nothing (wait until tile is free)
- * 7. drop 1 item
- * ...
- * 
- * for a turbo belt with stack size 4, the drop rate will be:
- * 1. drop 4 items
- * 2. drop 4 items
- * 3. drop 4 items
- * 4. nothing (wait until tile is free)
- * 5. drop 4 items
- * 6. nothing (wait until tile is free)
- * 7. drop 4 items
- * ...
- * 
- * for an fast transport belt with stack size 1, the drop rate will be:
- * 1. drop 1 item
- * 2. drop 1 item
- * 3. nothing (wait until tile is free)
- * 4. nothing (wait until tile is free)
- * 5. drop 1 item
- * 6. nothing (wait until tile is free)
- * 7. nothing (wait until tile is free)
- * 8. nothing (wait until tile is free)
- * 9. drop 1 item
- * 10. nothing (wait until tile is free)
- * 11. nothing (wait until tile is free)
- * 12. nothing (wait until tile is free)
- * 13. drop 1 item
- * ...
- * 
- * This is due to the underlying throttle rate at which items can move forward on the belt.
- * 
- * A belt tile is made of a segment that holds 4 items. So in the above cases, the stack size determines how much can be dropped
- * each tick, but the belt speed determines how often items can be dropped.
- * 
- * The inserter drops items at the 1st index of 4 items on the belt (base 0). Each tick, that item moves forward
- * at a rate determined by the belt speed, so 0.125 tiles per tick for a turbo belt.
- * 
- * Since an inserter drops at index 1, that means at maximum a single inserter can only occupy 3 of the 4 item slots in the belt
- * at a time. This acts like a shift register where the inserter can drop items into the belt at indices 0, 1, and 2,
- * but must wait for index 3 to clear before it can drop more items.
- * 
- * Therefore, the effective drop rate is determined by how many items can be dropped per tick (stack size)
- * and how often the inserter can drop items (belt speed).
- */
+function tilesPerSecond(belt_speed: BeltSpeed): Fraction {
+    const ratio = fraction(belt_speed).divide(BeltSpeed.TRANSPORT_BELT)
+    return fraction(1.875).multiply(ratio);
+}
+
+function secondsPerTile(belt_speed: BeltSpeed): Fraction {
+    const tiles_per_second = tilesPerSecond(belt_speed);
+
+    return fraction(1).divide(tiles_per_second)
+}
+
+function ticksPerTile(belt_speed: BeltSpeed): Fraction {
+    const seconds_per_tile = secondsPerTile(belt_speed);
+    return seconds_per_tile.multiply(60);
+}
+
+function ticksPerDrop(belt_speed: BeltSpeed): Fraction {
+    // 4 item positions per belt tile
+    return ticksPerTile(belt_speed).divide(4);
+}
+
+function initialBurstLength(belt_speed: BeltSpeed): number {
+    // The number of consecutive drops at the start before regular spacing kicks in
+    // When dropInterval < 4, we can fit 3 initial drops; otherwise 2 (by observation in factorio)
+    const drop_interval = ticksPerDrop(belt_speed);
+    return drop_interval.toDecimal() < 4 ? 3 : 2;
+}
+
 function amountToDropAtTick(belt_speed: BeltSpeed, stackSize: BeltStackSize, tick_index: number): number {
-    const movement_duration = BeltTileMovementDuration[belt_speed];
-    return 0
+    const drop_interval = ticksPerDrop(belt_speed);
+    const burst_length = initialBurstLength(belt_speed);
+    
+    // Initial burst phase: consecutive drops at ticks 0, 1, ..., burst_length-1
+    if (tick_index < burst_length) {
+        return stackSize;
+    }
+    
+    // Regular phase: after the burst, drops continue at regular intervals
+    // The burst handled burst_length drops at ticks 0..burst_length-1
+    // 
+    // After burst, we need to find the regular drop pattern.
+    // Drop n (0-indexed) in a pure regular pattern would be at tick floor(n * drop_interval).
+    // But the burst shifts everything.
+    //
+    // After the burst ends at tick (burst_length - 1), the next drops
+    // follow a pattern where drop #(burst_length + k) for k >= 0 occurs at:
+    //   first_aligned_tick + floor(k * drop_interval)
+    // where first_aligned_tick is the first tick >= burst_length that aligns with the interval grid.
+    //
+    // The interval grid is defined by: tick is on grid if tick / drop_interval is an integer.
+    // For fractional intervals, we check if tick_index equals floor(n * drop_interval) for some n.
+    
+    // Find the first "grid point" at or after burst_length
+    // Grid point n is at tick floor(n * drop_interval)
+    // We want smallest n such that floor(n * drop_interval) >= burst_length
+    // This is: n = ceil(burst_length / drop_interval)
+    
+    const first_regular_n_fraction = fraction(burst_length).divide(drop_interval);
+    const first_regular_n = Math.ceil(first_regular_n_fraction.toDecimal());
+    
+    // The first regular drop tick
+    const first_regular_tick = Math.floor(fraction(first_regular_n).multiply(drop_interval).toDecimal());
+    
+    if (tick_index < first_regular_tick) {
+        return 0;
+    }
+    
+    // For tick_index >= first_regular_tick, check if it's a drop tick
+    // Drop tick at grid point n is floor(n * drop_interval)
+    // We check if there exists n >= first_regular_n such that floor(n * drop_interval) == tick_index
+    
+    // Find the approximate n for this tick
+    const approx_n = fraction(tick_index).divide(drop_interval).toDecimal();
+    
+    // Check n values around approx_n
+    for (let n = Math.floor(approx_n); n <= Math.ceil(approx_n) + 1; n++) {
+        if (n >= first_regular_n) {
+            const drop_tick = Math.floor(fraction(n).multiply(drop_interval).toDecimal());
+            if (drop_tick === tick_index) {
+                return stackSize;
+            }
+        }
+    }
+    
+    return 0;
+}
+
+function durationToDropItemAmount(belt_speed: BeltSpeed, belt_stack_size: BeltStackSize, item_amount: number): Duration {
+    let current_amount = item_amount;
+
+    let ticks = 0;
+
+    while(current_amount > 0) {
+        const amount_dropped = amountToDropAtTick(belt_speed, belt_stack_size, ticks);
+        current_amount -= amount_dropped;
+        ticks += 1;
+    }
+
+    return Duration.ofTicks(ticks);
 }
 
 
@@ -193,4 +232,6 @@ export const Belt = {
     transport_belt: buildersForBeltSpeed(BeltSpeed.TRANSPORT_BELT),
     fromConfig: fromConfig,
     amountToDropAtTick: amountToDropAtTick,
+    ticksPerTile: ticksPerTile,
+    dropDuration: durationToDropItemAmount
 }
