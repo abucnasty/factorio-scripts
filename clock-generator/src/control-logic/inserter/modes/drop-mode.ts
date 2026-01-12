@@ -1,22 +1,28 @@
 import assert from "../../../common/assert";
-import { ChestState, EntityState, InserterState, InserterStatus, MachineState } from "../../../state";
+import { ItemName } from "../../../data";
+import { Belt, BeltStackSize, Lane } from "../../../entities/belt";
+import { BeltState, ChestState, EntityState, InserterState, InserterStatus, MachineState } from "../../../state";
 import { InserterMode } from "./inserter-mode";
 
 export class InserterDropMode implements InserterMode {
     public readonly status = InserterStatus.DROP_OFF;
+
+    private current_tick: number = 0;
 
     constructor(
         private readonly inserter_state: InserterState,
         private readonly sink_entity_state: EntityState
     ) { }
 
-    public onEnter(fromMode: InserterMode): void { }
+    public onEnter(fromMode: InserterMode): void {
+        this.current_tick = 0;
+    }
 
     public onExit(toMode: InserterMode): void { }
 
     public executeForTick(): void {
         if (EntityState.isBelt(this.sink_entity_state)) {
-            this.dropOffToBelt(this.inserter_state);
+            this.dropOffToBelt(this.sink_entity_state, this.inserter_state);
         }
 
         if (EntityState.isMachine(this.sink_entity_state)) {
@@ -26,22 +32,48 @@ export class InserterDropMode implements InserterMode {
         if (EntityState.isChest(this.sink_entity_state)) {
             this.dropOffToChest(this.inserter_state, this.sink_entity_state);
         }
+
+        this.current_tick += 1;
     }
 
-    private dropOffToBelt(inserter_state: InserterState): void {
-        // remove 4 items per tick to the belt over the drop duration
+    /**
+     * Select the lane to use for dropping items.
+     * Prefers the lane matching the held item's ingredient_name if found,
+     * otherwise returns the lane with the maximum stack_size.
+     */
+    private selectLaneForDrop(lanes: readonly Lane[], heldItemName: ItemName): Lane {
+        // Try to find a lane matching the held item
+        const matchingLane = lanes.find(lane => lane.ingredient_name === heldItemName);
+        if (matchingLane) {
+            return matchingLane;
+        }
+
+        // Fallback: return the lane with the maximum stack size
+        return lanes.reduce((maxLane, lane) => 
+            lane.stack_size > maxLane.stack_size ? lane : maxLane
+        );
+    }
+
+    private dropOffToBelt(belt_state: BeltState, inserter_state: InserterState): void {
         const held_item = inserter_state.held_item;
         assert(
             held_item !== null, 
             `${inserter_state.entity_id} Held item should not be null when dropping off to belt`
         );
 
-        inserter_state.inventoryState.removeQuantity(held_item.item_name, 4);
-        held_item.quantity -= 4;
+        const belt = belt_state.belt;
+        const lane = this.selectLaneForDrop(belt.lanes, held_item.item_name);
+        const amount_to_drop = Belt.amountToDropAtTick(belt.belt_speed, lane.stack_size as BeltStackSize, this.current_tick);
 
-        assert(held_item.quantity >= 0, "Held item quantity went below 0");
-        if (held_item.quantity == 0) {
-            inserter_state.held_item = null;
+        if (amount_to_drop > 0) {
+            const actual_drop = Math.min(amount_to_drop, held_item.quantity);
+            inserter_state.inventoryState.removeQuantity(held_item.item_name, actual_drop);
+            held_item.quantity -= actual_drop;
+
+            assert(held_item.quantity >= 0, "Held item quantity went below 0");
+            if (held_item.quantity === 0) {
+                inserter_state.held_item = null;
+            }
         }
     }
 
