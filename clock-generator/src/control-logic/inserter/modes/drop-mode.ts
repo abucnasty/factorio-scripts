@@ -1,5 +1,5 @@
 import assert from "../../../common/assert";
-import { ChestState, EntityState, InserterState, InserterStatus, MachineState } from "../../../state";
+import { BeltState, ChestState, EntityState, InserterState, InserterStatus, MachineState } from "../../../state";
 import { InserterMode } from "./inserter-mode";
 
 export class InserterDropMode implements InserterMode {
@@ -16,7 +16,7 @@ export class InserterDropMode implements InserterMode {
 
     public executeForTick(): void {
         if (EntityState.isBelt(this.sink_entity_state)) {
-            this.dropOffToBelt(this.inserter_state);
+            this.dropOffToBelt(this.sink_entity_state, this.inserter_state);
         }
 
         if (EntityState.isMachine(this.sink_entity_state)) {
@@ -28,7 +28,7 @@ export class InserterDropMode implements InserterMode {
         }
     }
 
-    private dropOffToBelt(inserter_state: InserterState): void {
+    private dropOffToBelt(belt_state: BeltState, inserter_state: InserterState): void {
         // remove 4 items per tick to the belt over the drop duration
         const held_item = inserter_state.held_item;
         assert(
