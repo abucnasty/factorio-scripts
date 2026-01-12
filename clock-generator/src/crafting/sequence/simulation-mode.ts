@@ -50,6 +50,9 @@ export function simulationModeForOutput(
 
 
     if (expected_transfer_amount > output_block.quantity) {
+        // FIXME: more nuanced logic here to determine if we need to prevent desyncs
+        // for example, in the electric furnace sample config, this could be just the normal mode and does not need desync prevention
+        // as the inserter being clocked to be enabled for just 1 tick is enough for it to work
         return SimulationMode.PREVENT_DESYNCS;
     }
 

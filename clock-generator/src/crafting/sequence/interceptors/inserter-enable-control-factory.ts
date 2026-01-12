@@ -887,7 +887,7 @@ export class EnableControlFactory {
 
         if (mode === SimulationMode.LOW_INSERTION_LIMITS) {
             const total_swing_duration = Duration.ofTicks(
-                (animation.total.ticks + 1) * total_transfer_count
+                animation.total.ticks * total_transfer_count
             );
             return OpenRange.fromStartAndDuration(
                 0,
@@ -897,7 +897,7 @@ export class EnableControlFactory {
 
         if (mode === SimulationMode.PREVENT_DESYNCS) {
             const total_swing_duration = Duration.ofTicks(
-                (animation.total.ticks + 1) * total_transfer_count
+                animation.total.ticks * total_transfer_count
             );
 
             // For slow machines, use "buffer in hand" strategy:
@@ -947,7 +947,7 @@ export class EnableControlFactory {
 
         if (mode === SimulationMode.NORMAL) {
             const total_swing_duration = Duration.ofTicks(
-                (animation.total.ticks + 1) * total_transfer_count
+                animation.total.ticks * total_transfer_count
             );
             return OpenRange.fromStartAndDuration(
                 0,
