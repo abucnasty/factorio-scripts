@@ -256,28 +256,7 @@ function computeLastSwingOffsetDuration(
     }
 
     if (mode === SimulationMode.PREVENT_DESYNCS || mode === SimulationMode.LOW_INSERTION_LIMITS) {
-        const inserter_stack_size = inserter.metadata.stack_size;
-        const amount_per_craft_int = Math.ceil(source_machine.output.amount_per_craft.toDecimal());
-        /**
-         * okay... so...
-         * this is going to look like magic because, it is.
-         * Purely by observation, the following buffers are ideal for handling desyncs 
-         * when dealing with low insertion limits.
-         * 
-         * | Recipe | Amount Per Craft | Ideal Buffer |
-         * | ------ | ---------------- | ------------ |
-         * | green  | 2                | 4            |
-         * | blue   | 4                | 2            |
-         * | yellow | 6                | 0            |
-         * | purple | 6                | 0            |
-         * 
-         * These most likely only work with legendary stack inserters at stack size 16 but ¯\_(ツ)_/¯
-         */
-        if (amount_per_craft_int < inserter_stack_size) {
-            const max_buffer = 7
-            const buffer = Math.max(0, max_buffer - amount_per_craft_int)
-            return Duration.ofTicks(buffer)
-        }
+        return Duration.zero
     }
     return Duration.zero;
 }
