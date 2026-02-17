@@ -29,6 +29,7 @@ mkdir -p "$MOD_DIR"
 
 # Copy mod files
 cp info.json "$MOD_DIR/"
+cp changelog.txt "$MOD_DIR/"
 cp data.lua "$MOD_DIR/"
 cp control.lua "$MOD_DIR/"
 cp -r locale "$MOD_DIR/"
