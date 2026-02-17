@@ -5,6 +5,8 @@
 require("scripts.types")
 local helpers = require("scripts.helpers")
 
+local debug = false
+
 local extraction = {}
 
 -- Individual Entity Extractors
@@ -373,12 +375,21 @@ local function extract_machine_data(entity)
     -- Only handle entities with supported subgroups
     local supported_subgroups = {
         ["smelting-machine"] = true,
-        ["production-machine"] = true
+        ["production-machine"] = true,
+        ["agriculture"] = true
     }
+
+    if debug then
+        helpers.print("Entity: " .. entity.name .. ", subgroup: " .. (entity.prototype.subgroup and entity.prototype.subgroup.name or "nil"))
+    end
 
     local prototype = entity.prototype
     local subgroup = prototype and prototype.subgroup and prototype.subgroup.name
     if not supported_subgroups[subgroup] then
+        return nil, nil
+    end
+
+    if subgroup == "agriculture" and entity.name ~= "biochamber" then
         return nil, nil
     end
 
