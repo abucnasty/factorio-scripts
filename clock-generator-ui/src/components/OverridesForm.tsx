@@ -62,7 +62,7 @@ export function OverridesForm({
                         onChange={(e) =>
                             onUpdate(
                                 'terminal_swing_count',
-                                e.target.value ? parseInt(e.target.value) : undefined
+                                e.target.value ? parseFloat(e.target.value) : undefined
                             )
                         }
                         slotProps={{ htmlInput: { min: 1 } }}

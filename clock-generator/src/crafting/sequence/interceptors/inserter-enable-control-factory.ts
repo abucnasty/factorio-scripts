@@ -57,7 +57,7 @@ export class EnableControlFactory {
         const additional_enable_controls: EnableControl[] = [];
 
         // Check if this inserter feeds into any terminal machine
-        // Skip for fractional swings - the fromMachinetoMachine/fromBeltToMachine path handles timing
+        // Skip for fractional swings
         if (!this.crafting_cycle_plan.fractional_swings_enabled) {
             if (EntityState.isMachine(sink_state) && this.terminal_machine_states.has(sink_state)) {
                 additional_enable_controls.push(
@@ -493,7 +493,7 @@ export class EnableControlFactory {
             }
         }
 
-        // Non-fractional mode: use original clocked control logic
+        // Non-fractional mode: use original clocked control logic (TODO: refactor this eventually...)
         const enabled_ranges = [this.computeEnableRangeFromMachine(inserter_state, source_state)];
         const clocked_control = this.clockedForCycle(enabled_ranges);
 
@@ -663,7 +663,7 @@ export class EnableControlFactory {
         );
 
         const enabled_ranges: OpenRange[] = output_inserter_enable_ranges.map(range => {
-            const output_inserter_end = range.end_inclusive - 1;
+            const output_inserter_end = range.end_inclusive;
             const end_of_cycle = this.crafting_cycle_plan.total_duration.ticks;
 
             let start_tick = output_inserter_end
