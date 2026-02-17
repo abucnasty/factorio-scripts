@@ -1,6 +1,8 @@
 -- Helper Functions for Clock Generator Sidecar
 -- Shared utility functions used across extraction and export modules.
 
+local debug = false
+
 local helpers = {}
 
 ---Get the default belt stack size for a force (1 + researched bonus)
@@ -22,9 +24,22 @@ function helpers.get_target_type(entity)
     end
     
     local entity_type = entity.type
+
+    if debug then
+        helpers.print("entity type: " .. entity_type)
+    end
     
-    -- Machines (assemblers, furnaces, labs)
-    if entity_type == "assembling-machine" or entity_type == "furnace" or entity_type == "lab" then
+    -- Machines (entities that can craft)
+    if entity_type == "assembling-machine" then
+        return "machine"
+    end
+    if entity_type == "furnace" then
+        return "machine"
+    end
+    if entity_type == "lab" then
+        return "machine"
+    end
+    if entity_type == "biochamber" then
         return "machine"
     end
     
@@ -144,6 +159,17 @@ function helpers.normalize_belt_type(name)
     }
     
     return underground_to_belt[name] or splitter_to_belt[name] or name
+end
+
+
+function helpers.print(...)
+    if debug then
+        local args = {...}
+        for i, v in ipairs(args) do
+            args[i] = tostring(v)
+        end
+        game.print("[ClockGen] " .. table.concat(args, " "))
+    end
 end
 
 return helpers
