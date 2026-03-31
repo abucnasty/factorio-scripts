@@ -104,7 +104,7 @@ describe("generateClockForConfig", () => {
                 // the output inserter swings 6 times, so the end range can be anywhere between 61 and 71
                 // if 72 or more, the inserter will cause instability due to swinging a 7th time
                 const expected_end_inclusive = OpenRange.from(61, 71);
-                
+
                 expect(inserterTransfers.length).toBe(1);
                 const transfer = inserterTransfers[0];
                 expect(transfer.tick_range.start_inclusive).toBe(expected_start_inclusive);
@@ -145,7 +145,7 @@ describe("generateClockForConfig", () => {
                 const inserterTransfers = result.transfer_history.getOrThrow(output_inserter_id);
                 const expected_start_inclusive = 1
                 const expected_end_inclusive = 49
-                
+
                 expect(inserterTransfers.length).toBe(1);
                 const transfer = inserterTransfers[0];
                 expect(transfer.tick_range.start_inclusive).toBe(expected_start_inclusive);
@@ -156,12 +156,12 @@ describe("generateClockForConfig", () => {
                 const inserter_transfers = result.transfer_history.getOrThrow(input_inserter_id)
                 const sorted_transfers = [...inserter_transfers].sort((a, b) => a.tick_range.start_inclusive - b.tick_range.start_inclusive);
                 const expected_ranges = [
-                    OpenRange.from(51, 62),
-                    OpenRange.from(62, 73),
-                    OpenRange.from(80, 91),
-                    OpenRange.from(91, 102)
+                    OpenRange.from(52, 63),
+                    OpenRange.from(63, 74),
+                    OpenRange.from(81, 92),
+                    OpenRange.from(92, 103)
                 ]
-                
+
                 expect(sorted_transfers.length).toBe(4);
                 sorted_transfers.forEach((transfer, index) => {
                     const expected_range = expected_ranges[index];
@@ -171,7 +171,7 @@ describe("generateClockForConfig", () => {
             });
 
         });
-        
+
     });
 
     describe("CHEMICAL_SCIENCE_ENGINES config (multi-output machine)", async () => {
@@ -239,7 +239,7 @@ describe("generateClockForConfig", () => {
     describe("fractional swings", () => {
         describe("PRODUCTION_SCIENCE_SHARED with fractional swings enabled", async () => {
             const configWithFractionalSwings = await loadConfigFromFile(ConfigPaths.PRODUCTION_SCIENCE_SHARED_JSON);
-            
+
             const result = generateClockForConfig(configWithFractionalSwings);
 
             it("has fractional_swings_enabled set to true", () => {
@@ -259,7 +259,7 @@ describe("generateClockForConfig", () => {
             it("swing distributions sum to correct totals", () => {
                 const distribution = result.crafting_cycle_plan.swing_distribution!;
                 const cycle_multiplier = result.crafting_cycle_plan.cycle_multiplier!;
-                
+
                 for (const [entityId, swingDist] of distribution.entries()) {
                     const sum = swingDist.swings_per_subcycle.reduce((a, b) => a + b, 0);
                     expect(sum).toBe(swingDist.total_swings);
@@ -270,7 +270,7 @@ describe("generateClockForConfig", () => {
             it("output inserter has fractional swing distribution", () => {
                 const distribution = result.crafting_cycle_plan.swing_distribution!;
                 const outputInserterDist = distribution.get("inserter:1");
-                
+
                 expect(outputInserterDist).toBeDefined();
                 // Should have alternating distribution (values differ by at most 1)
                 const swings = outputInserterDist!.swings_per_subcycle;
@@ -283,7 +283,7 @@ describe("generateClockForConfig", () => {
                 const base_duration = result.crafting_cycle_plan.total_duration.ticks;
                 const cycle_multiplier = result.crafting_cycle_plan.cycle_multiplier!;
                 const expected_simulation_duration = base_duration * cycle_multiplier;
-                
+
                 expect(result.simulation_duration.ticks).toBe(expected_simulation_duration);
             });
         });
@@ -309,6 +309,35 @@ describe("generateClockForConfig", () => {
 
             it("does not have cycle_multiplier defined", () => {
                 expect(result.crafting_cycle_plan.cycle_multiplier).toBeUndefined();
+            });
+        });
+
+        describe("Utility Science Belted with Combined Blue and LDS", async () => {
+            const config = await loadConfigFromFile(ConfigPaths.UTILITY_SCIENCE_BELTED_COMBINED_BLUE_AND_LDS);
+            const result = generateClockForConfig(config);
+
+            it("has correct tick ranges for input inserter transfers", () => {
+                // Get the actual EntityId instances from the map keys
+                const keys = Array.from(result.crafting_cycle_plan.entity_transfer_map.keys());
+                // inserter id 3 is the LDS + blue chip inserter in this configuration
+                const input_inserter_id: EntityId = keys.find(k => k.id === EntityId.forInserter(3).id)!;
+                
+                const inserter_transfers = result.transfer_history.getOrThrow(input_inserter_id)
+                const sorted_transfers = [...inserter_transfers].sort((a, b) => a.tick_range.start_inclusive - b.tick_range.start_inclusive);
+                const expected_ranges = [
+                    OpenRange.from(38, 49),
+                    OpenRange.from(49, 60),
+                    OpenRange.from(206, 217),
+                    OpenRange.from(217, 228),
+                    OpenRange.from(245, 256),
+                ]
+
+                expect(sorted_transfers.length).toBe(5);
+                sorted_transfers.forEach((transfer, index) => {
+                    const expected_range = expected_ranges[index];
+                    expect(transfer.tick_range.start_inclusive).toBe(expected_range.start_inclusive);
+                    expect(transfer.tick_range.end_inclusive).toBe(expected_range.end_inclusive);
+                })
             });
         });
     });

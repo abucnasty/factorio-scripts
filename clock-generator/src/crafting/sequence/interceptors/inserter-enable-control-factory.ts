@@ -457,7 +457,7 @@ export class EnableControlFactory {
                     this.computeEnableRangesToMachine(inserter_state, sink_state)
                 )
             }
-            return AlwaysEnabledControl
+            return this.enabledAfterOutputInserter(inserter_state, sink_state);
         }
 
         if (mode === SimulationMode.NORMAL) {
@@ -570,6 +570,47 @@ export class EnableControlFactory {
         }
 
         return ranges.length > 0 ? ranges : [this.computeEnableRangeFromMachine(inserter_state, source_state)];
+    }
+
+    /**
+     * Sets the enable range per crafting cycle to be after the output inserter for the sink machine has completed its swings
+     * 
+     * The input inserter is enabled from the end of the output inserter's schedule until the end of the crafting cycle.
+     */
+    private enabledAfterOutputInserter(inserter_state: InserterState, sink_state: MachineState): EnableControl {
+        const base_cycle_duration = this.crafting_cycle_plan.total_duration.ticks;
+
+        // Find output inserters for the sink machine (inserters pulling FROM the sink machine)
+        const output_inserters_for_sink = this.entity_state_registry
+            .getAllStates()
+            .filter(EntityState.isInserter)
+            .filter(i => i.inserter.source.entity_id.id === sink_state.machine.entity_id.id);
+
+        // If no output inserters, enable for the entire cycle
+        if (output_inserters_for_sink.length === 0) {
+            return AlwaysEnabledControl
+        }
+
+        // Get the enable ranges for all output inserters and merge them
+        const output_inserter_enable_ranges = OpenRange.reduceRanges(
+            output_inserters_for_sink.map(output_inserter_state => {
+                return this.computeEnableRangeFromMachine(
+                    output_inserter_state,
+                    sink_state,
+                );
+            })
+        );
+
+        // Create enable ranges that start after each output inserter range ends until end of cycle
+        const enabled_ranges: OpenRange[] = output_inserter_enable_ranges.map(range => {
+            const start_tick = range.end_inclusive - 2;
+            return OpenRange.from(start_tick, base_cycle_duration);
+        });
+
+        const merged_ranges = OpenRange.reduceRanges(enabled_ranges);
+        const sorted_ranges = merged_ranges.sort((a, b) => a.start_inclusive - b.start_inclusive);
+
+        return this.clockedForCycle(sorted_ranges.length > 0 ? sorted_ranges : [OpenRange.from(0, base_cycle_duration)]);
     }
 
     private computeEnableRangesToMachine(

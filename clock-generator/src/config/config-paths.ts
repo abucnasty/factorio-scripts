@@ -37,4 +37,5 @@ export const ConfigPaths = {
     LOW_DENSITY_STRUCTURE: path.join(CONFIG_SAMPLES_DIR, 'low-density-structure-120-per-second.json'),
     METALLURGIC_SCIENCE_PACK: path.join(CONFIG_SAMPLES_DIR, 'metallurgic-science-pack.json'),
     LITHIUM_PLATES: path.join(CONFIG_SAMPLES_DIR, 'lithium-plates-40-per-second.json'),
+    UTILITY_SCIENCE_BELTED_COMBINED_BLUE_AND_LDS: path.join(CONFIG_SAMPLES_DIR, 'utility-science-belted-combined-blue-and-lds.json'),
 } as const;

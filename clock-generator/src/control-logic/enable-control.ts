@@ -4,18 +4,24 @@ import { Resettable } from "./resettable";
 
 export interface EnableControl {
     isEnabled(): boolean;
+    /**
+     * Used for debugging purposes to identify the control in logs.
+     */
+    toString?(): string;
 }
 
 export const AlwaysEnabledControl: EnableControl = {
     isEnabled(): boolean {
         return true;
-    }
+    },
+    toString: () => "AlwaysEnabledControl"
 };
 
 const NeverEnabledControl: EnableControl = {
     isEnabled(): boolean {
         return false;
-    }
+    },
+    toString: () => "NeverEnabledControl"
 };
 
 export class EnableControlLambda implements EnableControl {
