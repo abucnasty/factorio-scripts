@@ -38,4 +38,5 @@ export const ConfigPaths = {
     METALLURGIC_SCIENCE_PACK: path.join(CONFIG_SAMPLES_DIR, 'metallurgic-science-pack.json'),
     LITHIUM_PLATES: path.join(CONFIG_SAMPLES_DIR, 'lithium-plates-40-per-second.json'),
     UTILITY_SCIENCE_BELTED_COMBINED_BLUE_AND_LDS: path.join(CONFIG_SAMPLES_DIR, 'utility-science-belted-combined-blue-and-lds.json'),
+    PROCESSING_UNITS: path.join(CONFIG_SAMPLES_DIR, 'processing-units-15-per-second.json'),
 } as const;
