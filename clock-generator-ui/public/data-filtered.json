@@ -63778,10 +63778,6 @@
       "type": "item",
       "stack_size": 200
     },
-    "straight-rail": {
-      "name": "straight-rail",
-      "type": "item"
-    },
     "uranium-rounds-magazine": {
       "name": "uranium-rounds-magazine",
       "type": "item",
@@ -63944,6 +63940,11 @@
     },
     "bioflux": {
       "name": "bioflux",
+      "type": "item",
+      "stack_size": 100
+    },
+    "rail": {
+      "name": "rail",
       "type": "item",
       "stack_size": 100
     }
