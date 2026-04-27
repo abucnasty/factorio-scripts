@@ -31,7 +31,7 @@ async function main() {
     const configArg = process.argv.find(arg => arg.startsWith('--config='));
     const configPath = configArg 
         ? configArg.split('=')[1] 
-        : ConfigPaths.PRODUCTION_SCIENCE_SHARED_JSON;
+        : ConfigPaths.PROCESSING_UNITS;
     
     const config: Config = await loadConfigFromFile(configPath);
     

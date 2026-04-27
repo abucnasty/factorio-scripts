@@ -226,6 +226,30 @@ describe("generateClockForConfig", () => {
             });
         });
     });
+
+    describe("PROCESSING_UNITS config (multi-ingredient chest input)", async () => {
+
+        const config = await loadConfigFromFile(ConfigPaths.PROCESSING_UNITS);
+        const result: BlueprintGenerationResult = generateClockForConfig(config);
+
+        // Get the actual EntityId instances from the map keys
+        const keys = Array.from(result.crafting_cycle_plan.entity_transfer_map.keys());
+        const input_inserter_id: EntityId = keys.find(k => k.id === EntityId.forInserter(1).id)!;
+
+        it("records input inserter transfers", () => {
+            const inserterTransfers = result.transfer_history.getOrThrow(input_inserter_id);
+            expect(inserterTransfers.length).toBeGreaterThan(0);
+        });
+
+        it("transfers both required ingredient types", () => {
+            const inserterTransfers = result.transfer_history.getOrThrow(input_inserter_id);
+            const transferredItems = new Set(inserterTransfers.map(t => t.item_name));
+
+            expect(transferredItems.has("electronic-circuit")).toBe(true);
+            expect(transferredItems.has("advanced-circuit")).toBe(true);
+        });
+    });
+
     describe("config validation", () => {
         it("throw error if the current configuration cannot meet the target production rate", async () => {
             const config = await loadConfigFromFile(ConfigPaths.STONE_BRICKS_DIRECT_INSERT);

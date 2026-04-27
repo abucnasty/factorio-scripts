@@ -270,7 +270,7 @@ export class EnableControlFactory {
             return EnableControl.never;
         }
 
-        return EnableControl.all(per_item_controls);
+        return EnableControl.any(per_item_controls);
     }
 
     private fromChestToMachineForItem(

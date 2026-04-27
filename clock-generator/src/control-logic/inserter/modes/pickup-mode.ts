@@ -93,7 +93,7 @@ export class InserterPickupMode implements InserterMode {
         }
 
         for (const item_name of inserter_state.inserter.filtered_items) {
-            if (!MachineState.machineInputIsBlocked(sink, item_name)) {
+            if (this.canPickupItemForSink(item_name)) {
                 const lane = source.belt.lanes.find(lane => lane.ingredient_name === item_name);
                 assert(lane, `No belt lane found for item ${item_name}`);
                 // Pick up at most lane.stack_size items, but cap at inserter stack size
@@ -130,7 +130,9 @@ export class InserterPickupMode implements InserterMode {
      */
     private pickupFromChest(state: InserterState, source: ChestState): void {
         const first_available_item = Array.from(state.inserter.filtered_items).find(it => {
-            return source.getCurrentQuantity(it) > 0 && canPickupItem(state, it);
+            return source.getCurrentQuantity(it) > 0
+                && canPickupItem(state, it)
+                && this.canPickupItemForSink(it);
         })
         
         if (!first_available_item) {
@@ -151,6 +153,14 @@ export class InserterPickupMode implements InserterMode {
         state.held_item = { item_name: held_item.item_name, quantity: held_item.quantity + pickup_quantity };
         state.inventoryState.addQuantity(first_available_item, pickup_quantity);
         source.inventoryState.removeQuantity(first_available_item, pickup_quantity);
+    }
+
+    private canPickupItemForSink(item_name: ItemName): boolean {
+        const sink = this.sinkEntityState;
+        if (!EntityState.isMachine(sink)) {
+            return true;
+        }
+        return !MachineState.machineInputIsBlocked(sink, item_name);
     }
 
     private hasPickupDurationElapsed(): boolean {
