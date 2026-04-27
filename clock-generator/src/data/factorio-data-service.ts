@@ -108,11 +108,6 @@ export class FactorioDataService {
 
     public static readonly DEFAULT_ENERGY_REQUIRED = 0.5
 
-
-    public static interceptor: Map<string, Item> = new Map([
-        ["rail", { name: "rail", type: "item", stack_size: 100 }],
-    ]);
-
     public static findRecipeOrThrow(recipeName: string): EnrichedRecipe {
         const recipe = this.getData().recipe[recipeName]
 
@@ -151,10 +146,6 @@ export class FactorioDataService {
     }
 
     public static findItemOrThrow(itemName: ItemName): Item {
-        const interceptor = this.interceptor.get(itemName);
-        if(interceptor) {
-            return interceptor
-        }
         const data = this.getData();
         const item = data.item[itemName] 
 

@@ -10,7 +10,6 @@ const item_categories = new Set([
     "item",
     "module",
     "tool",
-    "straight-rail",
     "ammo",
     "capsule",
 ])
@@ -42,6 +41,16 @@ function mapRawDataToFilteredFactorioData(rawData) {
             filtered["item"][itemName] = mapAsItem(itemData);
         }
     }
+
+    // synthetic items
+
+    // for some reason rail is not an item in the raw data, it is only a recipe
+    filtered["item"]["rail"] = {
+        name: "rail",
+        type: "item",
+        stack_size: 100,
+    }
+
     return filtered;
 }
 
