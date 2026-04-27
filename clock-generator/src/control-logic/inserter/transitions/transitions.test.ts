@@ -1,7 +1,7 @@
 import { describe, test, expect, vi, beforeEach } from "vitest"
 import { mock } from 'vitest-mock-extended';
 import { IdleModeTransitionEvaluator } from "./idle-mode-transition-evaluator"
-import { BeltState, EntityState, InserterState, MachineState } from "../../../state"
+import { BeltState, ChestState, EntityState, InserterState, MachineState } from "../../../state"
 import { EntityId, Inserter, InserterMetadata, InserterStackSize, InserterTarget, Machine, MachineMetadata, MachineType, RecipeMetadata } from "../../../entities"
 import { ItemName } from "../../../data/factorio-data-types"
 import { InserterAnimation } from "../../../entities/inserter/inserter-animation"
@@ -255,6 +255,104 @@ describe("transitions (belt to machine)", () => {
             pickup_mode.executeForTick();
             expect(inserterState.held_item?.quantity).toBe(10);
             expect(inserterState.held_item?.quantity).toBeLessThanOrEqual(stack_size);
+        })
+
+        test("skips blocked belt item and picks next available unblocked item", () => {
+            const mockSource: BeltState = mock<BeltState>({
+                entity_id: EntityId.forBelt(-1),
+                inventoryState: mock<any>(),
+                belt: {
+                    lanes: [
+                        { ingredient_name: "iron-plate", stack_size: 4 },
+                        { ingredient_name: "copper-cable", stack_size: 4 },
+                    ]
+                }
+            });
+
+            const mockSink: MachineState = MachineState.forMachine(
+                createMachine("electronic-circuit")
+            );
+
+            const ironPlateInsertionLimit = mockSink.machine.inputs
+                .getOrThrow("iron-plate")
+                .automated_insertion_limit
+                .quantity;
+            mockSink.inventoryState.setQuantity("iron-plate", ironPlateInsertionLimit);
+
+            const inserterState = InserterState.createIdle(createInserter({
+                source: {
+                    entity_id: mockSource.entity_id,
+                    item_names: new Set(["iron-plate", "copper-cable"])
+                },
+                sink: {
+                    entity_id: mockSink.entity_id,
+                    item_names: new Set(["iron-plate", "copper-cable"])
+                },
+                filters: ["iron-plate", "copper-cable"]
+            }));
+
+            const pickup_mode = InserterPickupMode.create({
+                inserterState: inserterState,
+                sourceState: mockSource,
+                sinkState: mockSink,
+            });
+
+            pickup_mode.executeForTick();
+
+            expect(inserterState.held_item?.item_name).toBe("copper-cable");
+            expect(inserterState.held_item?.quantity).toBe(4);
+        })
+
+        test("skips blocked chest item and picks next available unblocked item", () => {
+            const mockSource: ChestState = mock<ChestState>({
+                entity_id: EntityId.forChest(-1),
+                inventoryState: {
+                    removeQuantity: vi.fn(),
+                } as any,
+                getCurrentQuantity: (itemName?: string) => {
+                    if (itemName === "iron-plate") {
+                        return 100;
+                    }
+                    if (itemName === "copper-cable") {
+                        return 100;
+                    }
+                    return 0;
+                },
+                getItemFilters: () => ["iron-plate", "copper-cable"],
+            });
+
+            const mockSink: MachineState = MachineState.forMachine(
+                createMachine("electronic-circuit")
+            );
+
+            const ironPlateInsertionLimit = mockSink.machine.inputs
+                .getOrThrow("iron-plate")
+                .automated_insertion_limit
+                .quantity;
+            mockSink.inventoryState.setQuantity("iron-plate", ironPlateInsertionLimit);
+
+            const inserterState = InserterState.createIdle(createInserter({
+                source: {
+                    entity_id: mockSource.entity_id,
+                    item_names: new Set(["iron-plate", "copper-cable"])
+                },
+                sink: {
+                    entity_id: mockSink.entity_id,
+                    item_names: new Set(["iron-plate", "copper-cable"])
+                },
+                filters: ["iron-plate", "copper-cable"]
+            }));
+
+            const pickup_mode = InserterPickupMode.create({
+                inserterState: inserterState,
+                sourceState: mockSource,
+                sinkState: mockSink,
+            });
+
+            pickup_mode.executeForTick();
+
+            expect(inserterState.held_item?.item_name).toBe("copper-cable");
+            expect(inserterState.held_item?.quantity).toBeGreaterThan(0);
         })
     })
 })
