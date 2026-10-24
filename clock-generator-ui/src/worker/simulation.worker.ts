@@ -118,6 +118,7 @@ function toRunView(run: ClockAlternativeRun | null, config: Config): ClockAltern
         label: alternative.label,
         description: alternative.description,
         inserterWindowCount: alternative.inserter_window_count,
+        deciders: alternative.deciders,
         rankingWindowCount: alternative.ranking_window_count,
         assessment: alternative.assessment,
         assumptions: {
@@ -152,6 +153,7 @@ function toRunView(run: ClockAlternativeRun | null, config: Config): ClockAltern
         clockOnlyStateTransitionHistory: result.clock_only_run?.state_transition_history ?? null,
         fuelView: fuelViewOf(result),
         clockWindows: result.clock_windows,
+        alwaysOnReasons: result.always_on_reasons ?? {},
         beltPickupSlackTicks: result.belt_pickup_slack_ticks,
         insights: alternative.insights,
         shiftOptions: shiftOptionsOf(result),
@@ -161,7 +163,9 @@ function toRunView(run: ClockAlternativeRun | null, config: Config): ClockAltern
         inserterClocks: result.unplanned_inserter_clocks ?? {},
         backedUpBelts: alternative.belt?.kind === 'backed_up' || (alternative.belt === null && config.overrides?.backed_up_belts === true),
     }));
-    return { signature: run.signature, alternatives };
+    // the same clock made with shared windows, listed after it
+    const also = run.also?.flatMap(it => toRunView(it, config) ?? []);
+    return { signature: run.signature, alternatives, ...(also?.length ? { also } : {}) };
 }
 
 /** Runs one plan or task with streamed logs and progress; errors are posted instead of thrown */

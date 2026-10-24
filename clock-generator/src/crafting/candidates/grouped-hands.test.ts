@@ -5,7 +5,7 @@ import type { Config } from "../../config/schema";
 import { quiet } from "../generate-blueprint-test-helpers";
 import { planRun } from "../plan/plan-run";
 import { dropSpacing, dropTieBreak } from "../../config/drop-spacing";
-import { GroupedHandsNotApplicable, groupedHandsCycles, groupedHandsWindows } from "./grouped-hands";
+import { GroupedHandsNotApplicable, groupedHandsCycles, groupedHandsPlan, groupedHandsWindows } from "./grouped-hands";
 
 // The grenade build (REAL_OWNER_GRENADE), one copy: a foundry (3) fills four assembling machines (1, 2, 4, 5) with iron
 // plates through inserters 4, 3, 6 and 5, five hands of 16 a period each; a drill into each machine brings the coal; inserters 1,
@@ -43,6 +43,23 @@ describe("hands in groups", () => {
         // a drill's window opens with its machine's inputs
         expect(ranges(windows, "drill:1")[0][0]).toBe(2);
         expect(ranges(windows, "drill:2")[0][0]).toBe(58);
+    });
+
+    it("names the groups that take turns: each starts where its output swings open, with its outputs, then its inputs, then its drills", () => {
+        const plan = planRun({ ...config, overrides: { ...config.overrides, derive_clock_windows: false, terminal_swing_count: 1 } }, { logger: quiet });
+        const { simulation_context, swing_counts, recipe_lcm, duration } = plan.run;
+        const turnsOf = (drops: ReturnType<typeof dropTieBreak> | null) =>
+            groupedHandsPlan(simulation_context.entity_registry, swing_counts, recipe_lcm, duration.ticks, true, undefined, drops).turns;
+        // dealt out by ids: the machines alternate between the two groups
+        expect(turnsOf(null)).toEqual([
+            { start: 0, entity_ids: ["inserter:1", "inserter:7", "inserter:4", "inserter:6", "drill:1", "drill:3"] },
+            { start: 56, entity_ids: ["inserter:2", "inserter:8", "inserter:3", "inserter:5", "drill:2", "drill:4"] },
+        ]);
+        // dealt out by the belt the hands drop on: the machines of one row of it are a group
+        expect(turnsOf(dropTieBreak(config, duration.ticks))).toEqual([
+            { start: 0, entity_ids: ["inserter:1", "inserter:2", "inserter:3", "inserter:4", "drill:1", "drill:2"] },
+            { start: 56, entity_ids: ["inserter:7", "inserter:8", "inserter:5", "inserter:6", "drill:3", "drill:4"] },
+        ]);
     });
 
     it("gives the drills of one group one window, as long as the ticks the slowest of them needs to mine its machine's coal", () => {
@@ -131,7 +148,7 @@ describe("hands in a chain of machines", () => {
         expect(duration.ticks).toBe(168);
         // the way the sample's clock is made: a hand's worth for the plastic, whose foundries would keep a surplus hand, and the compact order
         const windows = groupedHandsWindows(simulation_context.entity_registry, swing_counts, recipe_lcm, duration.ticks, true,
-            { surplus_guard: true, feeder_offset: 1 });
+            { surplus_guard: true, feeder_offset: 1, share_windows: false });
         // three hands of 12 ticks onto the belt; then, as the last of them starts, the units and frames (two hands of 11, a third start the
         // limit refuses, and the belt pickup slack of 4); the low density structure behind them (two hands of 8 and a third start); the plastic
         // a tick after it (four hands of 8: no more than four) and the coal after that (two hands of 11 and a third start, and the slack)
@@ -140,6 +157,15 @@ describe("hands in a chain of machines", () => {
         for (const id of [5, 6, 7, 8, 22, 23, 25, 26]) expect(ranges(windows, `inserter:${id}`)).toEqual([[54, 71]]);
         for (const id of [10, 12, 19, 20]) expect(ranges(windows, `inserter:${id}`)).toEqual([[55, 80]]);
         expect(ranges(windows, "inserter:11")).toEqual([[56, 83]]);
+    });
+
+    it("has no groups that take turns: one group serves the chain", () => {
+        const plan = planRun({ ...config, overrides: { ...config.overrides, derive_clock_windows: false, lcm: 1 } }, { logger: quiet });
+        const { simulation_context, swing_counts, recipe_lcm, duration } = plan.run;
+        const made = groupedHandsPlan(simulation_context.entity_registry, swing_counts, recipe_lcm, duration.ticks, true,
+            { surplus_guard: true, feeder_offset: 1, share_windows: false });
+        expect(made.windows.size).toBeGreaterThan(0);
+        expect(made.turns).toEqual([]);
     });
 });
 
@@ -162,7 +188,7 @@ describe("hands that fill the cycle", () => {
         const { simulation_context, swing_counts, recipe_lcm, duration } = plan.run;
         expect(duration.ticks).toBe(24);
         const windows = groupedHandsWindows(simulation_context.entity_registry, swing_counts, recipe_lcm, duration.ticks, true,
-            { surplus_guard: false, feeder_offset: 1 });
+            { surplus_guard: false, feeder_offset: 1, share_windows: false });
         // three hands of 8 ticks and a start more are 26 ticks: the circuits into the processing unit machines (3, 4, 7, 8), the iron and
         // the cable into the circuit machines (5, 6, 13, 14, 15, 18, 19, 20) are busy all the time
         for (const id of [3, 4, 5, 6, 7, 8, 13, 14, 15, 18, 19, 20]) expect(windows.has(`inserter:${id}`)).toBe(false);
@@ -173,5 +199,18 @@ describe("hands that fill the cycle", () => {
         for (const id of [1, 10]) expect(ranges(windows, `inserter:${id}`)).toEqual([[5, 21]]);
         // one tick for each hand out
         for (const id of [16, 17, 23, 24]) expect(ranges(windows, `inserter:${id}`)).toEqual([[0, 0]]);
+    });
+    it("gives the inserters that open on the same tick one window, the longest of them, where windows are shared", () => {
+        const plan = planRun({ ...config, overrides: { ...config.overrides, derive_clock_windows: false, lcm: 1, terminal_swing_count: 1 } }, { logger: quiet });
+        const { simulation_context, swing_counts, recipe_lcm, duration } = plan.run;
+        const windows = groupedHandsWindows(simulation_context.entity_registry, swing_counts, recipe_lcm, duration.ticks, true,
+            { surplus_guard: false, feeder_offset: 1, share_windows: true });
+        // the cable and circuits (10 ticks) and the plastic and iron (17) open together, and are one window of 17
+        for (const id of [1, 10, 11, 12, 21, 22]) expect(ranges(windows, `inserter:${id}`)).toEqual([[5, 21]]);
+        // the advanced circuits open a tick before them and stay as they were; the hands out are not takers
+        for (const id of [2, 9]) expect(ranges(windows, `inserter:${id}`)).toEqual([[4, 13]]);
+        for (const id of [16, 17, 23, 24]) expect(ranges(windows, `inserter:${id}`)).toEqual([[0, 0]]);
+        // those left enabled all the time stay so
+        for (const id of [3, 4, 5, 6, 7, 8, 13, 14, 15, 18, 19, 20]) expect(windows.has(`inserter:${id}`)).toBe(false);
     });
 });

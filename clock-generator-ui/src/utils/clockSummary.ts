@@ -1,10 +1,10 @@
 import type { ClockAlternativeView } from '../worker/types';
 import { formatNumberText } from './numberText';
-import { lossesOf } from './rateWarning';
+import { lossesOf, notTriedOf } from './rateWarning';
 import type { PickRule } from './recommendedClock';
 
 /** The fields of a clock its summary is worked out from, so the tests need not build a whole view */
-export type SummaryClock = Pick<ClockAlternativeView, 'id' | 'label' | 'verdict' | 'ranking' | 'beltLabel' | 'deadlockRisk' | 'assessment'>;
+export type SummaryClock = Pick<ClockAlternativeView, 'id' | 'label' | 'verdict' | 'ranking' | 'beltLabel' | 'deadlockRisk' | 'assessment' | 'deciders'>;
 
 /**
  * The smallest distance from the target rate that names a clock by its rate, as the Copy button's "below target"
@@ -22,6 +22,7 @@ export const SUMMARY_COPY = {
     startDependent: 'Depends on how it is started',
     backedUpBelts: 'For backed-up belts',
     fewestWakeUps: 'Fewest wake-ups',
+    fewestDeciders: 'Fewest deciders',
     fewestWakeWindows: 'Fewest wake windows',
     another: (rate: string) => `Another way to make ${rate}/s`,
     // the card's tiles
@@ -35,12 +36,14 @@ export const SUMMARY_COPY = {
     recoversNotTested: 'Not tested',
     recoversUnavailable: 'Unavailable',
     recoversYesDetail: 'In the simulator, it gets back to its rate by itself after it is starved or jammed.',
-    recoversNoDetail: (losses: string) => losses
-        ? `In the simulator, after ${losses} for a while, it does not get back to its rate by itself.`
+    recoversNoDetail: (losses: string, notTried = '') => losses
+        ? `In the simulator, after ${losses} for a while, it does not get back to its rate by itself.${notTried}`
         : 'In the simulator, after it is starved or jammed, it does not get back to its rate by itself.',
     recoversNotTestedDetail: 'No usable recovery result is available for this clock.',
     recoversNotTriedDetail: (reason: string) => `Recovery could not be tried in the simulator: ${reason.replace(/\.$/, '')}.`,
     recoversBaselineUnavailableDetail: 'Recovery is unavailable: the undisturbed baseline for the loss trials did not hold its expected output.',
+    recoversLossLimit: (duration: string, item: string) =>
+        `Checked for losses up to ${duration}. A longer loss spoils the ${item} in the build, and no clock brings it back.`,
     beltMoving: 'Moving',
     beltBackedUp: 'Backed up',
     beltNone: 'None',
@@ -89,7 +92,7 @@ const isContender = (clock: SummaryClock) => clock.ranking.meets_target_rate && 
  * The name of a clock by what it is for, against the other clocks of its generation ("Fewest wake-ups"). The first
  * rule that matches wins: a clock off the target rate is named by its rate; one that does not recover, or does not hold
  * its rate, by that; one for backed-up belts (when the build asked for moving ones) by its belt; among the
- * others, the one with the fewest wake-ups, else the fewest wake windows; any other by the rate it makes. Tied clocks
+ * others, the one with the fewest wake-ups, else the fewest deciders, else the fewest wake windows; any other by the rate it makes. Tied clocks
  * share a name; the engine's name under it tells them apart. The target is each clock's own, so an edit to the build
  * since never renames a clock.
  */
@@ -120,6 +123,11 @@ export function plainClockName(clocks: SummaryClock[], index: number): string {
         if (wakeUps !== null && wakeUps === Math.min(...counted)) {
             return SUMMARY_COPY.fewestWakeUps;
         }
+        // the fewest decider combinators of clocks that do not all have the same number
+        const deciders = contenders.map(it => it.deciders);
+        if (clock.deciders === Math.min(...deciders) && Math.min(...deciders) < Math.max(...deciders)) {
+            return SUMMARY_COPY.fewestDeciders;
+        }
         if (clock.ranking.window_count === Math.min(...contenders.map(it => it.ranking.window_count))) {
             return SUMMARY_COPY.fewestWakeWindows;
         }
@@ -140,11 +148,31 @@ export function recoversOf(clock: Pick<SummaryClock, 'verdict' | 'assessment'>):
 } {
     const loss = clock.assessment.backpressure_loss;
     if (loss?.survives === true) return { kind: 'yes', value: SUMMARY_COPY.recoversYes, detail: SUMMARY_COPY.recoversYesDetail };
-    if (loss?.survives === false && loss.broken_by.length > 0) return { kind: 'no', value: SUMMARY_COPY.recoversNo, detail: SUMMARY_COPY.recoversNoDetail(lossesOf(clock)) };
+    if (loss?.survives === false && loss.broken_by.length > 0) return { kind: 'no', value: SUMMARY_COPY.recoversNo, detail: SUMMARY_COPY.recoversNoDetail(lossesOf(clock), notTriedOf(clock)) };
     if (loss?.survives === false) return { kind: 'not-tested', value: SUMMARY_COPY.recoversUnavailable, detail: SUMMARY_COPY.recoversBaselineUnavailableDetail };
     const notTried = clock.assessment.backpressure_loss_not_tried;
     return { kind: 'not-tested', value: clock.assessment.holds ? SUMMARY_COPY.recoversUnavailable : SUMMARY_COPY.recoversNotTested,
         detail: notTried !== undefined ? SUMMARY_COPY.recoversNotTriedDetail(notTried) : SUMMARY_COPY.recoversNotTestedDetail };
+}
+
+/** A stretch of time as the loss limit says it: "3 min 45 s", "3 min", "45 s" */
+export function minutesAndSecondsText(ticks: number): string {
+    const seconds = Math.round(ticks / 6) / 10;
+    const minutes = Math.floor(seconds / 60);
+    const rest = seconds - minutes * 60;
+    if (minutes === 0) return `${formatNumberText(rest)} s`;
+    return rest === 0 ? `${minutes} min` : `${minutes} min ${formatNumberText(rest)} s`;
+}
+
+/**
+ * For a build whose items spoil, the losses its clocks were checked for, in a sentence ("Checked for losses up to 45 s. A
+ * longer loss spoils the iron bacteria in the build, …"); null for any other build, or a clock whose losses were not tried
+ */
+export function lossLimitText(clock: Pick<SummaryClock, 'assessment'>, itemLabel: (id: string) => string): string | null {
+    const limit = clock.assessment.backpressure_loss?.loss_limit;
+    if (!limit) return null;
+    const name = itemLabel(limit.item);
+    return SUMMARY_COPY.recoversLossLimit(minutesAndSecondsText(limit.ticks), name.charAt(0).toLowerCase() + name.slice(1));
 }
 
 /** What the clock makes, for all the copies, and the line under it: "240/s", "all 11 copies" (nothing for one copy) */

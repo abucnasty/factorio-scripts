@@ -14,6 +14,8 @@ import {
     makesText,
     plainClockName,
     recoversOf,
+    lossLimitText,
+    minutesAndSecondsText,
     wakeUpsText,
     worksOf,
     type SummaryClock,
@@ -26,11 +28,12 @@ interface ClockOptions extends Partial<ClockRanking> {
     beltLabel?: string;
     deadlock?: boolean;
     brokenBy?: string[];
+    deciders?: number;
 }
 
-/** A stable clock at the target rate, made for the belt asked for, with 10 wake-ups and 4 windows, unless told otherwise */
+/** A stable clock at the target rate, made for the belt asked for, with 10 wake-ups, 4 windows and 4 deciders, unless told otherwise */
 function clock(id: string, options: ClockOptions = {}): SummaryClock {
-    const { verdict = 'stable', beltLabel = 'moving (+4 ticks)', deadlock = false, brokenBy, ...ranking } = options;
+    const { verdict = 'stable', beltLabel = 'moving (+4 ticks)', deadlock = false, brokenBy, deciders = 4, ...ranking } = options;
     const full: ClockRanking = {
         meets_target_rate: true,
         rate_off_target: 0,
@@ -45,6 +48,7 @@ function clock(id: string, options: ClockOptions = {}): SummaryClock {
         label: `Engine name of ${id}`,
         verdict,
         beltLabel,
+        deciders,
         deadlockRisk: deadlock ? 'Deadlock risk: inserters 1 and 2 both bring the same item.' : null,
         ranking: full,
         assessment: {
@@ -105,6 +109,17 @@ describe('plainClockName', () => {
     });
 
     it('names a clock with more wake-ups but the fewest windows "Fewest wake windows"', () => {
+        const clocks = [clock('a', { wake_ups_per_minute: 8, window_count: 6 }), clock('b', { wake_ups_per_minute: 12, window_count: 3 })];
+        expect(nameOf(clocks, 'b')).toBe('Fewest wake windows');
+    });
+
+    it('names a clock with more wake-ups but the fewest deciders "Fewest deciders", before the windows', () => {
+        const clocks = [clock('a', { wake_ups_per_minute: 8, window_count: 6, deciders: 10 }), clock('b', { wake_ups_per_minute: 12, window_count: 3, deciders: 6 })];
+        expect(nameOf(clocks, 'b')).toBe('Fewest deciders');
+        expect(nameOf(clocks, 'a')).toBe('Fewest wake-ups');
+    });
+
+    it('does not name a clock by its deciders when every clock has as many', () => {
         const clocks = [clock('a', { wake_ups_per_minute: 8, window_count: 6 }), clock('b', { wake_ups_per_minute: 12, window_count: 3 })];
         expect(nameOf(clocks, 'b')).toBe('Fewest wake windows');
     });
@@ -177,6 +192,17 @@ describe('recoversOf', () => {
         expect(recoversOf(clock('b', { verdict: 'no recovery' })).detail).toContain('an input stops arriving');
     });
 
+    it('says which losses were not tried, since the clock already failed one', () => {
+        const stopped = clock('a', { verdict: 'no recovery', brokenBy: ['coal stops arriving'] });
+        stopped.assessment.backpressure_loss!.not_tried = ['iron-plate stops arriving', 'iron-gear-wheel is not taken away'];
+        expect(recoversOf(stopped).detail).toBe('In the simulator, after coal stops arriving for a while, it does not get back to its rate by itself. '
+            + 'Not tried, since one failure is enough: iron-plate stops arriving, iron-gear-wheel is not taken away.');
+        expect(rateWarningOf(stopped)).toContain('after coal stops arriving for a while, the build does not get back to its rate by itself in the simulator. '
+            + 'Not tried, since one failure is enough: iron-plate stops arriving, iron-gear-wheel is not taken away.');
+        // all tried: nothing is said
+        expect(recoversOf(clock('b', { verdict: 'no recovery', brokenBy: ['coal stops arriving'] })).detail).not.toContain('Not tried');
+    });
+
     it('says "in the simulator" for yes and for no alike', () => {
         expect(recoversOf(clock('a')).detail).toMatch(/^In the simulator, /);
         expect(recoversOf(clock('b', { verdict: 'no recovery' })).detail).toMatch(/^In the simulator, /);
@@ -193,6 +219,37 @@ describe('recoversOf', () => {
 
     it('says not tested for a clock that does not hold its rate', () => {
         expect(recoversOf(clock('a', { verdict: 'unstable' }))).toMatchObject({ kind: 'not-tested', value: 'Not tested' });
+    });
+});
+
+describe('lossLimitText', () => {
+    const names: Record<string, string> = { nutrients: 'Nutrients', 'iron-bacteria': 'Iron bacteria' };
+    const itemLabel = (id: string) => names[id] ?? id;
+    const limited = (ticks: number, item: string, verdict: 'stable' | 'no recovery' = 'stable') => {
+        const limitedClock = clock('a', { verdict });
+        limitedClock.assessment.backpressure_loss = { ...limitedClock.assessment.backpressure_loss!, loss_limit: { ticks, item } };
+        return limitedClock;
+    };
+
+    it('names the longest loss checked and the item that spoils first, for a build whose items spoil', () => {
+        expect(lossLimitText(limited(13500, 'nutrients'), itemLabel))
+            .toBe('Checked for losses up to 3 min 45 s. A longer loss spoils the nutrients in the build, and no clock brings it back.');
+        expect(lossLimitText(limited(2700, 'iron-bacteria', 'no recovery'), itemLabel))
+            .toBe('Checked for losses up to 45 s. A longer loss spoils the iron bacteria in the build, and no clock brings it back.');
+    });
+
+    it('says nothing for a build whose items do not spoil, or a clock whose losses were not tried', () => {
+        expect(lossLimitText(clock('a'), itemLabel)).toBeNull();
+        const untried = clock('b');
+        untried.assessment.backpressure_loss = null;
+        expect(lossLimitText(untried, itemLabel)).toBeNull();
+    });
+
+    it('says a stretch in minutes and seconds', () => {
+        expect(minutesAndSecondsText(2700)).toBe('45 s');
+        expect(minutesAndSecondsText(10800)).toBe('3 min');
+        expect(minutesAndSecondsText(40500)).toBe('11 min 15 s');
+        expect(minutesAndSecondsText(750)).toBe('12.5 s');
     });
 });
 

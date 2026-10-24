@@ -8,6 +8,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 `clock-generator/package.json` and `clock-generator-ui/package.json` share the same version; the sidecar mod has a version of its own. See Versioning in the README.
 From 0.6.0 on, it lists only what people generating clocks will notice. Changes that only matter to working on the generator, such as the recorder, the harness and the samples, are in the git history.
 
+## [0.23.0] - Unreleased
+
+### Added
+- The list of a clock's inserters and drills says why each one the clock leaves always on is: its swings fill the clock period, it is part of a loop of machines, its enable rule is Always on, or nothing can time a drill into a chest.
+
+### Changed
+- Clocks need fewer decider combinators: inserters with the same wake windows share one decider whatever they carry, and a clock with shared wake windows is offered next to the separate one; the list of clocks shows each one's decider count.
+- In a clock whose machines take turns in groups, the combinators stand together by group, a gap between the groups, each group in the order of its turn, and the first combinator of each group says its turn.
+- Fewer clocks that cannot hold the rate are listed: the clock with three more output swings per cycle than planned is left out unless that count is a multiple of the planned one.
+- A build whose clock period runs to many thousands of ticks generates much faster.
+- A chain of machines that feed each other gets the clock with the fewest wake-ups among those that hold and recover, not the first that holds.
+- A clock that falls short only late in the 40 periods it has to get back after a loss is followed on, and counts as recovered once 40 periods at its rate follow, so some builds get a clock with fewer wake-ups.
+- A build whose items spoil is checked for losses shorter than three quarters of its shortest spoil time, since a longer one spoils it in the game whatever the clock, and Recovers says the limit.
+- A clock that does not get back after a loss is not tried on the losses after it, which the result shows as "Not tried"; builds with such clocks generate faster.
+- Inserters that take from a loop of machines into another machine get wake windows where the clock still holds and recovers with them, so builds with such a loop need far fewer wake-ups.
+
+### Removed
+- Clocks for a shorter period, labelled "shorter period (… not in the period)", are no longer offered: where one was selected, batched swings or shifted swings are now (the swing plan's "Exclude from LCM" leaves an ingredient out of the period by hand).
+
 ## [0.22.0] - 2026-10-24
 
 ### Added
